@@ -65,6 +65,7 @@ const AdminReservations = () => {
   const [selectedRes, setSelectedRes] = useState<any>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
 
