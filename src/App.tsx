@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { LanguageProvider } from "@/hooks/useLanguage";
 import Index from "./pages/Index";
 import Booking from "./pages/Booking";
 import Restaurant from "./pages/Restaurant";
@@ -27,33 +28,35 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public */}
-            <Route path="/" element={<Index />} />
-            <Route path="/booking" element={<Booking />} />
-            <Route path="/restaurant" element={<Restaurant />} />
+      <LanguageProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public */}
+              <Route path="/" element={<Index />} />
+              <Route path="/booking" element={<Booking />} />
+              <Route path="/restaurant" element={<Restaurant />} />
 
-            {/* Admin */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="reservations" element={<AdminReservations />} />
-              <Route path="room-types" element={<AdminRoomTypes />} />
-              <Route path="availability" element={<AdminAvailability />} />
-              <Route path="pricing" element={<AdminPricing />} />
-              <Route path="staff" element={<AdminStaff />} />
-              <Route path="invoices" element={<AdminInvoices />} />
-              <Route path="settings" element={<AdminSettings />} />
-            </Route>
+              {/* Admin */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="reservations" element={<AdminReservations />} />
+                <Route path="room-types" element={<AdminRoomTypes />} />
+                <Route path="availability" element={<AdminAvailability />} />
+                <Route path="pricing" element={<AdminPricing />} />
+                <Route path="staff" element={<AdminStaff />} />
+                <Route path="invoices" element={<AdminInvoices />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </LanguageProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
