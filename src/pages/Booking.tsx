@@ -24,6 +24,21 @@ import roomPenthouse from '@/assets/room-penthouse.jpg';
 
 const fallbackImages: Record<string, string> = { 'Deluxe Room': roomDeluxe, 'Grand Suite': roomSuite, 'Presidential Penthouse': roomPenthouse };
 
+const checkRoomAvailability = async (roomTypeId: string, checkIn: string, checkOut: string, availableUnits: number) => {
+  const { count } = await supabase.from('reservations')
+    .select('*', { count: 'exact', head: true })
+    .eq('room_type_id', roomTypeId)
+    .neq('status', 'cancelled')
+    .lt('check_in', checkOut)
+    .gt('check_out', checkIn);
+  const { count: blockedCount } = await supabase.from('availability_blocks')
+    .select('*', { count: 'exact', head: true })
+    .eq('room_type_id', roomTypeId)
+    .gte('date', checkIn)
+    .lt('date', checkOut);
+  return (count || 0) < availableUnits && (blockedCount || 0) === 0;
+};
+
 const Booking = () => {
   usePublicTheme();
   const { t } = useLanguage();
@@ -66,10 +81,9 @@ const Booking = () => {
       setCheckingAvail(true);
       const ci = format(checkIn, 'yyyy-MM-dd');
       const co = format(checkOut, 'yyyy-MM-dd');
-      const { count } = await supabase.from('reservations').select('*', { count: 'exact', head: true }).eq('room_type_id', selectedRoom).neq('status', 'cancelled').lt('check_in', co).gt('check_out', ci);
-      const { count: blockedCount } = await supabase.from('availability_blocks').select('*', { count: 'exact', head: true }).eq('room_type_id', selectedRoom).gte('date', ci).lt('date', co);
       const rt = roomTypes.find(r => r.id === selectedRoom);
-      setAvailable((count || 0) < (rt?.available_units || 1) && (blockedCount || 0) === 0);
+      const isAvail = await checkRoomAvailability(selectedRoom, ci, co, rt?.available_units || 1);
+      setAvailable(isAvail);
       setCheckingAvail(false);
     };
     check();
@@ -80,11 +94,24 @@ const Booking = () => {
   const handleSubmit = async () => {
     if (!room || !checkIn || !checkOut) return;
     setSubmitting(true);
+
+    // Re-check availability right before submitting to prevent race conditions
+    const ci = format(checkIn, 'yyyy-MM-dd');
+    const co = format(checkOut, 'yyyy-MM-dd');
+    const stillAvailable = await checkRoomAvailability(selectedRoom, ci, co, room.available_units || 1);
+    if (!stillAvailable) {
+      toast.error(t('booking.notAvailable'));
+      setAvailable(false);
+      setStep(1);
+      setSubmitting(false);
+      return;
+    }
+
     const { data: h } = await supabase.from('hotels').select('id').limit(1).maybeSingle();
     if (!h) { toast.error('Hotel not configured'); setSubmitting(false); return; }
     const { error } = await supabase.from('reservations').insert({
       hotel_id: h.id, guest_name: name, guest_email: email, guest_phone: phone,
-      room_type_id: selectedRoom, check_in: format(checkIn, 'yyyy-MM-dd'), check_out: format(checkOut, 'yyyy-MM-dd'),
+      room_type_id: selectedRoom, check_in: ci, check_out: co,
       guests_count: parseInt(guests), status: 'pending', payment_status: 'unpaid',
       total_price: totalPrice, booking_source: 'website', special_requests: specialRequests || null,
     });

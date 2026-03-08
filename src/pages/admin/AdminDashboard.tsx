@@ -5,9 +5,9 @@ import { useHotel } from '@/hooks/useHotel';
 import { formatCurrency } from '@/lib/currency';
 import { StatCard } from '@/components/admin/StatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
-import { CalendarDays, Clock, DollarSign, LogIn, LogOut as LogOutIcon, BarChart3 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { CalendarDays, Clock, DollarSign, LogIn, LogOut as LogOutIcon, BarChart3, Users } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, subMonths, parseISO, eachDayOfInterval, isWithinInterval } from 'date-fns';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
 
 const COLORS = ['hsl(45,90%,50%)', 'hsl(142,70%,45%)', 'hsl(0,70%,50%)', 'hsl(220,70%,50%)'];
 
@@ -17,6 +17,9 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({ total: 0, pending: 0, revenue: 0, checkIns: 0, checkOuts: 0, occupancy: 0 });
   const [recentReservations, setRecentReservations] = useState<any[]>([]);
   const [statusData, setStatusData] = useState<any[]>([]);
+  const [bookingChartData, setBookingChartData] = useState<any[]>([]);
+  const [guestsChartData, setGuestsChartData] = useState<any[]>([]);
+  const [occupancyChartData, setOccupancyChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchDashboardData(); }, []);
@@ -25,32 +28,74 @@ const AdminDashboard = () => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
     const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+
     const [resResult, roomsResult] = await Promise.all([
-      supabase.from('reservations').select('*, room_types(name)').order('created_at', { ascending: false }),
+      supabase.from('reservations').select('*, room_types(name, available_units)').order('created_at', { ascending: false }),
       supabase.from('room_types').select('available_units'),
     ]);
+
     const reservations = resResult.data || [];
     const totalUnits = (roomsResult.data || []).reduce((sum: number, r: any) => sum + (r.available_units || 0), 0);
+
     const pending = reservations.filter(r => r.status === 'pending').length;
     const confirmed = reservations.filter(r => r.status === 'confirmed').length;
     const cancelled = reservations.filter(r => r.status === 'cancelled').length;
     const completed = reservations.filter(r => r.status === 'completed').length;
-    const monthRevenue = reservations.filter(r => r.status !== 'cancelled' && r.created_at >= monthStart && r.created_at <= monthEnd + 'T23:59:59').reduce((sum, r) => sum + (Number(r.total_price) || 0), 0);
+    const monthRevenue = reservations
+      .filter(r => r.status !== 'cancelled' && r.created_at >= monthStart && r.created_at <= monthEnd + 'T23:59:59')
+      .reduce((sum, r) => sum + (Number(r.total_price) || 0), 0);
     const checkIns = reservations.filter(r => r.check_in === today && r.status === 'confirmed').length;
     const checkOuts = reservations.filter(r => r.check_out === today && r.status !== 'cancelled').length;
     const todayOccupied = reservations.filter(r => r.check_in <= today && r.check_out > today && r.status === 'confirmed').length;
     const occupancy = totalUnits > 0 ? Math.round((todayOccupied / totalUnits) * 100) : 0;
+
     setStats({ total: reservations.length, pending, revenue: monthRevenue, checkIns, checkOuts, occupancy });
     setRecentReservations(reservations.slice(0, 8));
-    setStatusData([{ name: t('admin.pending'), value: pending }, { name: t('admin.confirmed'), value: confirmed }, { name: t('admin.cancelled'), value: cancelled }, { name: t('admin.completed'), value: completed }].filter(d => d.value > 0));
+    setStatusData([
+      { name: t('admin.pending'), value: pending },
+      { name: t('admin.confirmed'), value: confirmed },
+      { name: t('admin.cancelled'), value: cancelled },
+      { name: t('admin.completed'), value: completed },
+    ].filter(d => d.value > 0));
+
+    // Build monthly booking chart from real data (last 6 months)
+    const monthlyBookings: { month: string; bookings: number }[] = [];
+    const monthlyGuests: { month: string; guests: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = subMonths(new Date(), i);
+      const mStart = format(startOfMonth(d), 'yyyy-MM-dd');
+      const mEnd = format(endOfMonth(d), 'yyyy-MM-dd') + 'T23:59:59';
+      const label = format(d, 'MMM');
+      const monthRes = reservations.filter(r => r.created_at >= mStart && r.created_at <= mEnd && r.status !== 'cancelled');
+      monthlyBookings.push({ month: label, bookings: monthRes.length });
+      monthlyGuests.push({ month: label, guests: monthRes.reduce((s, r) => s + (r.guests_count || 1), 0) });
+    }
+    setBookingChartData(monthlyBookings);
+    setGuestsChartData(monthlyGuests);
+
+    // Build daily room occupancy for current month
+    const now = new Date();
+    const mStartDate = startOfMonth(now);
+    const mEndDate = endOfMonth(now);
+    const days = eachDayOfInterval({ start: mStartDate, end: mEndDate });
+    const occupancyData = days.map(day => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      const occupied = reservations.filter(r =>
+        r.status === 'confirmed' && r.check_in <= dayStr && r.check_out > dayStr
+      ).length;
+      return {
+        day: format(day, 'dd'),
+        occupancy: totalUnits > 0 ? Math.round((occupied / totalUnits) * 100) : 0,
+      };
+    });
+    setOccupancyChartData(occupancyData);
+
     setLoading(false);
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   const cur = hotel?.currency || 'USD';
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-  const bookingChartData = months.map(m => ({ month: m, bookings: Math.floor(Math.random() * 40) + 10 }));
 
   return (
     <div className="space-y-6">
@@ -63,6 +108,8 @@ const AdminDashboard = () => {
         <StatCard label={t('admin.checkOutsToday')} value={stats.checkOuts} icon={LogOutIcon} />
         <StatCard label={t('admin.occupancy')} value={`${stats.occupancy}%`} icon={BarChart3} />
       </div>
+
+      {/* Charts Row 1: Bookings + Status */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-card rounded-lg border border-border p-6">
           <div className="flex items-center justify-between mb-6">
@@ -73,7 +120,7 @@ const AdminDashboard = () => {
             <BarChart data={bookingChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
               <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' }} />
               <Bar dataKey="bookings" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -100,6 +147,42 @@ const AdminDashboard = () => {
           ) : <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">{t('admin.noData')}</div>}
         </div>
       </div>
+
+      {/* Charts Row 2: Guests + Occupancy */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card rounded-lg border border-border p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-sm font-semibold flex items-center gap-2"><Users size={14} /> {t('admin.guestsOverview') || 'Guests'}</h3>
+            <span className="text-xs text-muted-foreground">{t('admin.last6Months')}</span>
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={guestsChartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
+              <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' }} />
+              <Line type="monotone" dataKey="guests" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-card rounded-lg border border-border p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-sm font-semibold flex items-center gap-2"><BarChart3 size={14} /> {t('admin.roomOccupancy') || 'Room Occupancy'}</h3>
+            <span className="text-xs text-muted-foreground">{format(new Date(), 'MMMM yyyy')}</span>
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={occupancyChartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={10} interval={2} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} unit="%" domain={[0, 100]} />
+              <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' }} formatter={(v: number) => [`${v}%`, 'Occupancy']} />
+              <Area type="monotone" dataKey="occupancy" stroke="hsl(142,70%,45%)" fill="hsl(142,70%,45%)" fillOpacity={0.15} strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Recent Reservations */}
       <div className="bg-card rounded-lg border border-border p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold">{t('admin.recentReservations')}</h3>
