@@ -248,7 +248,16 @@ const AdminReservations = () => {
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{r.room_types?.name || '—'}</td>
                   <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{r.check_in}</td>
                   <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{r.check_out}</td>
-                  <td className="py-3 px-4"><StatusBadge status={r.status} /></td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-1.5">
+                      <StatusBadge status={r.status} />
+                      {conflictIds.has(r.id) && (
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0 gap-0.5">
+                          <AlertTriangle size={10} /> {t('admin.conflict')}
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedRes(r)}><Eye size={14} /></Button>
