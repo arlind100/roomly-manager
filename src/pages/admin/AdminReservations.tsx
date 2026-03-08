@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle } from 'lucide-react';
+import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle, Upload, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { ImportReservationsModal } from '@/components/admin/ImportReservationsModal';
 
 type ReservationForm = {
   guest_name: string; guest_email: string; guest_phone: string;
@@ -64,6 +65,7 @@ const AdminReservations = () => {
   const [selectedRes, setSelectedRes] = useState<any>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -221,7 +223,10 @@ const AdminReservations = () => {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => setShowCreate(true)}><Plus size={16} className="mr-1" /> {t('admin.newReservation')}</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImport(true)}><Upload size={16} className="mr-1" /> {t('admin.importReservations')}</Button>
+          <Button onClick={() => setShowCreate(true)}><Plus size={16} className="mr-1" /> {t('admin.newReservation')}</Button>
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground">{filtered.length} {t('admin.reservations').toLowerCase()}</p>
@@ -330,6 +335,15 @@ const AdminReservations = () => {
           <Button onClick={handleCreate} disabled={creating} className="w-full">{creating ? t('admin.creating') : t('admin.createReservation')}</Button>
         </DialogContent>
       </Dialog>
+
+      {/* Import Modal */}
+      <ImportReservationsModal
+        open={showImport}
+        onOpenChange={setShowImport}
+        roomTypes={roomTypes}
+        hotelId={hotel?.id || reservations[0]?.hotel_id || ''}
+        onImported={fetchData}
+      />
     </div>
   );
 };
