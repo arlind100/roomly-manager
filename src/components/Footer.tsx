@@ -43,7 +43,18 @@ export const Footer = () => {
         </div>
         <div className="divider-gold mb-8" />
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
-          <p>{t('footer.rights')}</p>
+          <div className="flex items-center gap-4">
+            <p>{t('footer.rights')}</p>
+            <a 
+              href="https://arlune.site" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+            >
+              <span className="text-xs">Powered by</span>
+              <img src="/src/assets/arlune-logo-inverse.png" alt="Arlune" className="h-4" />
+            </a>
+          </div>
           <div className="flex gap-6">
             <span className="hover:text-primary cursor-pointer transition-colors">{t('footer.privacy')}</span>
             <span className="hover:text-primary cursor-pointer transition-colors">{t('footer.terms')}</span>
