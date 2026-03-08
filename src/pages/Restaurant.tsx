@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePublicTheme } from '@/hooks/useAdminTheme';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ScrollReveal, SectionHeading } from '@/components/ScrollReveal';
