@@ -414,9 +414,9 @@ export function ImportReservationsModal({ open, onOpenChange, roomTypes, hotelId
                     <tr key={i} className={`border-t border-border/50 ${row.status === 'error' ? 'bg-destructive/10' : row.status === 'duplicate' ? 'bg-muted/50 opacity-50' : row.status === 'conflict' ? 'bg-yellow-500/10' : ''}`}>
                       <td className="py-2 px-3">
                         {row.status === 'ok' && <CheckCircle2 size={14} className="text-green-500" />}
-                        {row.status === 'duplicate' && <span className="text-muted-foreground" title={row.statusMessage}>Dup</span>}
-                        {row.status === 'conflict' && <AlertTriangle size={14} className="text-yellow-500" title={row.statusMessage} />}
-                        {row.status === 'error' && <XCircle size={14} className="text-destructive" title={row.statusMessage} />}
+                        {row.status === 'duplicate' && <span className="text-muted-foreground">Dup</span>}
+                        {row.status === 'conflict' && <span className="text-yellow-500"><AlertTriangle size={14} /></span>}
+                        {row.status === 'error' && <span className="text-destructive"><XCircle size={14} /></span>}
                       </td>
                       <td className="py-2 px-3">{row.guest_name || '—'}</td>
                       <td className="py-2 px-3">
