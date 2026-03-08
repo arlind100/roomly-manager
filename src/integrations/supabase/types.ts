@@ -107,6 +107,53 @@ export type Database = {
         }
         Relationships: []
       }
+      import_logs: {
+        Row: {
+          conflicts_detected: number
+          duplicates_detected: number
+          errors: number
+          filename: string
+          hotel_id: string
+          id: string
+          import_batch_id: string
+          imported_at: string
+          imported_by: string | null
+          records_imported: number
+        }
+        Insert: {
+          conflicts_detected?: number
+          duplicates_detected?: number
+          errors?: number
+          filename: string
+          hotel_id: string
+          id?: string
+          import_batch_id: string
+          imported_at?: string
+          imported_by?: string | null
+          records_imported?: number
+        }
+        Update: {
+          conflicts_detected?: number
+          duplicates_detected?: number
+          errors?: number
+          filename?: string
+          hotel_id?: string
+          id?: string
+          import_batch_id?: string
+          imported_at?: string
+          imported_by?: string | null
+          records_imported?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_logs_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
@@ -239,12 +286,17 @@ export type Database = {
           check_in: string
           check_out: string
           created_at: string
+          external_platform: string | null
+          external_reservation_id: string | null
           guest_email: string | null
           guest_name: string
           guest_phone: string | null
           guests_count: number
           hotel_id: string
           id: string
+          import_batch_id: string | null
+          imported_at: string | null
+          is_external: boolean
           notes: string | null
           payment_status: string | null
           reservation_code: string
@@ -259,12 +311,17 @@ export type Database = {
           check_in: string
           check_out: string
           created_at?: string
+          external_platform?: string | null
+          external_reservation_id?: string | null
           guest_email?: string | null
           guest_name: string
           guest_phone?: string | null
           guests_count?: number
           hotel_id: string
           id?: string
+          import_batch_id?: string | null
+          imported_at?: string | null
+          is_external?: boolean
           notes?: string | null
           payment_status?: string | null
           reservation_code?: string
@@ -279,12 +336,17 @@ export type Database = {
           check_in?: string
           check_out?: string
           created_at?: string
+          external_platform?: string | null
+          external_reservation_id?: string | null
           guest_email?: string | null
           guest_name?: string
           guest_phone?: string | null
           guests_count?: number
           hotel_id?: string
           id?: string
+          import_batch_id?: string | null
+          imported_at?: string | null
+          is_external?: boolean
           notes?: string | null
           payment_status?: string | null
           reservation_code?: string
