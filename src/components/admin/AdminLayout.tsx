@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import arluneLogo from '@/assets/arlune-logo.png';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
