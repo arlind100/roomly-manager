@@ -335,6 +335,15 @@ const AdminReservations = () => {
           <Button onClick={handleCreate} disabled={creating} className="w-full">{creating ? t('admin.creating') : t('admin.createReservation')}</Button>
         </DialogContent>
       </Dialog>
+
+      {/* Import Modal */}
+      <ImportReservationsModal
+        open={showImport}
+        onOpenChange={setShowImport}
+        roomTypes={roomTypes}
+        hotelId={reservations[0]?.hotel_id || ''}
+        onImported={fetchData}
+      />
     </div>
   );
 };
