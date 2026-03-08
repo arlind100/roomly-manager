@@ -341,7 +341,7 @@ const AdminReservations = () => {
         open={showImport}
         onOpenChange={setShowImport}
         roomTypes={roomTypes}
-        hotelId={reservations[0]?.hotel_id || ''}
+        hotelId={hotel?.id || reservations[0]?.hotel_id || ''}
         onImported={fetchData}
       />
     </div>
