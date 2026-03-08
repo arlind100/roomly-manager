@@ -14,6 +14,43 @@ import { Textarea } from '@/components/ui/textarea';
 import { CalendarDays, Search, Plus, Check, X, Eye, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
+type ReservationForm = {
+  guest_name: string; guest_email: string; guest_phone: string;
+  room_type_id: string; check_in: string; check_out: string;
+  guests_count: number; total_price: number; special_requests: string; notes: string;
+};
+
+const emptyForm: ReservationForm = { guest_name: '', guest_email: '', guest_phone: '', room_type_id: '', check_in: '', check_out: '', guests_count: 1, total_price: 0, special_requests: '', notes: '' };
+
+interface FormFieldsProps {
+  f: ReservationForm;
+  setF: (fn: (prev: ReservationForm) => ReservationForm) => void;
+  roomTypes: any[];
+  t: (key: string) => string;
+}
+
+const FormFields = ({ f, setF, roomTypes, t }: FormFieldsProps) => (
+  <div className="space-y-4">
+    <div className="grid grid-cols-2 gap-4">
+      <div className="col-span-2"><Label>{t('admin.guestName')} *</Label><Input value={f.guest_name} onChange={e => setF(p => ({...p, guest_name: e.target.value}))} /></div>
+      <div><Label>{t('admin.guestEmail')}</Label><Input type="email" value={f.guest_email} onChange={e => setF(p => ({...p, guest_email: e.target.value}))} /></div>
+      <div><Label>{t('admin.guestPhone')}</Label><Input value={f.guest_phone} onChange={e => setF(p => ({...p, guest_phone: e.target.value}))} /></div>
+      <div><Label>{t('admin.roomType')}</Label>
+        <Select value={f.room_type_id} onValueChange={v => setF(p => ({...p, room_type_id: v}))}>
+          <SelectTrigger><SelectValue placeholder={t('admin.selectRoom')} /></SelectTrigger>
+          <SelectContent>{roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div><Label>{t('admin.guests')}</Label><Input type="number" min={1} value={f.guests_count} onChange={e => setF(p => ({...p, guests_count: parseInt(e.target.value) || 1}))} /></div>
+      <div><Label>{t('admin.checkIn')} *</Label><Input type="date" value={f.check_in} onChange={e => setF(p => ({...p, check_in: e.target.value}))} /></div>
+      <div><Label>{t('admin.checkOut')} *</Label><Input type="date" value={f.check_out} onChange={e => setF(p => ({...p, check_out: e.target.value}))} /></div>
+      <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={f.total_price} onChange={e => setF(p => ({...p, total_price: parseFloat(e.target.value) || 0}))} /></div>
+    </div>
+    <div><Label>{t('admin.specialRequests')}</Label><Textarea value={f.special_requests} onChange={e => setF(p => ({...p, special_requests: e.target.value}))} rows={2} /></div>
+    <div><Label>{t('admin.notes')}</Label><Textarea value={f.notes} onChange={e => setF(p => ({...p, notes: e.target.value}))} rows={2} /></div>
+  </div>
+);
+
 const AdminReservations = () => {
   const { t } = useLanguage();
   const { hotel } = useHotel();
@@ -29,9 +66,8 @@ const AdminReservations = () => {
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const emptyForm = { guest_name: '', guest_email: '', guest_phone: '', room_type_id: '', check_in: '', check_out: '', guests_count: 1, total_price: 0, special_requests: '', notes: '' };
-  const [form, setForm] = useState(emptyForm);
-  const [editForm, setEditForm] = useState(emptyForm);
+  const [form, setForm] = useState<ReservationForm>(emptyForm);
+  const [editForm, setEditForm] = useState<ReservationForm>(emptyForm);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -45,51 +81,51 @@ const AdminReservations = () => {
     setLoading(false);
   };
 
+  const checkAvailability = async (roomTypeId: string, checkIn: string, checkOut: string, excludeId?: string) => {
+    let query = supabase.from('reservations').select('*', { count: 'exact', head: true })
+      .eq('room_type_id', roomTypeId).neq('status', 'cancelled')
+      .lt('check_in', checkOut).gt('check_out', checkIn);
+    if (excludeId) query = query.neq('id', excludeId);
+    const { count } = await query;
+    const rt = roomTypes.find(r => r.id === roomTypeId);
+    return (count || 0) < (rt?.available_units || 1);
+  };
+
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('reservations').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) { toast.error(error.message); return; }
     toast.success(`Reservation ${status}`);
 
-    // Send confirmation email when confirming a reservation
     if (status === 'confirmed') {
       const res = reservations.find(r => r.id === id);
       if (res?.guest_email) {
         try {
           const { error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
             body: {
-              to_email: res.guest_email,
-              guest_name: res.guest_name,
-              reservation_code: res.reservation_code,
-              check_in: res.check_in,
-              check_out: res.check_out,
-              room_type_name: res.room_types?.name || '',
-              guests_count: res.guests_count,
-              total_price: res.total_price,
-              currency: cur,
-              hotel_name: hotel?.name || 'Hotel',
-              hotel_email: hotel?.email || '',
-              hotel_phone: hotel?.phone || '',
-              hotel_address: hotel?.address || '',
+              to_email: res.guest_email, guest_name: res.guest_name,
+              reservation_code: res.reservation_code, check_in: res.check_in, check_out: res.check_out,
+              room_type_name: res.room_types?.name || '', guests_count: res.guests_count,
+              total_price: res.total_price, currency: cur,
+              hotel_name: hotel?.name || 'Hotel', hotel_email: hotel?.email || '',
+              hotel_phone: hotel?.phone || '', hotel_address: hotel?.address || '',
             },
           });
-          if (emailError) {
-            console.error('Email error:', emailError);
-            toast.error('Reservation confirmed but email failed to send');
-          } else {
-            toast.success('Confirmation email sent to ' + res.guest_email);
-          }
-        } catch (e) {
-          console.error('Email send error:', e);
-        }
+          if (emailError) { console.error('Email error:', emailError); toast.error('Reservation confirmed but email failed'); }
+          else toast.success('Confirmation email sent to ' + res.guest_email);
+        } catch (e) { console.error('Email send error:', e); }
       }
     }
-
     fetchData();
     if (selectedRes?.id === id) setSelectedRes(null);
   };
 
   const handleCreate = async () => {
     if (!form.guest_name || !form.check_in || !form.check_out) { toast.error('Please fill required fields'); return; }
+    if (form.room_type_id) {
+      setCreating(true);
+      const avail = await checkAvailability(form.room_type_id, form.check_in, form.check_out);
+      if (!avail) { toast.error('Room not available for selected dates'); setCreating(false); return; }
+    }
     setCreating(true);
     const h = (await supabase.from('hotels').select('id').limit(1).single()).data;
     const { error } = await supabase.from('reservations').insert({ hotel_id: h?.id, ...form, room_type_id: form.room_type_id || null, status: 'confirmed' });
@@ -114,6 +150,11 @@ const AdminReservations = () => {
 
   const handleEditSave = async () => {
     if (!selectedRes) return;
+    if (editForm.room_type_id && (editForm.room_type_id !== selectedRes.room_type_id || editForm.check_in !== selectedRes.check_in || editForm.check_out !== selectedRes.check_out)) {
+      setSaving(true);
+      const avail = await checkAvailability(editForm.room_type_id, editForm.check_in, editForm.check_out, selectedRes.id);
+      if (!avail) { toast.error('Room not available for selected dates'); setSaving(false); return; }
+    }
     setSaving(true);
     const { error } = await supabase.from('reservations').update({
       guest_name: editForm.guest_name, guest_email: editForm.guest_email, guest_phone: editForm.guest_phone,
@@ -137,28 +178,6 @@ const AdminReservations = () => {
   });
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-
-  const FormFields = ({ f, setF }: { f: typeof emptyForm; setF: (fn: (prev: typeof emptyForm) => typeof emptyForm) => void }) => (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2"><Label>{t('admin.guestName')} *</Label><Input value={f.guest_name} onChange={e => setF(p => ({...p, guest_name: e.target.value}))} /></div>
-        <div><Label>{t('admin.guestEmail')}</Label><Input type="email" value={f.guest_email} onChange={e => setF(p => ({...p, guest_email: e.target.value}))} /></div>
-        <div><Label>{t('admin.guestPhone')}</Label><Input value={f.guest_phone} onChange={e => setF(p => ({...p, guest_phone: e.target.value}))} /></div>
-        <div><Label>{t('admin.roomType')}</Label>
-          <Select value={f.room_type_id} onValueChange={v => setF(p => ({...p, room_type_id: v}))}>
-            <SelectTrigger><SelectValue placeholder={t('admin.selectRoom')} /></SelectTrigger>
-            <SelectContent>{roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-        <div><Label>{t('admin.guests')}</Label><Input type="number" min={1} value={f.guests_count} onChange={e => setF(p => ({...p, guests_count: parseInt(e.target.value) || 1}))} /></div>
-        <div><Label>{t('admin.checkIn')} *</Label><Input type="date" value={f.check_in} onChange={e => setF(p => ({...p, check_in: e.target.value}))} /></div>
-        <div><Label>{t('admin.checkOut')} *</Label><Input type="date" value={f.check_out} onChange={e => setF(p => ({...p, check_out: e.target.value}))} /></div>
-        <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={f.total_price} onChange={e => setF(p => ({...p, total_price: parseFloat(e.target.value) || 0}))} /></div>
-      </div>
-      <div><Label>{t('admin.specialRequests')}</Label><Textarea value={f.special_requests} onChange={e => setF(p => ({...p, special_requests: e.target.value}))} rows={2} /></div>
-      <div><Label>{t('admin.notes')}</Label><Textarea value={f.notes} onChange={e => setF(p => ({...p, notes: e.target.value}))} rows={2} /></div>
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -266,7 +285,7 @@ const AdminReservations = () => {
       <Dialog open={showEdit} onOpenChange={v => { if (!v) { setShowEdit(false); setSelectedRes(null); } }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.editReservation')}</DialogTitle></DialogHeader>
-          <FormFields f={editForm} setF={setEditForm} />
+          <FormFields f={editForm} setF={setEditForm} roomTypes={roomTypes} t={t} />
           <Button onClick={handleEditSave} disabled={saving} className="w-full">{saving ? t('admin.saving') : t('admin.saveChanges')}</Button>
         </DialogContent>
       </Dialog>
@@ -275,7 +294,7 @@ const AdminReservations = () => {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.newReservation')}</DialogTitle></DialogHeader>
-          <FormFields f={form} setF={setForm} />
+          <FormFields f={form} setF={setForm} roomTypes={roomTypes} t={t} />
           <Button onClick={handleCreate} disabled={creating} className="w-full">{creating ? t('admin.creating') : t('admin.createReservation')}</Button>
         </DialogContent>
       </Dialog>
