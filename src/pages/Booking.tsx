@@ -25,6 +25,7 @@ import roomPenthouse from '@/assets/room-penthouse.jpg';
 const fallbackImages: Record<string, string> = { 'Deluxe Room': roomDeluxe, 'Grand Suite': roomSuite, 'Presidential Penthouse': roomPenthouse };
 
 const Booking = () => {
+  usePublicTheme();
   const { t } = useLanguage();
   const { hotel } = useHotel();
   const cur = hotel?.currency || 'USD';

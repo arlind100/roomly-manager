@@ -50,6 +50,41 @@ const AdminReservations = () => {
     const { error } = await supabase.from('reservations').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) { toast.error(error.message); return; }
     toast.success(`Reservation ${status}`);
+
+    // Send confirmation email when confirming a reservation
+    if (status === 'confirmed') {
+      const res = reservations.find(r => r.id === id);
+      if (res?.guest_email) {
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
+            body: {
+              to_email: res.guest_email,
+              guest_name: res.guest_name,
+              reservation_code: res.reservation_code,
+              check_in: res.check_in,
+              check_out: res.check_out,
+              room_type_name: res.room_types?.name || '',
+              guests_count: res.guests_count,
+              total_price: res.total_price,
+              currency: cur,
+              hotel_name: hotel?.name || 'Hotel',
+              hotel_email: hotel?.email || '',
+              hotel_phone: hotel?.phone || '',
+              hotel_address: hotel?.address || '',
+            },
+          });
+          if (emailError) {
+            console.error('Email error:', emailError);
+            toast.error('Reservation confirmed but email failed to send');
+          } else {
+            toast.success('Confirmation email sent to ' + res.guest_email);
+          }
+        } catch (e) {
+          console.error('Email send error:', e);
+        }
+      }
+    }
+
     fetchData();
     if (selectedRes?.id === id) setSelectedRes(null);
   };
