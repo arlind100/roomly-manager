@@ -164,6 +164,7 @@ export type Database = {
           end_date: string
           hotel_id: string
           id: string
+          is_active: boolean
           label: string | null
           price: number
           room_type_id: string
@@ -174,6 +175,7 @@ export type Database = {
           end_date: string
           hotel_id: string
           id?: string
+          is_active?: boolean
           label?: string | null
           price: number
           room_type_id: string
@@ -184,6 +186,7 @@ export type Database = {
           end_date?: string
           hotel_id?: string
           id?: string
+          is_active?: boolean
           label?: string | null
           price?: number
           room_type_id?: string
