@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { usePublicTheme } from '@/hooks/useAdminTheme';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import roomPenthouse from '@/assets/room-penthouse.jpg';
 const fallbackImages: Record<string, string> = { 'Deluxe Room': roomDeluxe, 'Grand Suite': roomSuite, 'Presidential Penthouse': roomPenthouse };
 
 const Booking = () => {
+  usePublicTheme();
   const { t } = useLanguage();
   const { hotel } = useHotel();
   const cur = hotel?.currency || 'USD';

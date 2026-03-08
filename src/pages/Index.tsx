@@ -11,8 +11,10 @@ import { Footer } from '@/components/Footer';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { usePublicTheme } from '@/hooks/useAdminTheme';
 
 const Index = () => {
+  usePublicTheme();
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

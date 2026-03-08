@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePublicTheme } from '@/hooks/useAdminTheme';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ScrollReveal, SectionHeading } from '@/components/ScrollReveal';
@@ -16,6 +17,7 @@ import restaurantImg from '@/assets/restaurant.jpg';
 import dishImg from '@/assets/dish.jpg';
 
 const Restaurant = () => {
+  usePublicTheme();
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState('');
   const [partySize, setPartySize] = useState('2');
