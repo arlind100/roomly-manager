@@ -16,6 +16,7 @@ import restaurantImg from '@/assets/restaurant.jpg';
 import dishImg from '@/assets/dish.jpg';
 
 const Restaurant = () => {
+  usePublicTheme();
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState('');
   const [partySize, setPartySize] = useState('2');
