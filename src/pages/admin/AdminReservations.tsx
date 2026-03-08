@@ -172,6 +172,28 @@ const AdminReservations = () => {
     fetchData();
   };
 
+  // Detect conflicts: reservations with same room_type that overlap dates
+  const getConflictIds = () => {
+    const conflictSet = new Set<string>();
+    const active = reservations.filter(r => r.status !== 'cancelled' && r.room_type_id);
+    for (let i = 0; i < active.length; i++) {
+      const a = active[i];
+      const rt = roomTypes.find(r => r.id === a.room_type_id);
+      const maxUnits = rt?.available_units || 1;
+      // Count how many overlap with this reservation's dates
+      const overlapping = active.filter(b =>
+        b.id !== a.id && b.room_type_id === a.room_type_id &&
+        b.check_in < a.check_out && b.check_out > a.check_in
+      );
+      if (overlapping.length >= maxUnits) {
+        conflictSet.add(a.id);
+        overlapping.forEach(b => conflictSet.add(b.id));
+      }
+    }
+    return conflictSet;
+  };
+  const conflictIds = getConflictIds();
+
   const filtered = reservations.filter(r => {
     const matchSearch = !search || [r.guest_name, r.guest_email, r.guest_phone, r.reservation_code].some(f => f?.toLowerCase().includes(search.toLowerCase()));
     const matchStatus = statusFilter === 'all' || r.status === statusFilter;
