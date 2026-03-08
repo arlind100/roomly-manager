@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -8,9 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { rooms, isRangeAvailable, saveReservation, Reservation } from '@/data/hotelData';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { CalendarIcon, Check, AlertCircle, ArrowLeft } from 'lucide-react';
+import { CalendarIcon, Check, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -18,10 +18,10 @@ import roomDeluxe from '@/assets/room-deluxe.jpg';
 import roomSuite from '@/assets/room-suite.jpg';
 import roomPenthouse from '@/assets/room-penthouse.jpg';
 
-const roomImages: Record<string, string> = {
-  deluxe: roomDeluxe,
-  suite: roomSuite,
-  penthouse: roomPenthouse,
+const fallbackImages: Record<string, string> = {
+  'Deluxe Room': roomDeluxe,
+  'Grand Suite': roomSuite,
+  'Presidential Penthouse': roomPenthouse,
 };
 
 const Booking = () => {
@@ -36,35 +36,86 @@ const Booking = () => {
   const [phone, setPhone] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [roomTypes, setRoomTypes] = useState<any[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(true);
 
-  const room = rooms.find(r => r.id === selectedRoom);
+  useEffect(() => {
+    supabase.from('room_types').select('*').eq('show_on_website', true).order('base_price')
+      .then(({ data }) => { setRoomTypes(data || []); setLoadingRooms(false); });
+  }, []);
+
+  const room = roomTypes.find(r => r.id === selectedRoom);
   const nights = checkIn && checkOut ? Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const totalPrice = room ? Number(room.base_price) * nights : 0;
 
-  const available = useMemo(() => {
-    if (!selectedRoom || !checkIn || !checkOut || nights <= 0) return null;
-    return isRangeAvailable(selectedRoom, checkIn.toISOString().split('T')[0], checkOut.toISOString().split('T')[0]);
-  }, [selectedRoom, checkIn, checkOut, nights]);
+  const getRoomImage = (rt: any) => {
+    if (rt.image_url && rt.image_url.startsWith('http')) return rt.image_url;
+    return fallbackImages[rt.name] || roomDeluxe;
+  };
+
+  // Simple availability check: count existing reservations for those dates
+  const [available, setAvailable] = useState<boolean | null>(null);
+  const [checkingAvail, setCheckingAvail] = useState(false);
+
+  useEffect(() => {
+    if (!selectedRoom || !checkIn || !checkOut || nights <= 0) { setAvailable(null); return; }
+    const checkAvailability = async () => {
+      setCheckingAvail(true);
+      const checkInStr = format(checkIn, 'yyyy-MM-dd');
+      const checkOutStr = format(checkOut, 'yyyy-MM-dd');
+
+      // Count overlapping non-cancelled reservations
+      const { count } = await supabase.from('reservations')
+        .select('*', { count: 'exact', head: true })
+        .eq('room_type_id', selectedRoom)
+        .neq('status', 'cancelled')
+        .lt('check_in', checkOutStr)
+        .gt('check_out', checkInStr);
+
+      // Count blocked dates in range
+      const { count: blockedCount } = await supabase.from('availability_blocks')
+        .select('*', { count: 'exact', head: true })
+        .eq('room_type_id', selectedRoom)
+        .gte('date', checkInStr)
+        .lt('date', checkOutStr);
+
+      const rt = roomTypes.find(r => r.id === selectedRoom);
+      const units = rt?.available_units || 1;
+      setAvailable((count || 0) < units && (blockedCount || 0) === 0);
+      setCheckingAvail(false);
+    };
+    checkAvailability();
+  }, [selectedRoom, checkIn, checkOut, nights, roomTypes]);
 
   const canProceedStep1 = selectedRoom && checkIn && checkOut && nights > 0 && available;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!room || !checkIn || !checkOut) return;
+    setSubmitting(true);
 
-    const reservation: Reservation = {
-      id: crypto.randomUUID(),
-      guestName: name,
-      guestEmail: email,
-      guestPhone: phone,
-      roomId: selectedRoom,
-      checkIn: checkIn.toISOString().split('T')[0],
-      checkOut: checkOut.toISOString().split('T')[0],
-      guests: parseInt(guests),
+    // Get hotel
+    const { data: hotel } = await supabase.from('hotels').select('id').limit(1).maybeSingle();
+    if (!hotel) { toast.error('Hotel not configured'); setSubmitting(false); return; }
+
+    const { error } = await supabase.from('reservations').insert({
+      hotel_id: hotel.id,
+      guest_name: name,
+      guest_email: email,
+      guest_phone: phone,
+      room_type_id: selectedRoom,
+      check_in: format(checkIn, 'yyyy-MM-dd'),
+      check_out: format(checkOut, 'yyyy-MM-dd'),
+      guests_count: parseInt(guests),
       status: 'pending',
-      createdAt: new Date().toISOString(),
-      specialRequests,
-    };
+      payment_status: 'unpaid',
+      total_price: totalPrice,
+      booking_source: 'website',
+      special_requests: specialRequests || null,
+    });
 
-    saveReservation(reservation);
+    setSubmitting(false);
+    if (error) { toast.error('Failed to submit reservation. Please try again.'); console.error(error); return; }
     setSubmitted(true);
     toast.success('Reservation submitted successfully!');
   };
@@ -138,24 +189,30 @@ const Booking = () => {
               {/* Room selection */}
               <div>
                 <label className="font-display text-lg font-medium block mb-4">Select Room</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {rooms.map(r => (
-                    <button
-                      key={r.id}
-                      onClick={() => setSelectedRoom(r.id)}
-                      className={cn(
-                        'glass-card rounded-xl overflow-hidden text-left transition-all duration-300',
-                        selectedRoom === r.id ? 'ring-2 ring-primary shadow-gold' : 'hover:shadow-gold/50'
-                      )}
-                    >
-                      <img src={roomImages[r.id]} alt={r.name} className="w-full h-32 object-cover" />
-                      <div className="p-4">
-                        <h4 className="font-display text-sm font-medium">{r.name}</h4>
-                        <p className="text-primary text-sm font-semibold mt-1">${r.price}/night</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                {loadingRooms ? (
+                  <div className="flex items-center justify-center h-32"><Loader2 className="animate-spin text-primary" /></div>
+                ) : roomTypes.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No rooms available at the moment.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {roomTypes.map(r => (
+                      <button
+                        key={r.id}
+                        onClick={() => setSelectedRoom(r.id)}
+                        className={cn(
+                          'glass-card rounded-xl overflow-hidden text-left transition-all duration-300',
+                          selectedRoom === r.id ? 'ring-2 ring-primary shadow-gold' : 'hover:shadow-gold/50'
+                        )}
+                      >
+                        <img src={getRoomImage(r)} alt={r.name} className="w-full h-32 object-cover" />
+                        <div className="p-4">
+                          <h4 className="font-display text-sm font-medium">{r.name}</h4>
+                          <p className="text-primary text-sm font-semibold mt-1">${Number(r.base_price)}/night</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Date selection */}
@@ -170,18 +227,10 @@ const Booking = () => {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={checkIn}
-                        onSelect={setCheckIn}
-                        disabled={(date) => date < new Date()}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
+                      <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} disabled={(date) => date < new Date()} initialFocus className="p-3 pointer-events-auto" />
                     </PopoverContent>
                   </Popover>
                 </div>
-
                 <div>
                   <label className="text-sm text-muted-foreground mb-1.5 block">Check-out Date</label>
                   <Popover>
@@ -192,14 +241,7 @@ const Booking = () => {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={checkOut}
-                        onSelect={setCheckOut}
-                        disabled={(date) => date <= (checkIn || new Date())}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
+                      <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} disabled={(date) => date <= (checkIn || new Date())} initialFocus className="p-3 pointer-events-auto" />
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -209,9 +251,7 @@ const Booking = () => {
               <div>
                 <label className="text-sm text-muted-foreground mb-1.5 block">Number of Guests</label>
                 <Select value={guests} onValueChange={setGuests}>
-                  <SelectTrigger className="w-full sm:w-48 bg-muted/50">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-48 bg-muted/50"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {[1, 2, 3, 4].map(n => (
                       <SelectItem key={n} value={String(n)}>{n} Guest{n > 1 ? 's' : ''}</SelectItem>
@@ -221,19 +261,20 @@ const Booking = () => {
               </div>
 
               {/* Availability status */}
-              {available !== null && (
-                <div className={cn(
-                  'glass-card rounded-xl p-4 flex items-center gap-3',
-                  available ? 'border-primary/30' : 'border-destructive/30'
-                )}>
+              {checkingAvail && (
+                <div className="glass-card rounded-xl p-4 flex items-center gap-3">
+                  <Loader2 className="animate-spin text-primary" size={20} />
+                  <p className="text-sm">Checking availability...</p>
+                </div>
+              )}
+              {!checkingAvail && available !== null && (
+                <div className={cn('glass-card rounded-xl p-4 flex items-center gap-3', available ? 'border-primary/30' : 'border-destructive/30')}>
                   {available ? (
                     <>
                       <Check className="text-primary" size={20} />
                       <div>
                         <p className="text-sm font-medium">Available!</p>
-                        <p className="text-xs text-muted-foreground">
-                          {room?.name} · {nights} night{nights > 1 ? 's' : ''} · Total: ${room ? room.price * nights : 0}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{room?.name} · {nights} night{nights > 1 ? 's' : ''} · Total: ${totalPrice}</p>
                       </div>
                     </>
                   ) : (
@@ -248,11 +289,7 @@ const Booking = () => {
                 </div>
               )}
 
-              <Button
-                disabled={!canProceedStep1}
-                onClick={() => setStep(2)}
-                className="bg-gradient-gold text-primary-foreground border-0 hover:opacity-90 font-body tracking-wide px-8"
-              >
+              <Button disabled={!canProceedStep1} onClick={() => setStep(2)} className="bg-gradient-gold text-primary-foreground border-0 hover:opacity-90 font-body tracking-wide px-8">
                 Continue to Guest Details
               </Button>
             </motion.div>
@@ -267,7 +304,7 @@ const Booking = () => {
                   <p><strong className="text-foreground">{room?.name}</strong></p>
                   <p>{checkIn && format(checkIn, 'MMM dd, yyyy')} — {checkOut && format(checkOut, 'MMM dd, yyyy')}</p>
                   <p>{nights} night{nights > 1 ? 's' : ''} · {guests} guest{parseInt(guests) > 1 ? 's' : ''}</p>
-                  <p className="text-primary font-semibold text-lg mt-2">Total: ${room ? room.price * nights : 0}</p>
+                  <p className="text-primary font-semibold text-lg mt-2">Total: ${totalPrice}</p>
                 </div>
               </div>
 
@@ -293,15 +330,9 @@ const Booking = () => {
               </div>
 
               <div className="flex gap-4">
-                <Button variant="outline" onClick={() => setStep(1)} className="font-body">
-                  Back
-                </Button>
-                <Button
-                  disabled={!name || !email || !phone}
-                  onClick={handleSubmit}
-                  className="bg-gradient-gold text-primary-foreground border-0 hover:opacity-90 font-body tracking-wide px-8"
-                >
-                  Submit Reservation
+                <Button variant="outline" onClick={() => setStep(1)} className="font-body">Back</Button>
+                <Button disabled={!name || !email || !phone || submitting} onClick={handleSubmit} className="bg-gradient-gold text-primary-foreground border-0 hover:opacity-90 font-body tracking-wide px-8">
+                  {submitting ? 'Submitting...' : 'Submit Reservation'}
                 </Button>
               </div>
             </motion.div>
