@@ -79,6 +79,15 @@ export default function AdminLayout() {
           <LogOut size={18} />
           {t('admin.signOut')}
         </button>
+        <a 
+          href="https://arlune.site" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="flex items-center justify-center gap-2 px-3 py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <span>Powered by</span>
+          <img src="/src/assets/arlune-logo.png" alt="Arlune" className="h-4" />
+        </a>
       </div>
     </>
   );
