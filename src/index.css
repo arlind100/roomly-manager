@@ -3,35 +3,27 @@
 @tailwind utilities;
 
 @layer base {
+  /* ======= PUBLIC SITE THEME (luxury dark) ======= */
   :root {
     --background: 30 10% 5%;
     --foreground: 40 20% 92%;
-
     --card: 30 8% 10%;
     --card-foreground: 40 20% 92%;
-
     --popover: 30 8% 10%;
     --popover-foreground: 40 20% 92%;
-
     --primary: 38 65% 52%;
     --primary-foreground: 30 10% 5%;
-
     --secondary: 30 8% 14%;
     --secondary-foreground: 40 15% 80%;
-
     --muted: 30 6% 18%;
     --muted-foreground: 30 10% 55%;
-
     --accent: 38 50% 42%;
     --accent-foreground: 40 20% 92%;
-
     --destructive: 0 70% 50%;
     --destructive-foreground: 40 20% 92%;
-
     --border: 30 8% 18%;
     --input: 30 8% 18%;
     --ring: 38 65% 52%;
-
     --radius: 0.75rem;
 
     --gold: 38 65% 52%;
@@ -58,6 +50,70 @@
     --font-display: 'Playfair Display', Georgia, serif;
     --font-body: 'DM Sans', system-ui, sans-serif;
   }
+
+  /* ======= ADMIN LIGHT THEME ======= */
+  :root.admin-light {
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 221 83% 53%;
+  }
+
+  /* ======= ADMIN DARK THEME ======= */
+  :root.admin-dark {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 6%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+
+    --sidebar-background: 222 47% 7%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 217 91% 60%;
+  }
 }
 
 @layer base {
@@ -78,6 +134,23 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
+  }
+
+  /* Admin pages use Inter for everything */
+  .admin-light, .admin-dark,
+  .admin-light *, .admin-dark * {
+    --font-display: 'Inter', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+  }
+  :root.admin-light body,
+  :root.admin-dark body {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  :root.admin-light h1, :root.admin-light h2, :root.admin-light h3,
+  :root.admin-light h4, :root.admin-light h5, :root.admin-light h6,
+  :root.admin-dark h1, :root.admin-dark h2, :root.admin-dark h3,
+  :root.admin-dark h4, :root.admin-dark h5, :root.admin-dark h6 {
+    font-family: 'Inter', system-ui, sans-serif;
   }
 }
 

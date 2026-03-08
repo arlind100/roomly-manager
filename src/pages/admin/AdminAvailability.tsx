@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/hooks/useLanguage';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 const AdminAvailability = () => {
+  const { t } = useLanguage();
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
   const [blocks, setBlocks] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
@@ -31,7 +33,7 @@ const AdminAvailability = () => {
     setRoomTypes(rtRes.data || []);
     setBlocks(blockRes.data || []);
     setReservations(resRes.data || []);
-    if (rtRes.data?.[0]) setSelectedRoom(rtRes.data[0].id);
+    if (rtRes.data?.[0] && !selectedRoom) setSelectedRoom(rtRes.data[0].id);
     setLoading(false);
   };
 
@@ -53,9 +55,7 @@ const AdminAvailability = () => {
   const handleAddBlock = async () => {
     if (!form.room_type_id || !form.date) { toast.error('Select room and date'); return; }
     const hotel = (await supabase.from('hotels').select('id').limit(1).single()).data;
-    const { error } = await supabase.from('availability_blocks').insert({
-      hotel_id: hotel?.id, room_type_id: form.room_type_id, date: form.date, reason: form.reason,
-    });
+    const { error } = await supabase.from('availability_blocks').insert({ hotel_id: hotel?.id, room_type_id: form.room_type_id, date: form.date, reason: form.reason });
     if (error) { toast.error(error.message); return; }
     toast.success('Block added');
     setShowAdd(false);
@@ -68,90 +68,110 @@ const AdminAvailability = () => {
     fetchData();
   };
 
+  // Calculate per-room availability for today
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const roomAvailability = roomTypes.map(rt => {
+    const booked = reservations.filter(r => r.room_type_id === rt.id && r.check_in <= today && r.check_out > today).length;
+    const blocked = blocks.filter(b => b.room_type_id === rt.id && b.date === today).length;
+    const free = Math.max(0, rt.available_units - booked - blocked);
+    return { ...rt, booked, blocked: blocked, free };
+  });
+
   const roomBlocked = blocks.filter(b => b.room_type_id === selectedRoom).map(b => new Date(b.date));
-  const roomReserved = reservations
-    .filter(r => r.room_type_id === selectedRoom)
-    .flatMap(r => {
-      const dates: Date[] = [];
-      const start = new Date(r.check_in);
-      const end = new Date(r.check_out);
-      for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) dates.push(new Date(d));
-      return dates;
-    });
+  const roomReserved = reservations.filter(r => r.room_type_id === selectedRoom).flatMap(r => {
+    const dates: Date[] = [];
+    const start = new Date(r.check_in); const end = new Date(r.check_out);
+    for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) dates.push(new Date(d));
+    return dates;
+  });
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-          <SelectTrigger className="w-56 bg-muted/50"><SelectValue placeholder="Select room type" /></SelectTrigger>
-          <SelectContent>{roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
-        </Select>
-        <Button onClick={() => setShowAdd(true)} variant="outline" className="font-body">
-          <Plus size={16} className="mr-1" /> Block Dates
-        </Button>
+      {/* Room Availability Overview */}
+      <div>
+        <h2 className="text-sm font-semibold mb-3">{t('admin.availOverview')}</h2>
+        {roomTypes.length === 0 ? (
+          <EmptyState icon={CalendarRange} title={t('admin.noRoomTypesAvail')} description={t('admin.noRoomTypesAvailDesc')} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {roomAvailability.map(ra => (
+              <div key={ra.id} className={`bg-card rounded-lg border p-4 cursor-pointer transition-all ${selectedRoom === ra.id ? 'border-primary ring-1 ring-primary' : 'border-border hover:border-primary/50'}`} onClick={() => setSelectedRoom(ra.id)}>
+                <h4 className="font-medium text-sm mb-2">{ra.name}</h4>
+                <div className="flex items-center gap-3 text-xs">
+                  <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500" /><span>{ra.free} {t('admin.freeUnits')}</span></div>
+                  <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-500" /><span>{ra.booked} {t('admin.bookedUnits')}</span></div>
+                  <span className="text-muted-foreground">/ {ra.available_units}</span>
+                </div>
+                {/* Progress bar */}
+                <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${ra.available_units > 0 ? (ra.booked / ra.available_units) * 100 : 0}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {roomTypes.length === 0 ? (
-        <EmptyState icon={CalendarRange} title="No room types" description="Create room types first to manage availability." />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="glass-card rounded-xl p-6">
-            <p className="text-sm text-muted-foreground mb-4">Click a date to block/unblock</p>
-            <Calendar
-              mode="single"
-              onSelect={(date) => date && handleBlock(date)}
-              modifiers={{ reserved: roomReserved, blocked: roomBlocked }}
-              modifiersClassNames={{
-                reserved: 'bg-yellow-500/30 text-yellow-200',
-                blocked: 'bg-destructive/30 text-destructive line-through',
-              }}
-              className="p-3"
-              numberOfMonths={1}
-            />
-            <div className="flex gap-4 mt-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-yellow-500/30" /> Reserved</div>
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/30" /> Blocked</div>
-            </div>
+      {roomTypes.length > 0 && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <Select value={selectedRoom} onValueChange={setSelectedRoom}>
+              <SelectTrigger className="w-56"><SelectValue placeholder={t('admin.selectRoomType')} /></SelectTrigger>
+              <SelectContent>{roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => setShowAdd(true)}><Plus size={16} className="mr-1" /> {t('admin.blockDates')}</Button>
           </div>
 
-          <div className="glass-card rounded-xl p-6">
-            <h3 className="font-display text-base font-medium mb-4">Blocked Dates</h3>
-            {blocks.filter(b => b.room_type_id === selectedRoom).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No blocked dates for this room type.</p>
-            ) : (
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {blocks.filter(b => b.room_type_id === selectedRoom).map(b => (
-                  <div key={b.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/30">
-                    <div>
-                      <p className="text-sm">{b.date}</p>
-                      <p className="text-xs text-muted-foreground">{b.reason}</p>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteBlock(b.id)}>
-                      <Trash2 size={14} />
-                    </Button>
-                  </div>
-                ))}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-card rounded-lg border border-border p-6">
+              <p className="text-sm text-muted-foreground mb-4">{t('admin.clickToBlock')}</p>
+              <Calendar
+                mode="single"
+                onSelect={(date) => date && handleBlock(date)}
+                modifiers={{ reserved: roomReserved, blocked: roomBlocked }}
+                modifiersClassNames={{ reserved: 'bg-yellow-500/30 text-yellow-700 dark:text-yellow-300', blocked: 'bg-destructive/30 text-destructive line-through' }}
+                className="p-3"
+              />
+              <div className="flex gap-4 mt-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-yellow-500/30" /> {t('admin.reserved')}</div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/30" /> {t('admin.blocked')}</div>
               </div>
-            )}
+            </div>
+
+            <div className="bg-card rounded-lg border border-border p-6">
+              <h3 className="text-sm font-semibold mb-4">{t('admin.blockedDates')}</h3>
+              {blocks.filter(b => b.room_type_id === selectedRoom).length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t('admin.noBlockedDates')}</p>
+              ) : (
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {blocks.filter(b => b.room_type_id === selectedRoom).map(b => (
+                    <div key={b.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/50">
+                      <div><p className="text-sm">{b.date}</p><p className="text-xs text-muted-foreground">{b.reason}</p></div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteBlock(b.id)}><Trash2 size={14} /></Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="font-display">Block Date</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('admin.blockDate')}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>Room Type</Label>
+            <div><Label>{t('admin.roomType')}</Label>
               <Select value={form.room_type_id} onValueChange={v => setForm(f => ({...f, room_type_id: v}))}>
-                <SelectTrigger className="bg-muted/50"><SelectValue placeholder="Select room" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('admin.selectRoom')} /></SelectTrigger>
                 <SelectContent>{roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>Date</Label><Input type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} className="bg-muted/50" /></div>
-            <div><Label>Reason</Label><Input value={form.reason} onChange={e => setForm(f => ({...f, reason: e.target.value}))} className="bg-muted/50" placeholder="Maintenance, holiday, etc." /></div>
-            <Button onClick={handleAddBlock} className="w-full bg-gradient-gold text-primary-foreground border-0 hover:opacity-90 font-body">Block Date</Button>
+            <div><Label>{t('admin.date')}</Label><Input type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} /></div>
+            <div><Label>{t('admin.reason')}</Label><Input value={form.reason} onChange={e => setForm(f => ({...f, reason: e.target.value}))} placeholder="Maintenance, holiday, etc." /></div>
+            <Button onClick={handleAddBlock} className="w-full">{t('admin.blockDate')}</Button>
           </div>
         </DialogContent>
       </Dialog>
