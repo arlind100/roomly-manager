@@ -139,7 +139,7 @@ export function ImportReservationsModal({ open, onOpenChange, roomTypes, hotelId
     setImportHistory(data || []);
   }, [hotelId]);
 
-  useState(() => { if (open) loadHistory(); });
+  useEffect(() => { if (open) loadHistory(); }, [open, loadHistory]);
 
   const reset = () => {
     setStep(1); setFileName(''); setHeaders([]); setRawRows([]); setParsedRows([]); setImportResult(null);
