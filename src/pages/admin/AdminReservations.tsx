@@ -223,7 +223,10 @@ const AdminReservations = () => {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => setShowCreate(true)}><Plus size={16} className="mr-1" /> {t('admin.newReservation')}</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImport(true)}><Upload size={16} className="mr-1" /> {t('admin.importReservations')}</Button>
+          <Button onClick={() => setShowCreate(true)}><Plus size={16} className="mr-1" /> {t('admin.newReservation')}</Button>
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground">{filtered.length} {t('admin.reservations').toLowerCase()}</p>
