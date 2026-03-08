@@ -151,20 +151,11 @@
     font-family: var(--font-display);
   }
 
-  /* Admin pages use Inter for everything */
-  .admin-light, .admin-dark,
-  .admin-light *, .admin-dark * {
-    --font-display: 'Inter', system-ui, sans-serif;
-    --font-body: 'Inter', system-ui, sans-serif;
-  }
-  :root.admin-light body,
-  :root.admin-dark body {
-    font-family: 'Inter', system-ui, sans-serif;
-  }
-  :root.admin-light h1, :root.admin-light h2, :root.admin-light h3,
-  :root.admin-light h4, :root.admin-light h5, :root.admin-light h6,
-  :root.admin-dark h1, :root.admin-dark h2, :root.admin-dark h3,
-  :root.admin-dark h4, :root.admin-dark h5, :root.admin-dark h6 {
+  /* Admin pages: all headings use Inter */
+  .admin-light h1, .admin-light h2, .admin-light h3,
+  .admin-light h4, .admin-light h5, .admin-light h6,
+  .admin-dark h1, .admin-dark h2, .admin-dark h3,
+  .admin-dark h4, .admin-dark h5, .admin-dark h6 {
     font-family: 'Inter', system-ui, sans-serif;
   }
 }
