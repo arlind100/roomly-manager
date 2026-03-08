@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
+import arluneLogo from '@/assets/arlune-logo-inverse.png';
 
 export const Footer = () => {
   const { t } = useLanguage();
