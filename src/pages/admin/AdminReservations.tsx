@@ -5,13 +5,14 @@ import { useHotel } from '@/hooks/useHotel';
 import { formatCurrency } from '@/lib/currency';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { EmptyState } from '@/components/admin/EmptyState';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarDays, Search, Plus, Check, X, Eye, Pencil } from 'lucide-react';
+import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 type ReservationForm = {
@@ -171,6 +172,28 @@ const AdminReservations = () => {
     fetchData();
   };
 
+  // Detect conflicts: reservations with same room_type that overlap dates
+  const getConflictIds = () => {
+    const conflictSet = new Set<string>();
+    const active = reservations.filter(r => r.status !== 'cancelled' && r.room_type_id);
+    for (let i = 0; i < active.length; i++) {
+      const a = active[i];
+      const rt = roomTypes.find(r => r.id === a.room_type_id);
+      const maxUnits = rt?.available_units || 1;
+      // Count how many overlap with this reservation's dates
+      const overlapping = active.filter(b =>
+        b.id !== a.id && b.room_type_id === a.room_type_id &&
+        b.check_in < a.check_out && b.check_out > a.check_in
+      );
+      if (overlapping.length >= maxUnits) {
+        conflictSet.add(a.id);
+        overlapping.forEach(b => conflictSet.add(b.id));
+      }
+    }
+    return conflictSet;
+  };
+  const conflictIds = getConflictIds();
+
   const filtered = reservations.filter(r => {
     const matchSearch = !search || [r.guest_name, r.guest_email, r.guest_phone, r.reservation_code].some(f => f?.toLowerCase().includes(search.toLowerCase()));
     const matchStatus = statusFilter === 'all' || r.status === statusFilter;
@@ -225,7 +248,16 @@ const AdminReservations = () => {
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{r.room_types?.name || '—'}</td>
                   <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{r.check_in}</td>
                   <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{r.check_out}</td>
-                  <td className="py-3 px-4"><StatusBadge status={r.status} /></td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-1.5">
+                      <StatusBadge status={r.status} />
+                      {conflictIds.has(r.id) && (
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0 gap-0.5">
+                          <AlertTriangle size={10} /> {t('admin.conflict')}
+                        </Badge>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedRes(r)}><Eye size={14} /></Button>

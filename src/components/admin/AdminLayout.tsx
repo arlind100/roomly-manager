@@ -84,7 +84,7 @@ export default function AdminLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className={`min-h-screen flex admin-${theme}`}>
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-60 flex-col border-r border-border bg-card fixed inset-y-0 left-0 z-30">
         <SidebarContent />
