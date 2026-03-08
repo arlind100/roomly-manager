@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BedDouble, Plus, Pencil, Trash2, Users, Maximize } from 'lucide-react';
+import { BedDouble, Plus, Pencil, Trash2, Users, Maximize, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 const emptyForm = {
   name: '', description: '', max_guests: 2, base_price: 0, weekend_price: null as number | null,
-  available_units: 1, amenities: '' as string, room_size: '', image_url: '',
+  available_units: 1, amenities: '' as string, room_size: '', image_url: '', show_on_website: true,
 };
 
 const AdminRoomTypes = () => {
@@ -36,7 +37,7 @@ const AdminRoomTypes = () => {
       name: rt.name, description: rt.description || '', max_guests: rt.max_guests,
       base_price: Number(rt.base_price), weekend_price: rt.weekend_price ? Number(rt.weekend_price) : null,
       available_units: rt.available_units, amenities: (rt.amenities || []).join(', '),
-      room_size: rt.room_size || '', image_url: rt.image_url || '',
+      room_size: rt.room_size || '', image_url: rt.image_url || '', show_on_website: rt.show_on_website ?? true,
     });
     setShowForm(true);
   };
@@ -44,7 +45,7 @@ const AdminRoomTypes = () => {
   const handleSave = async () => {
     if (!form.name || !form.base_price) { toast.error('Name and price required'); return; }
     setSaving(true);
-    const hotel = (await supabase.from('hotels').select('id').limit(1).single()).data;
+    const hotel = (await supabase.from('hotels').select('id').limit(1).maybeSingle()).data;
     const payload = {
       hotel_id: hotel?.id,
       name: form.name,
@@ -56,6 +57,7 @@ const AdminRoomTypes = () => {
       amenities: form.amenities ? form.amenities.split(',').map(s => s.trim()).filter(Boolean) : [],
       room_size: form.room_size || null,
       image_url: form.image_url || null,
+      show_on_website: form.show_on_website,
     };
 
     const { error } = editing
@@ -68,6 +70,13 @@ const AdminRoomTypes = () => {
     setShowForm(false);
     setEditing(null);
     setForm(emptyForm);
+    fetchRoomTypes();
+  };
+
+  const toggleVisibility = async (id: string, current: boolean) => {
+    const { error } = await supabase.from('room_types').update({ show_on_website: !current }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(!current ? 'Now visible on website' : 'Hidden from website');
     fetchRoomTypes();
   };
 
@@ -107,11 +116,25 @@ const AdminRoomTypes = () => {
                   <span className="text-primary font-semibold text-lg">${Number(rt.base_price)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{rt.description}</p>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
                   <span className="flex items-center gap-1"><Users size={12} /> {rt.max_guests} guests</span>
                   {rt.room_size && <span className="flex items-center gap-1"><Maximize size={12} /> {rt.room_size}</span>}
                   <span>{rt.available_units} unit{rt.available_units !== 1 ? 's' : ''}</span>
                 </div>
+
+                {/* Visibility badge */}
+                <button
+                  onClick={() => toggleVisibility(rt.id, rt.show_on_website)}
+                  className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full mb-4 transition-colors ${
+                    rt.show_on_website
+                      ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {rt.show_on_website ? <Eye size={10} /> : <EyeOff size={10} />}
+                  {rt.show_on_website ? 'Visible on website' : 'Hidden from website'}
+                </button>
+
                 {rt.amenities?.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {rt.amenities.slice(0, 4).map((a: string) => (
@@ -150,6 +173,13 @@ const AdminRoomTypes = () => {
               <div><Label>Image URL</Label><Input value={form.image_url} onChange={e => setForm(f => ({...f, image_url: e.target.value}))} className="bg-muted/50" placeholder="https://..." /></div>
             </div>
             <div><Label>Amenities (comma-separated)</Label><Input value={form.amenities} onChange={e => setForm(f => ({...f, amenities: e.target.value}))} className="bg-muted/50" placeholder="WiFi, Pool, Spa" /></div>
+            <div className="flex items-center justify-between rounded-lg border border-border/50 p-3">
+              <div>
+                <Label className="text-sm font-medium">Show on Website</Label>
+                <p className="text-xs text-muted-foreground">Make this room visible to guests on the public website</p>
+              </div>
+              <Switch checked={form.show_on_website} onCheckedChange={v => setForm(f => ({...f, show_on_website: v}))} />
+            </div>
             <Button onClick={handleSave} disabled={saving} className="w-full bg-gradient-gold text-primary-foreground border-0 hover:opacity-90 font-body">
               {saving ? 'Saving...' : editing ? 'Update Room Type' : 'Create Room Type'}
             </Button>
