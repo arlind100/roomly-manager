@@ -53,7 +53,7 @@ export const Footer = () => {
               className="flex items-center gap-2 hover:opacity-70 transition-opacity"
             >
               <span className="text-xs">Powered by</span>
-              <img src="/src/assets/arlune-logo-inverse.png" alt="Arlune" className="h-4" />
+              <img src={arluneLogo} alt="Arlune" className="h-4" />
             </a>
           </div>
           <div className="flex gap-6">
