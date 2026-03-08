@@ -321,6 +321,7 @@ export type Database = {
           max_guests: number
           name: string
           room_size: string | null
+          show_on_website: boolean
           updated_at: string
           weekend_price: number | null
         }
@@ -336,6 +337,7 @@ export type Database = {
           max_guests?: number
           name: string
           room_size?: string | null
+          show_on_website?: boolean
           updated_at?: string
           weekend_price?: number | null
         }
@@ -351,6 +353,7 @@ export type Database = {
           max_guests?: number
           name?: string
           room_size?: string | null
+          show_on_website?: boolean
           updated_at?: string
           weekend_price?: number | null
         }
