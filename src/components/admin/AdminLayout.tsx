@@ -145,6 +145,7 @@ export default function AdminLayout() {
         </header>
         <main className="flex-1 p-4 lg:p-6 overflow-auto"><Outlet /></main>
       </div>
+      <DashboardAssistant />
     </div>
   );
 }
