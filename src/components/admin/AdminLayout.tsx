@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import arluneLogo from '@/assets/arlune-logo.png';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -86,7 +87,7 @@ export default function AdminLayout() {
           className="flex items-center justify-center gap-2 px-3 py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <span>Powered by</span>
-          <img src="/src/assets/arlune-logo.png" alt="Arlune" className="h-4" />
+          <img src={arluneLogo} alt="Arlune" className="h-4" />
         </a>
       </div>
     </>
