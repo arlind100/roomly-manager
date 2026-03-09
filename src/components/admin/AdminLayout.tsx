@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import arluneLogo from '@/assets/arlune-logo.png';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import DashboardAssistant from '@/components/admin/assistant/DashboardAssistant';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useAdminTheme } from '@/hooks/useAdminTheme';
@@ -144,6 +145,7 @@ export default function AdminLayout() {
         </header>
         <main className="flex-1 p-4 lg:p-6 overflow-auto"><Outlet /></main>
       </div>
+      <DashboardAssistant />
     </div>
   );
 }
