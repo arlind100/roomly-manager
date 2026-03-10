@@ -2,12 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/hooks/useLanguage";
-import Index from "./pages/Index";
-import Booking from "./pages/Booking";
-import Restaurant from "./pages/Restaurant";
 import NotFound from "./pages/NotFound";
 
 // Admin
@@ -35,10 +32,8 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Public */}
-              <Route path="/" element={<Index />} />
-              <Route path="/booking" element={<Booking />} />
-              <Route path="/restaurant" element={<Restaurant />} />
+              {/* Redirect root to admin dashboard */}
+              <Route path="/" element={<Navigate to="/admin" replace />} />
 
               {/* Admin */}
               <Route path="/admin/login" element={<AdminLogin />} />
