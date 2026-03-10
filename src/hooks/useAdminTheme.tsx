@@ -25,12 +25,3 @@ export function useAdminTheme() {
 
   return { theme, setTheme, toggle };
 }
-
-/**
- * No-op hook kept for backward compatibility on public pages.
- * Admin theming is now fully scoped to the AdminLayout wrapper div,
- * so no cleanup on <html> is needed.
- */
-export function usePublicTheme() {
-  // Nothing to do — admin styles are scoped to wrapper, not :root
-}
