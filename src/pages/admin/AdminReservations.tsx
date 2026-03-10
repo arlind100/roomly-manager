@@ -272,6 +272,16 @@ const AdminReservations = () => {
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={() => updateStatus(r.id, 'confirmed')}><Check size={14} /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => updateStatus(r.id, 'cancelled')}><X size={14} /></Button>
                       </>}
+                      {r.status === 'confirmed' && (
+                        <Button variant="ghost" size="sm" className="h-8 text-xs text-blue-600 gap-1" onClick={() => updateStatus(r.id, 'checked_in')}>
+                          <LogIn size={14} /> {t('admin.checkInAction')}
+                        </Button>
+                      )}
+                      {r.status === 'checked_in' && (
+                        <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => updateStatus(r.id, 'completed')}>
+                          <LogOutIcon size={14} /> {t('admin.checkOutAction')}
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
