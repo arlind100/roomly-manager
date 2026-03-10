@@ -320,9 +320,12 @@ const AdminReservations = () => {
                   <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => updateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
                 </>}
                 {selectedRes.status === 'confirmed' && <>
-                  <Button size="sm" onClick={() => updateStatus(selectedRes.id, 'completed')}>{t('admin.markCompleted')}</Button>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-1" onClick={() => updateStatus(selectedRes.id, 'checked_in')}><LogIn size={14} /> {t('admin.checkInAction')}</Button>
                   <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => updateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
                 </>}
+                {selectedRes.status === 'checked_in' && (
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => updateStatus(selectedRes.id, 'completed')}><LogOutIcon size={14} /> {t('admin.checkOutAction')}</Button>
+                )}
               </div>
             </div>
           )}
