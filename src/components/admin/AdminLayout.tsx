@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, CalendarDays, BedDouble, CalendarRange, DollarSign,
   Users, FileText, Settings, LogOut, Menu, X, Bell, ChevronDown, Sun, Moon,
+  ConciergeBell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
