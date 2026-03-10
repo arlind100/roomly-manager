@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle, Upload, Download } from 'lucide-react';
+import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle, Upload, Download, LogIn, LogOut as LogOutIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { ImportReservationsModal } from '@/components/admin/ImportReservationsModal';
 
@@ -218,6 +218,7 @@ const AdminReservations = () => {
               <SelectItem value="all">{t('admin.allStatus')}</SelectItem>
               <SelectItem value="pending">{t('admin.pending')}</SelectItem>
               <SelectItem value="confirmed">{t('admin.confirmed')}</SelectItem>
+              <SelectItem value="checked_in">{t('admin.checkedIn')}</SelectItem>
               <SelectItem value="cancelled">{t('admin.cancelled')}</SelectItem>
               <SelectItem value="completed">{t('admin.completed')}</SelectItem>
             </SelectContent>
@@ -271,6 +272,16 @@ const AdminReservations = () => {
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={() => updateStatus(r.id, 'confirmed')}><Check size={14} /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => updateStatus(r.id, 'cancelled')}><X size={14} /></Button>
                       </>}
+                      {r.status === 'confirmed' && (
+                        <Button variant="ghost" size="sm" className="h-8 text-xs text-blue-600 gap-1" onClick={() => updateStatus(r.id, 'checked_in')}>
+                          <LogIn size={14} /> {t('admin.checkInAction')}
+                        </Button>
+                      )}
+                      {r.status === 'checked_in' && (
+                        <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => updateStatus(r.id, 'completed')}>
+                          <LogOutIcon size={14} /> {t('admin.checkOutAction')}
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -309,9 +320,12 @@ const AdminReservations = () => {
                   <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => updateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
                 </>}
                 {selectedRes.status === 'confirmed' && <>
-                  <Button size="sm" onClick={() => updateStatus(selectedRes.id, 'completed')}>{t('admin.markCompleted')}</Button>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-1" onClick={() => updateStatus(selectedRes.id, 'checked_in')}><LogIn size={14} /> {t('admin.checkInAction')}</Button>
                   <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => updateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
                 </>}
+                {selectedRes.status === 'checked_in' && (
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => updateStatus(selectedRes.id, 'completed')}><LogOutIcon size={14} /> {t('admin.checkOutAction')}</Button>
+                )}
               </div>
             </div>
           )}

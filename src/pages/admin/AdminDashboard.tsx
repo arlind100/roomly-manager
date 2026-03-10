@@ -197,6 +197,9 @@ const AdminDashboard = () => {
         <div className="bg-card rounded-lg border border-border p-5">
           <h3 className="text-sm font-semibold mb-3">{t('admin.quickActions')}</h3>
           <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" size="sm" className="text-xs justify-start gap-1.5" onClick={() => navigate('/admin/front-desk')}>
+              <UserPlus size={14} /> {t('admin.quickWalkIn')}
+            </Button>
             <Button variant="outline" size="sm" className="text-xs justify-start gap-1.5" onClick={() => navigate('/admin/reservations')}>
               <Plus size={14} /> {t('admin.newReservation')}
             </Button>
@@ -205,9 +208,6 @@ const AdminDashboard = () => {
             </Button>
             <Button variant="outline" size="sm" className="text-xs justify-start gap-1.5" onClick={() => navigate('/admin/room-types')}>
               <BedDouble size={14} /> {t('admin.addRoomType')}
-            </Button>
-            <Button variant="outline" size="sm" className="text-xs justify-start gap-1.5" onClick={() => navigate('/admin/reservations')}>
-              <UserPlus size={14} /> {t('admin.addGuest')}
             </Button>
           </div>
         </div>

@@ -22,6 +22,7 @@ import AdminPricing from "./pages/admin/AdminPricing";
 import AdminStaff from "./pages/admin/AdminStaff";
 import AdminInvoices from "./pages/admin/AdminInvoices";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminFrontDesk from "./pages/admin/AdminFrontDesk";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 <Route index element={<AdminDashboard />} />
+                <Route path="front-desk" element={<AdminFrontDesk />} />
                 <Route path="reservations" element={<AdminReservations />} />
                 <Route path="room-types" element={<AdminRoomTypes />} />
                 <Route path="availability" element={<AdminAvailability />} />

@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, CalendarDays, BedDouble, CalendarRange, DollarSign,
   Users, FileText, Settings, LogOut, Menu, X, Bell, ChevronDown, Sun, Moon,
+  ConciergeBell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +26,7 @@ export default function AdminLayout() {
 
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: t('admin.dashboard'), exact: true },
+    { path: '/admin/front-desk', icon: ConciergeBell, label: t('admin.frontDesk') },
     { path: '/admin/reservations', icon: CalendarDays, label: t('admin.reservations') },
     { path: '/admin/room-types', icon: BedDouble, label: t('admin.roomTypes') },
     { path: '/admin/availability', icon: CalendarRange, label: t('admin.availability') },

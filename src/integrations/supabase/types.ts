@@ -298,6 +298,7 @@ export type Database = {
           imported_at: string | null
           is_external: boolean
           notes: string | null
+          payment_method: string | null
           payment_status: string | null
           reservation_code: string
           room_type_id: string | null
@@ -323,6 +324,7 @@ export type Database = {
           imported_at?: string | null
           is_external?: boolean
           notes?: string | null
+          payment_method?: string | null
           payment_status?: string | null
           reservation_code?: string
           room_type_id?: string | null
@@ -348,6 +350,7 @@ export type Database = {
           imported_at?: string | null
           is_external?: boolean
           notes?: string | null
+          payment_method?: string | null
           payment_status?: string | null
           reservation_code?: string
           room_type_id?: string | null
