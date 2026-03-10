@@ -218,6 +218,7 @@ const AdminReservations = () => {
               <SelectItem value="all">{t('admin.allStatus')}</SelectItem>
               <SelectItem value="pending">{t('admin.pending')}</SelectItem>
               <SelectItem value="confirmed">{t('admin.confirmed')}</SelectItem>
+              <SelectItem value="checked_in">{t('admin.checkedIn')}</SelectItem>
               <SelectItem value="cancelled">{t('admin.cancelled')}</SelectItem>
               <SelectItem value="completed">{t('admin.completed')}</SelectItem>
             </SelectContent>
