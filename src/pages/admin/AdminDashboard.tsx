@@ -6,6 +6,7 @@ import { useHotel } from '@/hooks/useHotel';
 import { formatCurrency } from '@/lib/currency';
 import { StatCard } from '@/components/admin/StatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   CalendarDays, DollarSign, LogIn, LogOut as LogOutIcon, BarChart3, Users,
-  BedDouble, UserPlus, Search, Eye, Plus, CalendarRange, Ban,
+  BedDouble, UserPlus, Search, Eye, Plus, CalendarRange, Ban, AlertTriangle, Globe,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
@@ -208,11 +209,76 @@ const AdminDashboard = () => {
     fetchData();
   };
 
+  // ===== CONFLICTS =====
+  const conflictReservations = useMemo(() =>
+    reservations.filter(r => r.is_conflict && r.status !== 'cancelled'),
+  [reservations]);
+
+  const resolveConflict = async (keepId: string, cancelId: string) => {
+    const { error: e1 } = await supabase.from('reservations').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', cancelId);
+    const { error: e2 } = await supabase.from('reservations').update({ is_conflict: false, conflict_with_reservation_id: null, conflict_reason: null, updated_at: new Date().toISOString() }).eq('id', keepId);
+    if (e1 || e2) { toast.error('Failed to resolve conflict'); return; }
+    toast.success('Conflict resolved');
+    fetchData();
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">{format(new Date(), 'EEEE, MMMM dd, yyyy')}</p>
+
+      {/* ===== CONFLICT WARNINGS ===== */}
+      {conflictReservations.length > 0 && (
+        <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 space-y-3">
+          <h3 className="text-sm font-semibold flex items-center gap-2 text-destructive">
+            <AlertTriangle size={16} /> Reservation Conflicts Detected ({conflictReservations.length})
+          </h3>
+          <div className="space-y-2">
+            {conflictReservations.slice(0, 5).map(r => {
+              const conflictWith = r.conflict_with_reservation_id
+                ? reservations.find(x => x.id === r.conflict_with_reservation_id)
+                : null;
+              return (
+                <div key={r.id} className="bg-card rounded-lg border border-destructive/20 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">{r.guest_name}
+                        {r.is_external && <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 gap-0.5"><Globe size={10} /> External</Badge>}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {r.room_types?.name || '—'} · {r.check_in} → {r.check_out}
+                      </p>
+                      {conflictWith && (
+                        <p className="text-xs text-destructive mt-1">
+                          ⚡ Conflicts with: {conflictWith.guest_name} ({conflictWith.check_in} → {conflictWith.check_out})
+                          {conflictWith.booking_source && ` · ${conflictWith.booking_source}`}
+                        </p>
+                      )}
+                      {r.conflict_reason && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Reason: {r.conflict_reason.replace(/_/g, ' ')}</p>
+                      )}
+                    </div>
+                    {conflictWith && (
+                      <div className="flex gap-1 shrink-0">
+                        <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => resolveConflict(r.id, conflictWith.id)}>
+                          Keep This
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => resolveConflict(conflictWith.id, r.id)}>
+                          Keep Other
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {conflictReservations.length > 5 && (
+              <p className="text-xs text-muted-foreground text-center">+ {conflictReservations.length - 5} more conflicts</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ===== TOP METRICS ===== */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">

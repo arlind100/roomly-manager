@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.send-confirmation-email]
 verify_jwt = false
+
+[functions.sync-ical]
+verify_jwt = false
