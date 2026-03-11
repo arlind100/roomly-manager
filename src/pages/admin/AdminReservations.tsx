@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle, Upload, Download, LogIn, LogOut as LogOutIcon } from 'lucide-react';
+import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle, Upload, Download, LogIn, LogOut as LogOutIcon, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { ImportReservationsModal } from '@/components/admin/ImportReservationsModal';
 
