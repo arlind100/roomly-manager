@@ -249,8 +249,11 @@ const AdminReservations = () => {
               </tr></thead>
               <tbody>{filtered.map(r => (
                 <tr key={r.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <td className="py-3 px-4 font-mono text-xs">{r.reservation_code}</td>
-                  <td className="py-3 px-4"><div>{r.guest_name}</div><div className="text-xs text-muted-foreground">{r.guest_email}</div></td>
+                  <td className="py-3 px-4 font-mono text-xs">
+                    {r.reservation_code}
+                    {r.is_external && <Badge variant="outline" className="ml-1.5 text-[10px] px-1.5 py-0 gap-0.5"><Globe size={9} /> External</Badge>}
+                  </td>
+                  <td className="py-3 px-4"><div>{r.guest_name}</div><div className="text-xs text-muted-foreground">{r.guest_email}{r.ical_uid ? ` · iCal` : ''}</div></td>
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{r.room_types?.name || '—'}</td>
                   <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{r.check_in}</td>
                   <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{r.check_out}</td>
