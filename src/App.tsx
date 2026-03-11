@@ -40,7 +40,6 @@ const App = () => (
               <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="reservations" element={<AdminReservations />} />
-                <Route path="reservations" element={<AdminReservations />} />
                 <Route path="room-types" element={<AdminRoomTypes />} />
                 <Route path="availability" element={<AdminAvailability />} />
                 <Route path="pricing" element={<AdminPricing />} />
