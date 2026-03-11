@@ -63,6 +63,7 @@ export type Database = {
           cancellation_policy: string | null
           check_in_time: string | null
           check_out_time: string | null
+          conflict_policy: string
           created_at: string
           currency: string
           email: string | null
@@ -79,6 +80,7 @@ export type Database = {
           cancellation_policy?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
+          conflict_policy?: string
           created_at?: string
           currency?: string
           email?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           cancellation_policy?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
+          conflict_policy?: string
           created_at?: string
           currency?: string
           email?: string | null
@@ -106,6 +109,60 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ical_feeds: {
+        Row: {
+          created_at: string
+          hotel_id: string
+          ical_url: string
+          id: string
+          last_sync: string | null
+          name: string
+          priority_level: number
+          room_type_id: string | null
+          sync_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hotel_id: string
+          ical_url: string
+          id?: string
+          last_sync?: string | null
+          name: string
+          priority_level?: number
+          room_type_id?: string | null
+          sync_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hotel_id?: string
+          ical_url?: string
+          id?: string
+          last_sync?: string | null
+          name?: string
+          priority_level?: number
+          room_type_id?: string | null
+          sync_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ical_feeds_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ical_feeds_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       import_logs: {
         Row: {
@@ -284,7 +341,11 @@ export type Database = {
         Row: {
           booking_source: string | null
           check_in: string
+          check_in_time: string | null
           check_out: string
+          check_out_time: string | null
+          conflict_reason: string | null
+          conflict_with_reservation_id: string | null
           created_at: string
           external_platform: string | null
           external_reservation_id: string | null
@@ -293,9 +354,11 @@ export type Database = {
           guest_phone: string | null
           guests_count: number
           hotel_id: string
+          ical_uid: string | null
           id: string
           import_batch_id: string | null
           imported_at: string | null
+          is_conflict: boolean
           is_external: boolean
           notes: string | null
           payment_method: string | null
@@ -310,7 +373,11 @@ export type Database = {
         Insert: {
           booking_source?: string | null
           check_in: string
+          check_in_time?: string | null
           check_out: string
+          check_out_time?: string | null
+          conflict_reason?: string | null
+          conflict_with_reservation_id?: string | null
           created_at?: string
           external_platform?: string | null
           external_reservation_id?: string | null
@@ -319,9 +386,11 @@ export type Database = {
           guest_phone?: string | null
           guests_count?: number
           hotel_id: string
+          ical_uid?: string | null
           id?: string
           import_batch_id?: string | null
           imported_at?: string | null
+          is_conflict?: boolean
           is_external?: boolean
           notes?: string | null
           payment_method?: string | null
@@ -336,7 +405,11 @@ export type Database = {
         Update: {
           booking_source?: string | null
           check_in?: string
+          check_in_time?: string | null
           check_out?: string
+          check_out_time?: string | null
+          conflict_reason?: string | null
+          conflict_with_reservation_id?: string | null
           created_at?: string
           external_platform?: string | null
           external_reservation_id?: string | null
@@ -345,9 +418,11 @@ export type Database = {
           guest_phone?: string | null
           guests_count?: number
           hotel_id?: string
+          ical_uid?: string | null
           id?: string
           import_batch_id?: string | null
           imported_at?: string | null
+          is_conflict?: boolean
           is_external?: boolean
           notes?: string | null
           payment_method?: string | null
