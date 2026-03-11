@@ -13,6 +13,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { BedDouble, Plus, Pencil, Trash2, Users, Maximize, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
+import roomStandard from '@/assets/room-standard.jpg';
+import roomDeluxe from '@/assets/room-deluxe.jpg';
+import roomSuite from '@/assets/room-suite.jpg';
+import roomFamily from '@/assets/room-family.jpg';
+
+const FALLBACK_MAP: Record<string, string> = {
+  standard: roomStandard, classic: roomStandard, single: roomStandard, double: roomStandard,
+  deluxe: roomDeluxe, superior: roomDeluxe, premium: roomDeluxe,
+  suite: roomSuite, presidential: roomSuite, executive: roomSuite, penthouse: roomSuite,
+  family: roomFamily, twin: roomFamily,
+};
+
+function getRoomFallbackImage(name: string): string {
+  const lower = name.toLowerCase();
+  for (const [key, img] of Object.entries(FALLBACK_MAP)) {
+    if (lower.includes(key)) return img;
+  }
+  return roomStandard;
+}
+
 const emptyForm = { name: '', description: '', max_guests: 2, base_price: 0, weekend_price: null as number | null, available_units: 1, amenities: '', room_size: '', image_url: '', show_on_website: true };
 
 const AdminRoomTypes = () => {
