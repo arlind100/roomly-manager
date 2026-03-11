@@ -13,6 +13,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { BedDouble, Plus, Pencil, Trash2, Users, Maximize, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
+import roomStandard from '@/assets/room-standard.jpg';
+import roomDeluxe from '@/assets/room-deluxe.jpg';
+import roomSuite from '@/assets/room-suite.jpg';
+import roomFamily from '@/assets/room-family.jpg';
+
+const FALLBACK_MAP: Record<string, string> = {
+  standard: roomStandard, classic: roomStandard, single: roomStandard, double: roomStandard,
+  deluxe: roomDeluxe, superior: roomDeluxe, premium: roomDeluxe,
+  suite: roomSuite, presidential: roomSuite, executive: roomSuite, penthouse: roomSuite,
+  family: roomFamily, twin: roomFamily,
+};
+
+function getRoomFallbackImage(name: string): string {
+  const lower = name.toLowerCase();
+  for (const [key, img] of Object.entries(FALLBACK_MAP)) {
+    if (lower.includes(key)) return img;
+  }
+  return roomStandard;
+}
+
 const emptyForm = { name: '', description: '', max_guests: 2, base_price: 0, weekend_price: null as number | null, available_units: 1, amenities: '', room_size: '', image_url: '', show_on_website: true };
 
 const AdminRoomTypes = () => {
@@ -83,7 +103,7 @@ const AdminRoomTypes = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {roomTypes.map(rt => (
             <div key={rt.id} className="bg-card rounded-lg border border-border overflow-hidden">
-              {rt.image_url && <div className="h-40 bg-muted"><img src={rt.image_url} alt={rt.name} className="w-full h-full object-cover" /></div>}
+              <div className="h-40 bg-muted"><img src={rt.image_url || getRoomFallbackImage(rt.name)} alt={rt.name} className="w-full h-full object-cover" /></div>
               <div className="p-5">
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-semibold">{rt.name}</h3>

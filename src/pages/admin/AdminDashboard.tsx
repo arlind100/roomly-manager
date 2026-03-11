@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -7,416 +7,473 @@ import { formatCurrency } from '@/lib/currency';
 import { StatCard } from '@/components/admin/StatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-  CalendarDays, Clock, DollarSign, LogIn, LogOut as LogOutIcon, BarChart3, Users,
-  Plus, BedDouble, CalendarRange, UserPlus, AlertTriangle, ArrowRight,
+  CalendarDays, DollarSign, LogIn, LogOut as LogOutIcon, BarChart3, Users,
+  BedDouble, UserPlus, Search, Eye, Plus, CalendarRange, Ban,
 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, subMonths, eachDayOfInterval, addDays } from 'date-fns';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area,
-} from 'recharts';
+import { format, addDays } from 'date-fns';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
-const COLORS = ['hsl(45,90%,50%)', 'hsl(142,70%,45%)', 'hsl(0,70%,50%)', 'hsl(220,70%,50%)'];
-const SOURCE_COLORS = ['hsl(220,70%,50%)', 'hsl(45,90%,50%)', 'hsl(142,70%,45%)', 'hsl(0,70%,50%)'];
+import roomStandard from '@/assets/room-standard.jpg';
+import roomDeluxe from '@/assets/room-deluxe.jpg';
+import roomSuite from '@/assets/room-suite.jpg';
+import roomFamily from '@/assets/room-family.jpg';
+
+// Fallback images by keyword matching
+const FALLBACK_IMAGES: Record<string, string> = {
+  standard: roomStandard,
+  classic: roomStandard,
+  single: roomStandard,
+  double: roomStandard,
+  deluxe: roomDeluxe,
+  superior: roomDeluxe,
+  premium: roomDeluxe,
+  suite: roomSuite,
+  presidential: roomSuite,
+  executive: roomSuite,
+  penthouse: roomSuite,
+  family: roomFamily,
+  twin: roomFamily,
+};
+
+function getRoomImage(rt: any): string {
+  if (rt.image_url) return rt.image_url;
+  const name = (rt.name || '').toLowerCase();
+  for (const [key, img] of Object.entries(FALLBACK_IMAGES)) {
+    if (name.includes(key)) return img;
+  }
+  return roomStandard;
+}
+
+const statusColor: Record<string, string> = {
+  available: 'bg-green-500/15 text-green-600 border-green-500/30',
+  occupied: 'bg-red-500/15 text-red-600 border-red-500/30',
+  reserved: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30',
+  cleaning: 'bg-blue-500/15 text-blue-600 border-blue-500/30',
+  maintenance: 'bg-muted text-muted-foreground border-border',
+};
 
 const AdminDashboard = () => {
   const { t } = useLanguage();
   const { hotel } = useHotel();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ total: 0, pending: 0, revenue: 0, checkIns: 0, checkOuts: 0, occupancy: 0 });
-  const [revenueToday, setRevenueToday] = useState(0);
-  const [recentReservations, setRecentReservations] = useState<any[]>([]);
-  const [statusData, setStatusData] = useState<any[]>([]);
-  const [bookingChartData, setBookingChartData] = useState<any[]>([]);
-  const [guestsChartData, setGuestsChartData] = useState<any[]>([]);
-  const [occupancyChartData, setOccupancyChartData] = useState<any[]>([]);
-  const [upcomingArrivals, setUpcomingArrivals] = useState<any[]>([]);
-  const [upcomingDepartures, setUpcomingDepartures] = useState<any[]>([]);
-  const [sourceData, setSourceData] = useState<any[]>([]);
-  const [next7DaysOccupancy, setNext7DaysOccupancy] = useState<any[]>([]);
+  const cur = hotel?.currency || 'USD';
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [roomTypes, setRoomTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showWalkIn, setShowWalkIn] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [selectedRes, setSelectedRes] = useState<any>(null);
 
-  useEffect(() => { fetchDashboardData(); }, []);
+  const [walkIn, setWalkIn] = useState({
+    guest_name: '', guest_phone: '', nights: 1, guests_count: 1,
+    room_type_id: '', total_price: 0, payment_method: 'cash', notes: '',
+  });
 
-  const fetchDashboardData = async () => {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
-    const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+  useEffect(() => { fetchData(); }, []);
 
-    const [resResult, roomsResult] = await Promise.all([
+  const fetchData = async () => {
+    const [resResult, rtResult] = await Promise.all([
       supabase.from('reservations').select('*, room_types(name, available_units)').order('created_at', { ascending: false }),
-      supabase.from('room_types').select('available_units'),
+      supabase.from('room_types').select('*'),
     ]);
-
-    const reservations = resResult.data || [];
-    const totalUnits = (roomsResult.data || []).reduce((sum: number, r: any) => sum + (r.available_units || 0), 0);
-
-    const pending = reservations.filter(r => r.status === 'pending').length;
-    const confirmed = reservations.filter(r => r.status === 'confirmed').length;
-    const cancelled = reservations.filter(r => r.status === 'cancelled').length;
-    const completed = reservations.filter(r => r.status === 'completed').length;
-    const monthRevenue = reservations
-      .filter(r => r.status !== 'cancelled' && r.created_at >= monthStart && r.created_at <= monthEnd + 'T23:59:59')
-      .reduce((sum, r) => sum + (Number(r.total_price) || 0), 0);
-    const checkIns = reservations.filter(r => r.check_in === today && r.status === 'confirmed').length;
-    const checkOuts = reservations.filter(r => r.check_out === today && r.status !== 'cancelled').length;
-    const todayOccupied = reservations.filter(r => r.check_in <= today && r.check_out > today && r.status === 'confirmed').length;
-    const occupancy = totalUnits > 0 ? Math.round((todayOccupied / totalUnits) * 100) : 0;
-
-    // Revenue today
-    const todayRevenue = reservations
-      .filter(r => r.status === 'confirmed' && r.check_in <= today && r.check_out > today)
-      .reduce((sum, r) => sum + (Number(r.total_price) || 0), 0);
-    setRevenueToday(todayRevenue);
-
-    setStats({ total: reservations.length, pending, revenue: monthRevenue, checkIns, checkOuts, occupancy });
-    setRecentReservations(reservations.slice(0, 8));
-    setStatusData([
-      { name: t('admin.pending'), value: pending },
-      { name: t('admin.confirmed'), value: confirmed },
-      { name: t('admin.cancelled'), value: cancelled },
-      { name: t('admin.completed'), value: completed },
-    ].filter(d => d.value > 0));
-
-    // Upcoming arrivals (today + tomorrow, confirmed/pending)
-    const arrivals = reservations
-      .filter(r => (r.check_in === today || r.check_in === tomorrow) && (r.status === 'confirmed' || r.status === 'pending'))
-      .sort((a, b) => a.check_in.localeCompare(b.check_in))
-      .slice(0, 5);
-    setUpcomingArrivals(arrivals);
-
-    // Upcoming departures (today + tomorrow)
-    const departures = reservations
-      .filter(r => (r.check_out === today || r.check_out === tomorrow) && r.status !== 'cancelled')
-      .sort((a, b) => a.check_out.localeCompare(b.check_out))
-      .slice(0, 5);
-    setUpcomingDepartures(departures);
-
-    // Booking source breakdown
-    const sourceMap: Record<string, number> = {};
-    reservations.filter(r => r.status !== 'cancelled').forEach(r => {
-      const src = r.booking_source || 'direct';
-      sourceMap[src] = (sourceMap[src] || 0) + 1;
-    });
-    setSourceData(Object.entries(sourceMap).map(([name, value]) => ({ name, value })));
-
-    // Monthly booking chart (last 6 months)
-    const monthlyBookings: { month: string; bookings: number }[] = [];
-    const monthlyGuests: { month: string; guests: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = subMonths(new Date(), i);
-      const mStart = format(startOfMonth(d), 'yyyy-MM-dd');
-      const mEnd = format(endOfMonth(d), 'yyyy-MM-dd') + 'T23:59:59';
-      const label = format(d, 'MMM');
-      const monthRes = reservations.filter(r => r.created_at >= mStart && r.created_at <= mEnd && r.status !== 'cancelled');
-      monthlyBookings.push({ month: label, bookings: monthRes.length });
-      monthlyGuests.push({ month: label, guests: monthRes.reduce((s, r) => s + (r.guests_count || 1), 0) });
-    }
-    setBookingChartData(monthlyBookings);
-    setGuestsChartData(monthlyGuests);
-
-    // Daily room occupancy for current month
-    const now = new Date();
-    const mStartDate = startOfMonth(now);
-    const mEndDate = endOfMonth(now);
-    const days = eachDayOfInterval({ start: mStartDate, end: mEndDate });
-    const occupancyData = days.map(day => {
-      const dayStr = format(day, 'yyyy-MM-dd');
-      const occupied = reservations.filter(r =>
-        r.status === 'confirmed' && r.check_in <= dayStr && r.check_out > dayStr
-      ).length;
-      return { day: format(day, 'dd'), occupancy: totalUnits > 0 ? Math.round((occupied / totalUnits) * 100) : 0 };
-    });
-    setOccupancyChartData(occupancyData);
-
-    // Occupancy next 7 days
-    const next7 = eachDayOfInterval({ start: new Date(), end: addDays(new Date(), 6) });
-    const next7Data = next7.map(day => {
-      const dayStr = format(day, 'yyyy-MM-dd');
-      const occupied = reservations.filter(r =>
-        r.status === 'confirmed' && r.check_in <= dayStr && r.check_out > dayStr
-      ).length;
-      return { day: format(day, 'EEE'), occupancy: totalUnits > 0 ? Math.round((occupied / totalUnits) * 100) : 0 };
-    });
-    setNext7DaysOccupancy(next7Data);
-
+    setReservations(resResult.data || []);
+    setRoomTypes(rtResult.data || []);
     setLoading(false);
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  // ===== METRICS =====
+  const stats = useMemo(() => {
+    const totalUnits = roomTypes.reduce((s, rt) => s + (rt.available_units || 0), 0);
+    const occupied = reservations.filter(r =>
+      r.check_in <= today && r.check_out > today && (r.status === 'confirmed' || r.status === 'checked_in')
+    ).length;
+    const checkIns = reservations.filter(r => r.check_in === today && r.status === 'confirmed').length;
+    const checkOuts = reservations.filter(r => r.check_out === today && (r.status === 'confirmed' || r.status === 'checked_in')).length;
+    const todayRevenue = reservations
+      .filter(r => r.status !== 'cancelled' && r.check_in <= today && r.check_out > today)
+      .reduce((s, r) => s + (Number(r.total_price) || 0), 0);
+    const todayReservations = reservations.filter(r => r.created_at?.startsWith(today)).length;
+    const occupancy = totalUnits > 0 ? Math.round((occupied / totalUnits) * 100) : 0;
+    return { occupancy, todayReservations, todayRevenue, available: Math.max(0, totalUnits - occupied), checkIns, checkOuts };
+  }, [reservations, roomTypes, today]);
 
-  const cur = hotel?.currency || 'USD';
-  const tooltipStyle = { background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' };
+  // ===== TODAY ACTIVITY =====
+  const todayArrivals = useMemo(() =>
+    reservations.filter(r => r.check_in === today && (r.status === 'confirmed' || r.status === 'pending')).slice(0, 10),
+  [reservations, today]);
+
+  const todayDepartures = useMemo(() =>
+    reservations.filter(r => r.check_out === today && (r.status === 'confirmed' || r.status === 'checked_in')).slice(0, 10),
+  [reservations, today]);
+
+  const currentGuests = useMemo(() =>
+    reservations.filter(r => r.check_in <= today && r.check_out > today && (r.status === 'confirmed' || r.status === 'checked_in')).slice(0, 15),
+  [reservations, today]);
+
+  // ===== ROOM STATUS BOARD =====
+  const roomStatusBoard = useMemo(() => {
+    return roomTypes.map(rt => {
+      const activeRes = reservations.filter(r =>
+        r.room_type_id === rt.id && r.check_in <= today && r.check_out > today &&
+        (r.status === 'confirmed' || r.status === 'checked_in')
+      );
+      const occupiedCount = activeRes.length;
+      const reservedCount = reservations.filter(r =>
+        r.room_type_id === rt.id && r.check_in > today &&
+        r.check_in <= format(addDays(new Date(), 1), 'yyyy-MM-dd') &&
+        (r.status === 'confirmed' || r.status === 'pending')
+      ).length;
+      let status: string = 'available';
+      if (occupiedCount >= (rt.available_units || 1)) status = 'occupied';
+      else if (reservedCount > 0) status = 'reserved';
+      return { ...rt, status, occupiedCount, reservedCount, freeUnits: Math.max(0, (rt.available_units || 1) - occupiedCount) };
+    });
+  }, [reservations, roomTypes, today]);
+
+  // ===== SEARCH =====
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return reservations.filter(r =>
+      r.guest_name?.toLowerCase().includes(q) ||
+      r.guest_phone?.toLowerCase().includes(q) ||
+      r.reservation_code?.toLowerCase().includes(q) ||
+      r.room_types?.name?.toLowerCase().includes(q)
+    ).slice(0, 10);
+  }, [searchQuery, reservations]);
+
+  // ===== WALK-IN =====
+  const availableRooms = useMemo(() => {
+    const checkOut = format(addDays(new Date(), walkIn.nights), 'yyyy-MM-dd');
+    return roomTypes.filter(rt => {
+      const overlapping = reservations.filter(r =>
+        r.room_type_id === rt.id && r.status !== 'cancelled' &&
+        r.check_in < checkOut && r.check_out > today
+      ).length;
+      return overlapping < (rt.available_units || 1);
+    });
+  }, [roomTypes, reservations, today, walkIn.nights]);
+
+  const handleRoomSelect = (roomTypeId: string) => {
+    const rt = roomTypes.find(r => r.id === roomTypeId);
+    setWalkIn(p => ({ ...p, room_type_id: roomTypeId, total_price: (rt?.base_price || 0) * walkIn.nights }));
+  };
+
+  const handleNightsChange = (nights: number) => {
+    const rt = roomTypes.find(r => r.id === walkIn.room_type_id);
+    setWalkIn(p => ({ ...p, nights, total_price: rt ? rt.base_price * nights : p.total_price }));
+  };
+
+  const handleWalkInSubmit = async () => {
+    if (!walkIn.guest_name || !walkIn.room_type_id) { toast.error('Guest name and room are required'); return; }
+    setCreating(true);
+    const h = hotel?.id || (await supabase.from('hotels').select('id').limit(1).single()).data?.id;
+    const checkOut = format(addDays(new Date(), walkIn.nights), 'yyyy-MM-dd');
+    const { error } = await supabase.from('reservations').insert({
+      hotel_id: h, guest_name: walkIn.guest_name, guest_phone: walkIn.guest_phone || null,
+      room_type_id: walkIn.room_type_id, check_in: today, check_out: checkOut,
+      guests_count: walkIn.guests_count, total_price: walkIn.total_price,
+      payment_method: walkIn.payment_method, notes: walkIn.notes || null,
+      status: 'checked_in', booking_source: 'walk-in',
+    });
+    setCreating(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Walk-in reservation created');
+    setShowWalkIn(false);
+    setWalkIn({ guest_name: '', guest_phone: '', nights: 1, guests_count: 1, room_type_id: '', total_price: 0, payment_method: 'cash', notes: '' });
+    fetchData();
+  };
+
+  const handleCheckIn = async (id: string) => {
+    const { error } = await supabase.from('reservations').update({ status: 'checked_in', updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(t('admin.checkedIn'));
+    fetchData();
+  };
+
+  const handleCheckOut = async (id: string) => {
+    const { error } = await supabase.from('reservations').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Guest checked out');
+    fetchData();
+  };
+
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">{format(new Date(), 'EEEE, MMMM dd, yyyy')}</p>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <StatCard label={t('admin.totalReservations')} value={stats.total} icon={CalendarDays} />
-        <StatCard label={t('admin.pending')} value={stats.pending} icon={Clock} />
-        <StatCard label={t('admin.revenueMonth')} value={formatCurrency(stats.revenue, cur)} icon={DollarSign} />
+      {/* ===== TOP METRICS ===== */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        <StatCard label={t('admin.occupancy')} value={`${stats.occupancy}%`} icon={BarChart3} />
+        <StatCard label={t('admin.totalReservations')} value={stats.todayReservations} icon={CalendarDays} />
+        <StatCard label={t('admin.revenueToday')} value={formatCurrency(stats.todayRevenue, cur)} icon={DollarSign} />
+        <StatCard label={t('admin.availableRooms')} value={stats.available} icon={BedDouble} />
         <StatCard label={t('admin.checkInsToday')} value={stats.checkIns} icon={LogIn} />
         <StatCard label={t('admin.checkOutsToday')} value={stats.checkOuts} icon={LogOutIcon} />
-        <StatCard label={t('admin.occupancy')} value={`${stats.occupancy}%`} icon={BarChart3} />
       </div>
 
-      {/* Row: Pending Alert + Revenue Today + Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Pending Alert */}
-        <button
-          onClick={() => navigate('/admin/reservations?status=pending')}
-          className="bg-card rounded-lg border border-border p-5 flex items-center gap-4 hover:bg-muted/30 transition-colors text-left"
-        >
-          <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-            <AlertTriangle size={20} className="text-amber-500" />
+      {/* ===== QUICK ACTIONS ===== */}
+      <div className="bg-card rounded-lg border border-border p-5">
+        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Users size={14} /> {t('admin.quickActions')}</h3>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t('admin.frontDeskSearch')}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
           </div>
-          <div>
-            <p className="text-2xl font-semibold">{stats.pending}</p>
-            <p className="text-xs text-muted-foreground">
-              {stats.pending > 0 ? `${stats.pending} ${t('admin.pendingReservationsAlert')}` : t('admin.noPendingReservations')}
-            </p>
-          </div>
-        </button>
-
-        {/* Revenue Today */}
-        <div className="bg-card rounded-lg border border-border p-5 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-            <DollarSign size={20} className="text-emerald-500" />
-          </div>
-          <div>
-            <p className="text-2xl font-semibold">{formatCurrency(revenueToday, cur)}</p>
-            <p className="text-xs text-muted-foreground">{t('admin.revenueToday')}</p>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-card rounded-lg border border-border p-5">
-          <h3 className="text-sm font-semibold mb-3">{t('admin.quickActions')}</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" size="sm" className="text-xs justify-start gap-1.5" onClick={() => navigate('/admin/front-desk')}>
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={() => setShowWalkIn(true)} className="gap-1.5" size="sm">
               <UserPlus size={14} /> {t('admin.quickWalkIn')}
             </Button>
-            <Button variant="outline" size="sm" className="text-xs justify-start gap-1.5" onClick={() => navigate('/admin/reservations')}>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/admin/reservations')}>
               <Plus size={14} /> {t('admin.newReservation')}
             </Button>
-            <Button variant="outline" size="sm" className="text-xs justify-start gap-1.5" onClick={() => navigate('/admin/availability')}>
-              <CalendarRange size={14} /> {t('admin.blockDates')}
-            </Button>
-            <Button variant="outline" size="sm" className="text-xs justify-start gap-1.5" onClick={() => navigate('/admin/room-types')}>
-              <BedDouble size={14} /> {t('admin.addRoomType')}
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate('/admin/availability')}>
+              <Ban size={14} /> {t('admin.blockDates')}
             </Button>
           </div>
         </div>
-      </div>
 
-      {/* Row: Upcoming Arrivals + Departures */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Arrivals */}
-        <div className="bg-card rounded-lg border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold flex items-center gap-2"><LogIn size={14} /> {t('admin.upcomingArrivals')}</h3>
-            <span className="text-xs text-muted-foreground">{t('admin.todayTomorrow')}</span>
-          </div>
-          {upcomingArrivals.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">{t('admin.noData')}</p>
-          ) : (
-            <div className="space-y-3">
-              {upcomingArrivals.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium">{r.guest_name}</p>
-                    <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">{r.check_in}</p>
-                    <p className="text-xs"><Users size={10} className="inline mr-1" />{r.guests_count}</p>
-                  </div>
-                </div>
-              ))}
-              <button onClick={() => navigate('/admin/reservations')} className="text-xs text-primary hover:underline flex items-center gap-1">
-                {t('admin.viewAll')} <ArrowRight size={12} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Departures */}
-        <div className="bg-card rounded-lg border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold flex items-center gap-2"><LogOutIcon size={14} /> {t('admin.upcomingDepartures')}</h3>
-            <span className="text-xs text-muted-foreground">{t('admin.todayTomorrow')}</span>
-          </div>
-          {upcomingDepartures.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">{t('admin.noData')}</p>
-          ) : (
-            <div className="space-y-3">
-              {upcomingDepartures.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium">{r.guest_name}</p>
-                    <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">{r.check_out}</p>
-                    <p className="text-xs"><Users size={10} className="inline mr-1" />{r.guests_count}</p>
-                  </div>
-                </div>
-              ))}
-              <button onClick={() => navigate('/admin/reservations')} className="text-xs text-primary hover:underline flex items-center gap-1">
-                {t('admin.viewAll')} <ArrowRight size={12} />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Charts Row 1: Bookings + Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-card rounded-lg border border-border p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-semibold">{t('admin.bookingsOverview')}</h3>
-            <span className="text-xs text-muted-foreground">{t('admin.last6Months')}</span>
-          </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={bookingChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="bookings" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="bg-card rounded-lg border border-border p-6">
-          <h3 className="text-sm font-semibold mb-6">{t('admin.reservationStatus')}</h3>
-          {statusData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart><Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value" paddingAngle={3}>
-                  {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie><Tooltip contentStyle={tooltipStyle} /></PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-3 mt-2 justify-center">
-                {statusData.map((d, i) => (
-                  <div key={d.name} className="flex items-center gap-1.5 text-xs">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
-                    <span className="text-muted-foreground">{d.name} ({d.value})</span>
+        {/* Search Results */}
+        {searchQuery.trim() && (
+          <div className="mt-4 border-t border-border pt-4">
+            <p className="text-xs text-muted-foreground mb-2">{t('admin.searchResults')} ({searchResults.length})</p>
+            {searchResults.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">{t('admin.noData')}</p>
+            ) : (
+              <div className="space-y-1.5">
+                {searchResults.map(r => (
+                  <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium">{r.guest_name}</p>
+                      <p className="text-xs text-muted-foreground">{r.reservation_code} · {r.room_types?.name || '—'} · {r.check_in} → {r.check_out}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={r.status} />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedRes(r)}><Eye size={14} /></Button>
+                    </div>
                   </div>
                 ))}
               </div>
-            </>
-          ) : <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">{t('admin.noData')}</div>}
-        </div>
-      </div>
-
-      {/* Charts Row 2: Guests + Occupancy */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card rounded-lg border border-border p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-semibold flex items-center gap-2"><Users size={14} /> {t('admin.guestsOverview')}</h3>
-            <span className="text-xs text-muted-foreground">{t('admin.last6Months')}</span>
-          </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={guestsChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Line type="monotone" dataKey="guests" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="bg-card rounded-lg border border-border p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-semibold flex items-center gap-2"><BarChart3 size={14} /> {t('admin.roomOccupancy')}</h3>
-            <span className="text-xs text-muted-foreground">{format(new Date(), 'MMMM yyyy')}</span>
-          </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={occupancyChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={10} interval={2} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} unit="%" domain={[0, 100]} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v}%`, 'Occupancy']} />
-              <Area type="monotone" dataKey="occupancy" stroke="hsl(142,70%,45%)" fill="hsl(142,70%,45%)" fillOpacity={0.15} strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Row: Booking Sources + Next 7 Days Occupancy */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Booking Source Breakdown */}
-        <div className="bg-card rounded-lg border border-border p-6">
-          <h3 className="text-sm font-semibold mb-6">{t('admin.bookingSourceBreakdown')}</h3>
-          {sourceData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart><Pie data={sourceData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" paddingAngle={3}>
-                  {sourceData.map((_, i) => <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />)}
-                </Pie><Tooltip contentStyle={tooltipStyle} /></PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-3 mt-2 justify-center">
-                {sourceData.map((d, i) => (
-                  <div key={d.name} className="flex items-center gap-1.5 text-xs">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: SOURCE_COLORS[i % SOURCE_COLORS.length] }} />
-                    <span className="text-muted-foreground capitalize">{d.name} ({d.value})</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : <div className="flex items-center justify-center h-40 text-sm text-muted-foreground">{t('admin.noData')}</div>}
-        </div>
-
-        {/* Occupancy Next 7 Days */}
-        <div className="bg-card rounded-lg border border-border p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-semibold flex items-center gap-2"><BarChart3 size={14} /> {t('admin.occupancyNext7Days')}</h3>
-          </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={next7DaysOccupancy}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} unit="%" domain={[0, 100]} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v}%`, 'Occupancy']} />
-              <Bar dataKey="occupancy" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Recent Reservations */}
-      <div className="bg-card rounded-lg border border-border p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold">{t('admin.recentReservations')}</h3>
-          <a href="/admin/reservations" className="text-xs text-primary hover:underline">{t('admin.viewAll')}</a>
-        </div>
-        {recentReservations.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noData')}</p> : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-border">
-                <th className="text-left py-2.5 px-2 text-xs text-muted-foreground font-medium">{t('admin.code')}</th>
-                <th className="text-left py-2.5 px-2 text-xs text-muted-foreground font-medium">{t('admin.guest')}</th>
-                <th className="text-left py-2.5 px-2 text-xs text-muted-foreground font-medium hidden md:table-cell">{t('admin.room')}</th>
-                <th className="text-left py-2.5 px-2 text-xs text-muted-foreground font-medium hidden lg:table-cell">{t('admin.checkIn')}</th>
-                <th className="text-left py-2.5 px-2 text-xs text-muted-foreground font-medium">{t('admin.status')}</th>
-              </tr></thead>
-              <tbody>{recentReservations.map(r => (
-                <tr key={r.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <td className="py-2.5 px-2 font-mono text-xs">{r.reservation_code}</td>
-                  <td className="py-2.5 px-2">{r.guest_name}</td>
-                  <td className="py-2.5 px-2 hidden md:table-cell text-muted-foreground">{r.room_types?.name || '—'}</td>
-                  <td className="py-2.5 px-2 hidden lg:table-cell text-muted-foreground">{r.check_in}</td>
-                  <td className="py-2.5 px-2"><StatusBadge status={r.status} /></td>
-                </tr>
-              ))}</tbody>
-            </table>
+            )}
           </div>
         )}
       </div>
+
+      {/* ===== TODAY ACTIVITY ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Arrivals Today */}
+        <div className="bg-card rounded-lg border border-border p-5">
+          <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
+            <LogIn size={14} className="text-green-600" /> {t('admin.upcomingArrivals')}
+            <span className="ml-auto text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full">{todayArrivals.length}</span>
+          </h3>
+          {todayArrivals.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noCheckInsToday')}</p>
+          ) : (
+            <div className="space-y-2">
+              {todayArrivals.map(r => (
+                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/50 bg-muted/20">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{r.guest_name}</p>
+                    <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'} · <StatusBadge status={r.status} /></p>
+                  </div>
+                  <div className="flex items-center gap-1.5 ml-2">
+                    <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white text-xs h-7 px-2" onClick={() => handleCheckIn(r.id)}>
+                      <LogIn size={12} /> {t('admin.checkInAction')}
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedRes(r)}><Eye size={12} /></Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Departures Today */}
+        <div className="bg-card rounded-lg border border-border p-5">
+          <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
+            <LogOutIcon size={14} className="text-amber-600" /> {t('admin.upcomingDepartures')}
+            <span className="ml-auto text-xs bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full">{todayDepartures.length}</span>
+          </h3>
+          {todayDepartures.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noCheckOutsToday')}</p>
+          ) : (
+            <div className="space-y-2">
+              {todayDepartures.map(r => (
+                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/50 bg-muted/20">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{r.guest_name}</p>
+                    <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-1 text-xs h-7 px-2 ml-2" onClick={() => handleCheckOut(r.id)}>
+                    <LogOutIcon size={12} /> {t('admin.checkOutAction')}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Current Guests */}
+        <div className="bg-card rounded-lg border border-border p-5">
+          <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
+            <Users size={14} className="text-primary" /> Current Guests
+            <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{currentGuests.length}</span>
+          </h3>
+          {currentGuests.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noData')}</p>
+          ) : (
+            <div className="space-y-2 max-h-[320px] overflow-y-auto">
+              {currentGuests.map(r => (
+                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/50 bg-muted/20">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{r.guest_name}</p>
+                    <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
+                  </div>
+                  <div className="text-right ml-2">
+                    <p className="text-[10px] text-muted-foreground">{r.check_in} → {r.check_out}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ===== ROOM STATUS OVERVIEW ===== */}
+      <div className="bg-card rounded-lg border border-border p-5">
+        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><BedDouble size={14} /> {t('admin.roomStatusBoard')}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {roomStatusBoard.map(rt => (
+            <button
+              key={rt.id}
+              onClick={() => navigate('/admin/room-types')}
+              className={cn('rounded-lg border p-4 transition-all hover:shadow-md text-left', statusColor[rt.status])}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <img src={getRoomImage(rt)} alt={rt.name} className="w-12 h-12 rounded-lg object-cover" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold truncate">{rt.name}</p>
+                  <span className="text-[10px] font-medium uppercase tracking-wider">{t(`admin.room_${rt.status}`)}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-xs opacity-80">
+                <span>{rt.freeUnits}/{rt.available_units} {t('admin.free')}</span>
+                <span>{rt.occupiedCount} {t('admin.occupied')}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-4 mt-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-green-500/30" /> {t('admin.room_available')}</div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-red-500/30" /> {t('admin.room_occupied')}</div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-yellow-500/30" /> {t('admin.room_reserved')}</div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-blue-500/30" /> {t('admin.room_cleaning')}</div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-muted" /> Maintenance</div>
+        </div>
+      </div>
+
+      {/* ===== WALK-IN MODAL ===== */}
+      <Dialog open={showWalkIn} onOpenChange={setShowWalkIn}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{t('admin.quickWalkIn')}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>{t('admin.guestName')} *</Label><Input value={walkIn.guest_name} onChange={e => setWalkIn(p => ({ ...p, guest_name: e.target.value }))} placeholder="John Smith" /></div>
+            <div><Label>{t('admin.guestPhone')}</Label><Input value={walkIn.guest_phone} onChange={e => setWalkIn(p => ({ ...p, guest_phone: e.target.value }))} placeholder="+1 555 0100" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{t('admin.nights')}</Label><Input type="number" min={1} value={walkIn.nights} onChange={e => handleNightsChange(parseInt(e.target.value) || 1)} /></div>
+              <div><Label>{t('admin.guests')}</Label><Input type="number" min={1} value={walkIn.guests_count} onChange={e => setWalkIn(p => ({ ...p, guests_count: parseInt(e.target.value) || 1 }))} /></div>
+            </div>
+            <div>
+              <Label>{t('admin.roomType')} *</Label>
+              <Select value={walkIn.room_type_id} onValueChange={handleRoomSelect}>
+                <SelectTrigger><SelectValue placeholder={t('admin.selectRoom')} /></SelectTrigger>
+                <SelectContent>
+                  {availableRooms.map(rt => (
+                    <SelectItem key={rt.id} value={rt.id}>
+                      <div className="flex items-center gap-2">
+                        <img src={getRoomImage(rt)} alt="" className="w-6 h-6 rounded object-cover" />
+                        {rt.name} — {formatCurrency(rt.base_price, cur)}/night
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={walkIn.total_price} onChange={e => setWalkIn(p => ({ ...p, total_price: parseFloat(e.target.value) || 0 }))} /></div>
+              <div>
+                <Label>{t('admin.paymentMethod')}</Label>
+                <Select value={walkIn.payment_method} onValueChange={v => setWalkIn(p => ({ ...p, payment_method: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">{t('admin.cash')}</SelectItem>
+                    <SelectItem value="card">{t('admin.card')}</SelectItem>
+                    <SelectItem value="other">{t('admin.other')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div><Label>{t('admin.notes')}</Label><Textarea value={walkIn.notes} onChange={e => setWalkIn(p => ({ ...p, notes: e.target.value }))} rows={2} placeholder="VIP, extra bed, late checkout..." /></div>
+            <Button onClick={handleWalkInSubmit} disabled={creating} className="w-full gap-2">
+              <UserPlus size={16} /> {creating ? t('admin.creating') : t('admin.createWalkIn')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== RESERVATION DETAIL MODAL ===== */}
+      <Dialog open={!!selectedRes} onOpenChange={() => setSelectedRes(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{t('admin.reservationDetails')}</DialogTitle></DialogHeader>
+          {selectedRes && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><p className="text-xs text-muted-foreground">{t('admin.code')}</p><p className="font-mono">{selectedRes.reservation_code}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.status')}</p><StatusBadge status={selectedRes.status} /></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.guestName')}</p><p className="font-medium">{selectedRes.guest_name}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.roomType')}</p><p>{selectedRes.room_types?.name || '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.checkIn')}</p><p>{selectedRes.check_in}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.checkOut')}</p><p>{selectedRes.check_out}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.guests')}</p><p>{selectedRes.guests_count}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.totalPrice')}</p><p className="font-semibold">{formatCurrency(Number(selectedRes.total_price) || 0, cur)}</p></div>
+              </div>
+              {selectedRes.guest_email && <div><p className="text-xs text-muted-foreground">{t('admin.guestEmail')}</p><p>{selectedRes.guest_email}</p></div>}
+              {selectedRes.guest_phone && <div><p className="text-xs text-muted-foreground">{t('admin.guestPhone')}</p><p>{selectedRes.guest_phone}</p></div>}
+              {selectedRes.notes && <div><p className="text-xs text-muted-foreground">{t('admin.notes')}</p><p>{selectedRes.notes}</p></div>}
+              <div className="flex gap-2 pt-2">
+                {selectedRes.status === 'confirmed' && (
+                  <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white flex-1" onClick={() => { handleCheckIn(selectedRes.id); setSelectedRes(null); }}>
+                    <LogIn size={14} /> {t('admin.checkInAction')}
+                  </Button>
+                )}
+                {(selectedRes.status === 'confirmed' || selectedRes.status === 'checked_in') && (
+                  <Button size="sm" variant="outline" className="gap-1.5 flex-1" onClick={() => { handleCheckOut(selectedRes.id); setSelectedRes(null); }}>
+                    <LogOutIcon size={14} /> {t('admin.checkOutAction')}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
