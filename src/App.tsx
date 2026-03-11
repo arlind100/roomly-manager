@@ -19,7 +19,6 @@ import AdminPricing from "./pages/admin/AdminPricing";
 import AdminStaff from "./pages/admin/AdminStaff";
 import AdminInvoices from "./pages/admin/AdminInvoices";
 import AdminSettings from "./pages/admin/AdminSettings";
-import AdminFrontDesk from "./pages/admin/AdminFrontDesk";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 const queryClient = new QueryClient();
