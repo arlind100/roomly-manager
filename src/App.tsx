@@ -20,6 +20,7 @@ import AdminStaff from "./pages/admin/AdminStaff";
 import AdminInvoices from "./pages/admin/AdminInvoices";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminFrontDesk from "./pages/admin/AdminFrontDesk";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
                 <Route path="pricing" element={<AdminPricing />} />
                 <Route path="staff" element={<AdminStaff />} />
                 <Route path="invoices" element={<AdminInvoices />} />
+                <Route path="analytics-reports" element={<AdminAnalytics />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
 
