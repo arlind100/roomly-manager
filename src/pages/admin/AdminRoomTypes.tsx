@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BedDouble, Plus, Pencil, Trash2, Users, Maximize, Eye, EyeOff } from 'lucide-react';
+import { BedDouble, Plus, Pencil, Trash2, Users, Maximize, Eye, EyeOff, Upload, X, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 import roomStandard from '@/assets/room-standard.jpg';
 import roomDeluxe from '@/assets/room-deluxe.jpg';
@@ -33,6 +34,8 @@ function getRoomFallbackImage(name: string): string {
   return roomStandard;
 }
 
+const SUPABASE_URL = "https://qdxtmdyagsxtvtjaxqou.supabase.co";
+
 const emptyForm = { name: '', description: '', max_guests: 2, base_price: 0, weekend_price: null as number | null, available_units: 1, amenities: '', room_size: '', image_url: '', show_on_website: true };
 
 const AdminRoomTypes = () => {
@@ -45,6 +48,9 @@ const AdminRoomTypes = () => {
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchRoomTypes(); }, []);
 
@@ -59,6 +65,54 @@ const AdminRoomTypes = () => {
     setForm({ name: rt.name, description: rt.description || '', max_guests: rt.max_guests, base_price: Number(rt.base_price), weekend_price: rt.weekend_price ? Number(rt.weekend_price) : null, available_units: rt.available_units, amenities: (rt.amenities || []).join(', '), room_size: rt.room_size || '', image_url: rt.image_url || '', show_on_website: rt.show_on_website ?? true });
     setShowForm(true);
   };
+
+  // Upload image to Supabase Storage
+  const uploadImage = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setUploading(true);
+    const ext = file.name.split('.').pop() || 'jpg';
+    const fileName = `${crypto.randomUUID()}.${ext}`;
+    const filePath = `room-types/${fileName}`;
+
+    const { error } = await supabase.storage.from('room-images').upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+    setUploading(false);
+
+    if (error) {
+      toast.error('Upload failed: ' + error.message);
+      return;
+    }
+
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/room-images/${filePath}`;
+    setForm(f => ({ ...f, image_url: publicUrl }));
+    toast.success('Image uploaded');
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) uploadImage(file);
+  }, [uploadImage]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [uploadImage]);
+
+  const removeImage = () => setForm(f => ({ ...f, image_url: '' }));
 
   const handleSave = async () => {
     if (!form.name || !form.base_price) { toast.error('Name and price required'); return; }
@@ -141,20 +195,72 @@ const AdminRoomTypes = () => {
           <div className="space-y-4">
             <div><Label>{t('admin.roomName')} *</Label><Input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} /></div>
             <div><Label>{t('admin.description')}</Label><Textarea value={form.description} onChange={e => setForm(f => ({...f, description: e.target.value}))} rows={3} /></div>
+            
+            {/* Image Upload - Drag & Drop */}
+            <div>
+              <Label className="mb-2 block">Room Image</Label>
+              {form.image_url ? (
+                <div className="relative rounded-lg overflow-hidden border border-border">
+                  <img src={form.image_url} alt="Room preview" className="w-full h-40 object-cover" />
+                  <button
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    'relative flex flex-col items-center justify-center h-36 rounded-lg border-2 border-dashed cursor-pointer transition-colors',
+                    dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/30',
+                    uploading && 'pointer-events-none opacity-60'
+                  )}
+                >
+                  {uploading ? (
+                    <>
+                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
+                      <p className="text-xs text-muted-foreground">Uploading...</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mb-2">
+                        <ImageIcon size={20} className="text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        <span className="text-primary font-medium">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG, WebP up to 5MB</p>
+                    </>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div><Label>{t('admin.basePrice')} *</Label><Input type="number" min={0} value={form.base_price} onChange={e => setForm(f => ({...f, base_price: parseFloat(e.target.value) || 0}))} /></div>
               <div><Label>{t('admin.weekendPrice')}</Label><Input type="number" min={0} value={form.weekend_price || ''} onChange={e => setForm(f => ({...f, weekend_price: parseFloat(e.target.value) || null}))} placeholder="Optional" /></div>
               <div><Label>{t('admin.maxGuests')}</Label><Input type="number" min={1} value={form.max_guests} onChange={e => setForm(f => ({...f, max_guests: parseInt(e.target.value) || 1}))} /></div>
               <div><Label>{t('admin.availableUnits')}</Label><Input type="number" min={1} value={form.available_units} onChange={e => setForm(f => ({...f, available_units: parseInt(e.target.value) || 1}))} /></div>
               <div><Label>{t('admin.roomSize')}</Label><Input value={form.room_size} onChange={e => setForm(f => ({...f, room_size: e.target.value}))} placeholder="e.g. 45 m²" /></div>
-              <div><Label>{t('admin.imageUrl')}</Label><Input value={form.image_url} onChange={e => setForm(f => ({...f, image_url: e.target.value}))} placeholder="https://..." /></div>
             </div>
             <div><Label>{t('admin.amenitiesLabel')}</Label><Input value={form.amenities} onChange={e => setForm(f => ({...f, amenities: e.target.value}))} placeholder="WiFi, Pool, Spa" /></div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div><Label className="text-sm font-medium">{t('admin.showOnWebsite')}</Label><p className="text-xs text-muted-foreground">{t('admin.showOnWebsiteDesc')}</p></div>
               <Switch checked={form.show_on_website} onCheckedChange={v => setForm(f => ({...f, show_on_website: v}))} />
             </div>
-            <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? t('admin.saving') : editing ? t('admin.saveChanges') : t('admin.create')}</Button>
+            <Button onClick={handleSave} disabled={saving || uploading} className="w-full">{saving ? t('admin.saving') : editing ? t('admin.saveChanges') : t('admin.create')}</Button>
           </div>
         </DialogContent>
       </Dialog>
