@@ -33,6 +33,7 @@ export default function AdminLayout() {
     { path: '/admin/pricing', icon: DollarSign, label: t('admin.pricing') },
     { path: '/admin/staff', icon: Users, label: t('admin.staff') },
     { path: '/admin/invoices', icon: FileText, label: t('admin.invoices') },
+    { path: '/admin/analytics-reports', icon: BarChart3, label: t('admin.analyticsReports') },
     { path: '/admin/settings', icon: Settings, label: t('admin.settings') },
   ];
 
