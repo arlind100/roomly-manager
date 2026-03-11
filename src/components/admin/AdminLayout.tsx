@@ -27,7 +27,6 @@ export default function AdminLayout() {
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: t('admin.dashboard'), exact: true },
     { path: '/admin/reservations', icon: CalendarDays, label: t('admin.reservations') },
-    { path: '/admin/reservations', icon: CalendarDays, label: t('admin.reservations') },
     { path: '/admin/room-types', icon: BedDouble, label: t('admin.roomTypes') },
     { path: '/admin/availability', icon: CalendarRange, label: t('admin.availability') },
     { path: '/admin/pricing', icon: DollarSign, label: t('admin.pricing') },
