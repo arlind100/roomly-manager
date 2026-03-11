@@ -83,7 +83,7 @@ const AdminRoomTypes = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {roomTypes.map(rt => (
             <div key={rt.id} className="bg-card rounded-lg border border-border overflow-hidden">
-              {rt.image_url && <div className="h-40 bg-muted"><img src={rt.image_url} alt={rt.name} className="w-full h-full object-cover" /></div>}
+              <div className="h-40 bg-muted"><img src={rt.image_url || getRoomFallbackImage(rt.name)} alt={rt.name} className="w-full h-full object-cover" /></div>
               <div className="p-5">
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-semibold">{rt.name}</h3>
