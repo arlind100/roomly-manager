@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.sync-ical]
 verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.send-checkout-email]
+verify_jwt = false
