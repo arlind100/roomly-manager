@@ -95,29 +95,94 @@ const AdminReservations = () => {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from('reservations').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Reservation ${status}`);
+    const now = new Date().toISOString();
+    const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const updateData: Record<string, any> = { status, updated_at: now };
 
-    if (status === 'confirmed') {
-      const res = reservations.find(r => r.id === id);
-      if (res?.guest_email) {
-        try {
-          const { error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
+    // Record actual timestamps
+    if (status === 'checked_in') updateData.check_in_time = timeNow;
+    if (status === 'completed') updateData.check_out_time = timeNow;
+
+    const { error } = await supabase.from('reservations').update(updateData).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Reservation ${status.replace('_', ' ')}`);
+
+    const res = reservations.find(r => r.id === id);
+
+    // Send confirmation email on confirm
+    if (status === 'confirmed' && res?.guest_email) {
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
+          body: {
+            to_email: res.guest_email, guest_name: res.guest_name,
+            reservation_code: res.reservation_code, check_in: res.check_in, check_out: res.check_out,
+            room_type_name: res.room_types?.name || '', guests_count: res.guests_count,
+            total_price: res.total_price, currency: cur,
+            hotel_name: hotel?.name || 'Hotel', hotel_email: hotel?.email || '',
+            hotel_phone: hotel?.phone || '', hotel_address: hotel?.address || '',
+          },
+        });
+        if (emailError) { console.error('Email error:', emailError); toast.error('Confirmed but email failed'); }
+        else toast.success('Confirmation email sent');
+      } catch (e) { console.error('Email send error:', e); }
+    }
+
+    // Send welcome email on check-in
+    if (status === 'checked_in' && res?.guest_email) {
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-welcome-email', {
+          body: {
+            to_email: res.guest_email, guest_name: res.guest_name,
+            reservation_code: res.reservation_code, check_in: res.check_in, check_out: res.check_out,
+            room_type_name: res.room_types?.name || '', guests_count: res.guests_count,
+            check_in_time: timeNow,
+            hotel_name: hotel?.name || 'Hotel', hotel_email: hotel?.email || '',
+            hotel_phone: hotel?.phone || '', hotel_address: hotel?.address || '',
+          },
+        });
+        if (emailError) console.error('Welcome email error:', emailError);
+        else toast.success('Welcome email sent to ' + res.guest_email);
+      } catch (e) { console.error('Welcome email error:', e); }
+    }
+
+    // Auto-generate invoice & send checkout email on check-out
+    if (status === 'completed' && res) {
+      // Calculate nights
+      const nightsCount = Math.max(1, Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)));
+
+      // Create invoice
+      try {
+        const h = (await supabase.from('hotels').select('id').limit(1).single()).data;
+        const { data: invoice, error: invError } = await supabase.from('invoices').insert({
+          hotel_id: h?.id || res.hotel_id,
+          reservation_id: res.id,
+          amount: res.total_price || 0,
+          status: 'sent',
+          issued_at: now,
+        }).select().single();
+
+        if (invError) { console.error('Invoice error:', invError); toast.error('Checkout done but invoice creation failed'); }
+        else toast.success('Invoice ' + (invoice?.invoice_number || '') + ' generated');
+
+        // Send checkout email
+        if (res.guest_email) {
+          const { error: emailError } = await supabase.functions.invoke('send-checkout-email', {
             body: {
               to_email: res.guest_email, guest_name: res.guest_name,
               reservation_code: res.reservation_code, check_in: res.check_in, check_out: res.check_out,
               room_type_name: res.room_types?.name || '', guests_count: res.guests_count,
-              total_price: res.total_price, currency: cur,
+              total_price: res.total_price, currency: cur, check_out_time: timeNow,
+              nights_count: nightsCount, invoice_number: invoice?.invoice_number || '',
               hotel_name: hotel?.name || 'Hotel', hotel_email: hotel?.email || '',
               hotel_phone: hotel?.phone || '', hotel_address: hotel?.address || '',
             },
           });
-          if (emailError) { console.error('Email error:', emailError); toast.error('Reservation confirmed but email failed'); }
-          else toast.success('Confirmation email sent to ' + res.guest_email);
-        } catch (e) { console.error('Email send error:', e); }
-      }
+          if (emailError) console.error('Checkout email error:', emailError);
+          else toast.success('Checkout summary email sent');
+        }
+      } catch (e) { console.error('Checkout process error:', e); }
     }
+
     fetchData();
     if (selectedRes?.id === id) setSelectedRes(null);
   };
