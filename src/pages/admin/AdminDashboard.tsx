@@ -398,10 +398,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* Current Guests */}
-        <div className="bg-card rounded-lg border border-border p-5">
+        <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
             <Users size={14} className="text-primary" /> Current Guests
-            <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{currentGuests.length}</span>
+            <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full shadow-sm">{currentGuests.length}</span>
           </h3>
           {currentGuests.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noData')}</p>
