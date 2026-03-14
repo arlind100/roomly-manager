@@ -1,26 +1,26 @@
 import { cn } from '@/lib/utils';
 
 const statusStyles: Record<string, string> = {
-  pending: 'bg-yellow-500/15 text-yellow-500',
-  confirmed: 'bg-green-500/15 text-green-500',
-  cancelled: 'bg-destructive/15 text-destructive',
-  completed: 'bg-primary/15 text-primary',
-  checked_in: 'bg-blue-500/15 text-blue-500',
-  paid: 'bg-green-500/15 text-green-500',
-  unpaid: 'bg-yellow-500/15 text-yellow-500',
-  refunded: 'bg-muted text-muted-foreground',
-  partial: 'bg-orange-500/15 text-orange-500',
-  draft: 'bg-muted text-muted-foreground',
-  sent: 'bg-blue-500/15 text-blue-400',
-  active: 'bg-green-500/15 text-green-500',
-  inactive: 'bg-muted text-muted-foreground',
+  pending: 'bg-yellow-50 text-yellow-700 shadow-sm',
+  confirmed: 'bg-green-50 text-green-700 shadow-sm',
+  cancelled: 'bg-red-50 text-red-600 shadow-sm',
+  completed: 'bg-primary/10 text-primary shadow-sm',
+  checked_in: 'bg-blue-50 text-blue-700 shadow-sm',
+  paid: 'bg-green-50 text-green-700 shadow-sm',
+  unpaid: 'bg-yellow-50 text-yellow-700 shadow-sm',
+  refunded: 'bg-muted text-muted-foreground shadow-sm',
+  partial: 'bg-orange-50 text-orange-700 shadow-sm',
+  draft: 'bg-muted text-muted-foreground shadow-sm',
+  sent: 'bg-blue-50 text-blue-600 shadow-sm',
+  active: 'bg-green-50 text-green-700 shadow-sm',
+  inactive: 'bg-muted text-muted-foreground shadow-sm',
 };
 
 export function StatusBadge({ status }: { status: string }) {
   return (
     <span className={cn(
-      'text-xs font-medium px-2.5 py-1 rounded-full capitalize inline-block',
-      statusStyles[status] || 'bg-muted text-muted-foreground'
+      'text-xs font-medium px-2.5 py-1 rounded-full capitalize inline-block transition-shadow duration-200 hover:shadow-md',
+      statusStyles[status] || 'bg-muted text-muted-foreground shadow-sm'
     )}>
       {status}
     </span>
