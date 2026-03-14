@@ -161,7 +161,7 @@ const AdminRoomTypes = () => {
               <div className="p-5">
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-semibold">{rt.name}</h3>
-                  <span className="text-primary font-semibold">{formatCurrency(Number(rt.base_price), cur)}</span>
+                  <span className="text-primary font-semibold">{displayPrice(Number(rt.base_price), cur)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{rt.description}</p>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">

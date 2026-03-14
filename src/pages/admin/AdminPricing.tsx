@@ -137,7 +137,7 @@ const AdminPricing = () => {
                 <tr key={o.id} className={`border-b border-border/50 ${!o.is_active ? 'opacity-50' : ''}`}>
                   <td className="py-3 px-4">{o.room_types?.name}</td>
                   <td className="py-3 px-4 text-muted-foreground">{o.start_date} → {o.end_date}</td>
-                  <td className="py-3 px-4 text-primary font-semibold">{formatCurrency(Number(o.price), cur)}</td>
+                  <td className="py-3 px-4 text-primary font-semibold">{displayPrice(Number(o.price), cur)}</td>
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{o.label || '—'}</td>
                   <td className="py-3 px-4 text-center"><Switch checked={o.is_active} onCheckedChange={() => toggleOverride(o.id, o.is_active)} /></td>
                   <td className="py-3 px-4 text-right"><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteOverride(o.id)}><Trash2 size={14} /></Button></td>

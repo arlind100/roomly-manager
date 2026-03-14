@@ -374,7 +374,7 @@ const AdminReservations = () => {
                 <div><span className="text-muted-foreground block text-xs">{t('admin.guests')}</span>{selectedRes.guests_count}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.checkIn')}</span>{selectedRes.check_in}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.checkOut')}</span>{selectedRes.check_out}</div>
-                <div><span className="text-muted-foreground block text-xs">{t('admin.totalPrice')}</span>{formatCurrency(selectedRes.total_price || 0, cur)}</div>
+                <div><span className="text-muted-foreground block text-xs">{t('admin.totalPrice')}</span>{displayPrice(selectedRes.total_price || 0, cur)}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.payment')}</span><StatusBadge status={selectedRes.payment_status || 'unpaid'} /></div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.source')}</span>{selectedRes.booking_source}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.status')}</span><StatusBadge status={selectedRes.status} /></div>

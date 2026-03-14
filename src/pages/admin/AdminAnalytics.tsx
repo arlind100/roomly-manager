@@ -617,8 +617,8 @@ const AdminAnalytics = () => {
               <BarChart data={revenueByRoomType}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={v => formatCurrency(v, cur)} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v, cur)} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={v => displayPrice(v, cur)} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => displayPrice(v, cur)} />
                 <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
                   {revenueByRoomType.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                 </Bar>

@@ -519,7 +519,7 @@ const AdminDashboard = () => {
                 <div><p className="text-xs text-muted-foreground">{t('admin.checkIn')}</p><p>{selectedRes.check_in}</p></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.checkOut')}</p><p>{selectedRes.check_out}</p></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.guests')}</p><p>{selectedRes.guests_count}</p></div>
-                <div><p className="text-xs text-muted-foreground">{t('admin.totalPrice')}</p><p className="font-semibold">{formatCurrency(Number(selectedRes.total_price) || 0, cur)}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.totalPrice')}</p><p className="font-semibold">{displayPrice(Number(selectedRes.total_price) || 0, cur)}</p></div>
               </div>
               {selectedRes.guest_email && <div><p className="text-xs text-muted-foreground">{t('admin.guestEmail')}</p><p>{selectedRes.guest_email}</p></div>}
               {selectedRes.guest_phone && <div><p className="text-xs text-muted-foreground">{t('admin.guestPhone')}</p><p>{selectedRes.guest_phone}</p></div>}

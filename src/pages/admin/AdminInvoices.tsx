@@ -149,7 +149,7 @@ const AdminInvoices = () => {
                   <td className="py-3 px-4 font-mono text-xs">{inv.invoice_number}</td>
                   <td className="py-3 px-4">{inv.reservations?.guest_name || '—'}</td>
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground font-mono text-xs">{inv.reservations?.reservation_code || '—'}</td>
-                  <td className="py-3 px-4 font-semibold">{formatCurrency(Number(inv.amount), cur)}</td>
+                  <td className="py-3 px-4 font-semibold">{displayPrice(Number(inv.amount), cur)}</td>
                   <td className="py-3 px-4"><StatusBadge status={inv.status} /></td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-1">
