@@ -420,7 +420,7 @@ const AdminAnalytics = () => {
                   ))}
                   <TableRow className="border-t-2 border-border">
                     <TableCell className="text-sm font-semibold">Total</TableCell>
-                    <TableCell className="text-sm font-semibold">{formatCurrency(totalRevenue, cur)}</TableCell>
+                    <TableCell className="text-sm font-semibold">{displayPrice(totalRevenue, cur)}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
