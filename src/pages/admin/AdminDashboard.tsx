@@ -222,7 +222,7 @@ const AdminDashboard = () => {
     fetchData();
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner" /></div>;
 
   return (
     <div className="space-y-6">
