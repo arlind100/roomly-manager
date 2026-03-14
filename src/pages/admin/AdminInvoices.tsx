@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
-import { formatCurrency } from '@/lib/currency';
+import { displayPrice } from '@/lib/currency';
 import { generateInvoicePdf } from '@/lib/generateInvoicePdf';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { StatusBadge } from '@/components/admin/StatusBadge';
