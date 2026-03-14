@@ -509,7 +509,7 @@ const AdminAnalytics = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
               <StatCard label="Cancelled Reservations" value={cancelledRes} icon={CalendarDays} />
               <StatCard label="Cancellation Rate" value={`${cancellationRate}%`} icon={Activity} />
-              <StatCard label="Revenue Lost" value={formatCurrency(
+              <StatCard label="Revenue Lost" value={displayPrice(
                 filtered.filter(r => r.status === 'cancelled').reduce((s, r) => s + (Number(r.total_price) || 0), 0), cur
               )} icon={DollarSign} />
             </div>
