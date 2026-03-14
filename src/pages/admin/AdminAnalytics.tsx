@@ -415,7 +415,7 @@ const AdminAnalytics = () => {
                   {revenueByRoomType.map(row => (
                     <TableRow key={row.name}>
                       <TableCell className="text-sm">{row.name}</TableCell>
-                      <TableCell className="text-sm font-medium">{formatCurrency(row.revenue, cur)}</TableCell>
+                      <TableCell className="text-sm font-medium">{displayPrice(row.revenue, cur)}</TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="border-t-2 border-border">
