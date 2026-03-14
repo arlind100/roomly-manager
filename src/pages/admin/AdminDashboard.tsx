@@ -408,7 +408,7 @@ const AdminDashboard = () => {
           ) : (
             <div className="space-y-2 max-h-[320px] overflow-y-auto">
               {currentGuests.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/50 bg-muted/20">
+                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] border border-border/40 bg-muted/30 transition-all duration-200 hover:shadow-sm">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{r.guest_name}</p>
                     <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
