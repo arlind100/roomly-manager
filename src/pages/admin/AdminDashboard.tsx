@@ -383,12 +383,12 @@ const AdminDashboard = () => {
           ) : (
             <div className="space-y-2">
               {todayDepartures.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/50 bg-muted/20">
+                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] border border-border/40 bg-amber-50/30 transition-all duration-200 hover:shadow-sm">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{r.guest_name}</p>
                     <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="gap-1 text-xs h-7 px-2 ml-2" onClick={() => handleCheckOut(r.id)}>
+                  <Button size="sm" variant="outline" className="gap-1 text-xs h-7 px-2 ml-2 shadow-sm" onClick={() => handleCheckOut(r.id)}>
                     <LogOutIcon size={12} /> {t('admin.checkOutAction')}
                   </Button>
                 </div>
