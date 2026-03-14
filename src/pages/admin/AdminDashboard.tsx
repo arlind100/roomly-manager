@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
-import { formatCurrency } from '@/lib/currency';
+import { displayPrice } from '@/lib/currency';
 import { StatCard } from '@/components/admin/StatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { Badge } from '@/components/ui/badge';
@@ -284,7 +284,7 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard label={t('admin.occupancy')} value={`${stats.occupancy}%`} icon={BarChart3} />
         <StatCard label={t('admin.totalReservations')} value={stats.todayReservations} icon={CalendarDays} />
-        <StatCard label={t('admin.revenueToday')} value={formatCurrency(stats.todayRevenue, cur)} icon={DollarSign} />
+        <StatCard label={t('admin.revenueToday')} value={displayPrice(stats.todayRevenue, cur)} icon={DollarSign} />
         <StatCard label={t('admin.availableRooms')} value={stats.available} icon={BedDouble} />
         <StatCard label={t('admin.checkInsToday')} value={stats.checkIns} icon={LogIn} />
         <StatCard label={t('admin.checkOutsToday')} value={stats.checkOuts} icon={LogOutIcon} />
@@ -476,7 +476,7 @@ const AdminDashboard = () => {
                     <SelectItem key={rt.id} value={rt.id}>
                       <div className="flex items-center gap-2">
                         <img src={getRoomImage(rt)} alt="" className="w-6 h-6 rounded object-cover" />
-                        {rt.name} — {formatCurrency(rt.base_price, cur)}/night
+                        {rt.name} — {displayPrice(rt.base_price, cur)}/night
                       </div>
                     </SelectItem>
                   ))}
@@ -519,7 +519,7 @@ const AdminDashboard = () => {
                 <div><p className="text-xs text-muted-foreground">{t('admin.checkIn')}</p><p>{selectedRes.check_in}</p></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.checkOut')}</p><p>{selectedRes.check_out}</p></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.guests')}</p><p>{selectedRes.guests_count}</p></div>
-                <div><p className="text-xs text-muted-foreground">{t('admin.totalPrice')}</p><p className="font-semibold">{formatCurrency(Number(selectedRes.total_price) || 0, cur)}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.totalPrice')}</p><p className="font-semibold">{displayPrice(Number(selectedRes.total_price) || 0, cur)}</p></div>
               </div>
               {selectedRes.guest_email && <div><p className="text-xs text-muted-foreground">{t('admin.guestEmail')}</p><p>{selectedRes.guest_email}</p></div>}
               {selectedRes.guest_phone && <div><p className="text-xs text-muted-foreground">{t('admin.guestPhone')}</p><p>{selectedRes.guest_phone}</p></div>}

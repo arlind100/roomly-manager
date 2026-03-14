@@ -146,9 +146,9 @@
     @apply shadow-xl -translate-y-0.5;
   }
 
-  /* Glassmorphism icon container */
+  /* Icon container */
   .icon-glass {
-    @apply rounded-xl p-2.5 backdrop-blur-sm;
+    @apply rounded-xl p-2.5 shadow-sm;
     background: hsl(var(--primary) / 0.08);
   }
 

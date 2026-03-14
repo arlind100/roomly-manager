@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
-import { formatCurrency } from '@/lib/currency';
+import { displayPrice } from '@/lib/currency';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -161,7 +161,7 @@ const AdminRoomTypes = () => {
               <div className="p-5">
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-semibold">{rt.name}</h3>
-                  <span className="text-primary font-semibold">{formatCurrency(Number(rt.base_price), cur)}</span>
+                  <span className="text-primary font-semibold">{displayPrice(Number(rt.base_price), cur)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{rt.description}</p>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
@@ -204,7 +204,7 @@ const AdminRoomTypes = () => {
                   <img src={form.image_url} alt="Room preview" className="w-full h-40 object-cover" />
                   <button
                     onClick={removeImage}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 border border-border shadow-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
                   >
                     <X size={14} />
                   </button>

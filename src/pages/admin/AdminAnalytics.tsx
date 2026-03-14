@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
-import { formatCurrency } from '@/lib/currency';
+import { displayPrice } from '@/lib/currency';
 import { StatCard } from '@/components/admin/StatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -277,8 +277,8 @@ const AdminAnalytics = () => {
             <StatCard label="Total Reservations" value={totalReservations} icon={CalendarDays} />
             <StatCard label="Confirmed" value={confirmedRes} icon={CalendarDays} />
             <StatCard label="Cancelled" value={cancelledRes} icon={CalendarDays} />
-            <StatCard label="Total Revenue" value={formatCurrency(totalRevenue, cur)} icon={DollarSign} />
-            <StatCard label="Avg. Booking Value" value={formatCurrency(avgBookingValue, cur)} icon={TrendingUp} />
+            <StatCard label="Total Revenue" value={displayPrice(totalRevenue, cur)} icon={DollarSign} />
+            <StatCard label="Avg. Booking Value" value={displayPrice(avgBookingValue, cur)} icon={TrendingUp} />
             <StatCard label="Occupancy Rate" value={`${occupancyRate}%`} icon={BedDouble} />
           </div>
 
@@ -289,8 +289,8 @@ const AdminAnalytics = () => {
               <LineChart data={revenueChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={v => formatCurrency(v, cur)} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v, cur)} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={v => displayPrice(v, cur)} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => displayPrice(v, cur)} />
                 <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: 'hsl(var(--primary))' }} />
               </LineChart>
             </ResponsiveContainer>
@@ -359,7 +359,7 @@ const AdminAnalytics = () => {
               <StatCard label="Arrivals Today" value={dailyArrivals.length} icon={Users} />
               <StatCard label="Departures Today" value={dailyDepartures.length} icon={Users} />
               <StatCard label="Currently Staying" value={currentlyStaying.length} icon={Hotel} />
-              <StatCard label="Revenue Today" value={formatCurrency(dailyRevenue, cur)} icon={DollarSign} />
+              <StatCard label="Revenue Today" value={displayPrice(dailyRevenue, cur)} icon={DollarSign} />
             </div>
           </div>
 
@@ -415,12 +415,12 @@ const AdminAnalytics = () => {
                   {revenueByRoomType.map(row => (
                     <TableRow key={row.name}>
                       <TableCell className="text-sm">{row.name}</TableCell>
-                      <TableCell className="text-sm font-medium">{formatCurrency(row.revenue, cur)}</TableCell>
+                      <TableCell className="text-sm font-medium">{displayPrice(row.revenue, cur)}</TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="border-t-2 border-border">
                     <TableCell className="text-sm font-semibold">Total</TableCell>
-                    <TableCell className="text-sm font-semibold">{formatCurrency(totalRevenue, cur)}</TableCell>
+                    <TableCell className="text-sm font-semibold">{displayPrice(totalRevenue, cur)}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -430,7 +430,7 @@ const AdminAnalytics = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={11} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v, cur)} />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => displayPrice(v, cur)} />
                     <Line type="monotone" dataKey="revenue" stroke="hsl(142, 70%, 45%)" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -475,7 +475,7 @@ const AdminAnalytics = () => {
                       <TableCell className="text-sm">{r.check_in}</TableCell>
                       <TableCell className="text-sm">{r.check_out}</TableCell>
                       <TableCell><StatusBadge status={r.status} /></TableCell>
-                      <TableCell className="text-sm">{formatCurrency(Number(r.total_price) || 0, cur)}</TableCell>
+                      <TableCell className="text-sm">{displayPrice(Number(r.total_price) || 0, cur)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{r.booking_source || 'direct'}</TableCell>
                     </TableRow>
                   ))}
@@ -509,7 +509,7 @@ const AdminAnalytics = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
               <StatCard label="Cancelled Reservations" value={cancelledRes} icon={CalendarDays} />
               <StatCard label="Cancellation Rate" value={`${cancellationRate}%`} icon={Activity} />
-              <StatCard label="Revenue Lost" value={formatCurrency(
+              <StatCard label="Revenue Lost" value={displayPrice(
                 filtered.filter(r => r.status === 'cancelled').reduce((s, r) => s + (Number(r.total_price) || 0), 0), cur
               )} icon={DollarSign} />
             </div>
@@ -548,7 +548,7 @@ const AdminAnalytics = () => {
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><DollarSign size={18} className="text-primary" /></div>
                 <div>
                   <p className="text-xs text-muted-foreground">ADR (Average Daily Rate)</p>
-                  <p className="text-xl font-semibold">{formatCurrency(adr, cur)}</p>
+                  <p className="text-xl font-semibold">{displayPrice(adr, cur)}</p>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">Average revenue per occupied room per day</p>
@@ -559,7 +559,7 @@ const AdminAnalytics = () => {
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><TrendingUp size={18} className="text-primary" /></div>
                 <div>
                   <p className="text-xs text-muted-foreground">RevPAR</p>
-                  <p className="text-xl font-semibold">{formatCurrency(revpar, cur)}</p>
+                  <p className="text-xl font-semibold">{displayPrice(revpar, cur)}</p>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">Revenue per available room</p>
@@ -617,8 +617,8 @@ const AdminAnalytics = () => {
               <BarChart data={revenueByRoomType}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={v => formatCurrency(v, cur)} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v, cur)} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={v => displayPrice(v, cur)} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => displayPrice(v, cur)} />
                 <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
                   {revenueByRoomType.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                 </Bar>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
-import { formatCurrency } from '@/lib/currency';
+import { displayPrice } from '@/lib/currency';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,8 +101,8 @@ const AdminPricing = () => {
               <tbody>{roomTypes.map(rt => (
                 <tr key={rt.id} className="border-b border-border/50">
                   <td className="py-3 px-4 font-medium">{rt.name}</td>
-                  <td className="py-3 px-4 text-primary font-semibold">{formatCurrency(Number(rt.base_price), cur)}</td>
-                  <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{rt.weekend_price ? formatCurrency(Number(rt.weekend_price), cur) : '—'}</td>
+                  <td className="py-3 px-4 text-primary font-semibold">{displayPrice(Number(rt.base_price), cur)}</td>
+                  <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{rt.weekend_price ? displayPrice(Number(rt.weekend_price), cur) : '—'}</td>
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{rt.available_units}</td>
                   <td className="py-3 px-4 text-right">
                     <Button variant="ghost" size="sm" onClick={() => openEditPrice(rt)}><Pencil size={14} className="mr-1" /> {t('admin.edit')}</Button>
@@ -137,7 +137,7 @@ const AdminPricing = () => {
                 <tr key={o.id} className={`border-b border-border/50 ${!o.is_active ? 'opacity-50' : ''}`}>
                   <td className="py-3 px-4">{o.room_types?.name}</td>
                   <td className="py-3 px-4 text-muted-foreground">{o.start_date} → {o.end_date}</td>
-                  <td className="py-3 px-4 text-primary font-semibold">{formatCurrency(Number(o.price), cur)}</td>
+                  <td className="py-3 px-4 text-primary font-semibold">{displayPrice(Number(o.price), cur)}</td>
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{o.label || '—'}</td>
                   <td className="py-3 px-4 text-center"><Switch checked={o.is_active} onCheckedChange={() => toggleOverride(o.id, o.is_active)} /></td>
                   <td className="py-3 px-4 text-right"><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteOverride(o.id)}><Trash2 size={14} /></Button></td>

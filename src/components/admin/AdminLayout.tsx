@@ -105,7 +105,7 @@ export default function AdminLayout() {
       {/* Mobile Sidebar */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute inset-0 bg-foreground/20" onClick={() => setSidebarOpen(false)} />
           <aside className="absolute left-0 inset-y-0 w-64 bg-card flex flex-col shadow-elevated border-r border-border/60">
             <div className="absolute right-3 top-3">
               <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground transition-colors"><X size={18} /></button>
@@ -117,7 +117,7 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <div className="flex-1 lg:ml-60 flex flex-col min-h-screen">
-        <header className="h-14 border-b border-border/60 bg-card/80 backdrop-blur-xl sticky top-0 z-20 flex items-center justify-between px-4 lg:px-6 shadow-sm">
+        <header className="h-14 border-b border-border/60 bg-card sticky top-0 z-20 flex items-center justify-between px-4 lg:px-6 shadow-card">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors">
               <Menu size={20} />
