@@ -53,11 +53,11 @@ function getRoomImage(rt: any): string {
 }
 
 const statusColor: Record<string, string> = {
-  available: 'bg-green-500/15 text-green-600 border-green-500/30',
-  occupied: 'bg-red-500/15 text-red-600 border-red-500/30',
-  reserved: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30',
-  cleaning: 'bg-blue-500/15 text-blue-600 border-blue-500/30',
-  maintenance: 'bg-muted text-muted-foreground border-border',
+  available: 'bg-green-50 text-green-700 border-green-200/60 shadow-sm',
+  occupied: 'bg-red-50 text-red-700 border-red-200/60 shadow-sm',
+  reserved: 'bg-yellow-50 text-yellow-700 border-yellow-200/60 shadow-sm',
+  cleaning: 'bg-blue-50 text-blue-700 border-blue-200/60 shadow-sm',
+  maintenance: 'bg-muted text-muted-foreground border-border/60 shadow-sm',
 };
 
 const AdminDashboard = () => {
@@ -222,7 +222,7 @@ const AdminDashboard = () => {
     fetchData();
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="spinner" /></div>;
 
   return (
     <div className="space-y-6">
@@ -230,7 +230,7 @@ const AdminDashboard = () => {
 
       {/* ===== CONFLICT WARNINGS ===== */}
       {conflictReservations.length > 0 && (
-        <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 space-y-3">
+        <div className="bg-red-50 border border-red-200/60 rounded-[0.625rem] p-4 space-y-3 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 text-destructive">
             <AlertTriangle size={16} /> Reservation Conflicts Detected ({conflictReservations.length})
           </h3>
@@ -240,7 +240,7 @@ const AdminDashboard = () => {
                 ? reservations.find(x => x.id === r.conflict_with_reservation_id)
                 : null;
               return (
-                <div key={r.id} className="bg-card rounded-lg border border-destructive/20 p-3">
+                <div key={r.id} className="bg-card rounded-[0.625rem] border border-red-200/60 p-3 shadow-sm">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">{r.guest_name}
@@ -291,7 +291,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* ===== QUICK ACTIONS ===== */}
-      <div className="bg-card rounded-lg border border-border p-5">
+      <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
         <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Users size={14} /> {t('admin.quickActions')}</h3>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-md">
@@ -318,14 +318,14 @@ const AdminDashboard = () => {
 
         {/* Search Results */}
         {searchQuery.trim() && (
-          <div className="mt-4 border-t border-border pt-4">
+          <div className="mt-4 border-t border-border/60 pt-4">
             <p className="text-xs text-muted-foreground mb-2">{t('admin.searchResults')} ({searchResults.length})</p>
             {searchResults.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">{t('admin.noData')}</p>
             ) : (
               <div className="space-y-1.5">
                 {searchResults.map(r => (
-                  <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors">
+                  <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] hover:bg-muted/50 transition-all duration-200">
                     <div>
                       <p className="text-sm font-medium">{r.guest_name}</p>
                       <p className="text-xs text-muted-foreground">{r.reservation_code} · {r.room_types?.name || '—'} · {r.check_in} → {r.check_out}</p>
@@ -345,23 +345,23 @@ const AdminDashboard = () => {
       {/* ===== TODAY ACTIVITY ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Arrivals Today */}
-        <div className="bg-card rounded-lg border border-border p-5">
+        <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
             <LogIn size={14} className="text-green-600" /> {t('admin.upcomingArrivals')}
-            <span className="ml-auto text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full">{todayArrivals.length}</span>
+            <span className="ml-auto text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full shadow-sm">{todayArrivals.length}</span>
           </h3>
           {todayArrivals.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noCheckInsToday')}</p>
           ) : (
             <div className="space-y-2">
               {todayArrivals.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/50 bg-muted/20">
+                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] border border-border/40 bg-green-50/30 transition-all duration-200 hover:shadow-sm">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{r.guest_name}</p>
                     <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'} · <StatusBadge status={r.status} /></p>
                   </div>
                   <div className="flex items-center gap-1.5 ml-2">
-                    <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white text-xs h-7 px-2" onClick={() => handleCheckIn(r.id)}>
+                    <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-primary-foreground text-xs h-7 px-2 shadow-sm" onClick={() => handleCheckIn(r.id)}>
                       <LogIn size={12} /> {t('admin.checkInAction')}
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedRes(r)}><Eye size={12} /></Button>
@@ -373,22 +373,22 @@ const AdminDashboard = () => {
         </div>
 
         {/* Departures Today */}
-        <div className="bg-card rounded-lg border border-border p-5">
+        <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
             <LogOutIcon size={14} className="text-amber-600" /> {t('admin.upcomingDepartures')}
-            <span className="ml-auto text-xs bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full">{todayDepartures.length}</span>
+            <span className="ml-auto text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full shadow-sm">{todayDepartures.length}</span>
           </h3>
           {todayDepartures.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noCheckOutsToday')}</p>
           ) : (
             <div className="space-y-2">
               {todayDepartures.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/50 bg-muted/20">
+                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] border border-border/40 bg-amber-50/30 transition-all duration-200 hover:shadow-sm">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{r.guest_name}</p>
                     <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="gap-1 text-xs h-7 px-2 ml-2" onClick={() => handleCheckOut(r.id)}>
+                  <Button size="sm" variant="outline" className="gap-1 text-xs h-7 px-2 ml-2 shadow-sm" onClick={() => handleCheckOut(r.id)}>
                     <LogOutIcon size={12} /> {t('admin.checkOutAction')}
                   </Button>
                 </div>
@@ -398,17 +398,17 @@ const AdminDashboard = () => {
         </div>
 
         {/* Current Guests */}
-        <div className="bg-card rounded-lg border border-border p-5">
+        <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
             <Users size={14} className="text-primary" /> Current Guests
-            <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{currentGuests.length}</span>
+            <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full shadow-sm">{currentGuests.length}</span>
           </h3>
           {currentGuests.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noData')}</p>
           ) : (
             <div className="space-y-2 max-h-[320px] overflow-y-auto">
               {currentGuests.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/50 bg-muted/20">
+                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] border border-border/40 bg-muted/30 transition-all duration-200 hover:shadow-sm">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{r.guest_name}</p>
                     <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
@@ -424,14 +424,14 @@ const AdminDashboard = () => {
       </div>
 
       {/* ===== ROOM STATUS OVERVIEW ===== */}
-      <div className="bg-card rounded-lg border border-border p-5">
+      <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
         <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><BedDouble size={14} /> {t('admin.roomStatusBoard')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {roomStatusBoard.map(rt => (
             <button
               key={rt.id}
               onClick={() => navigate('/admin/room-types')}
-              className={cn('rounded-lg border p-4 transition-all hover:shadow-md text-left', statusColor[rt.status])}
+              className={cn('rounded-[0.625rem] border p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 text-left', statusColor[rt.status])}
             >
               <div className="flex items-center gap-3 mb-2">
                 <img src={getRoomImage(rt)} alt={rt.name} className="w-12 h-12 rounded-lg object-cover" />
