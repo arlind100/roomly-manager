@@ -454,15 +454,11 @@ const AdminAnalytics = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><CalendarDays size={16} /> Reservation Report</h3>
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => exportCSV(
-                reservationReportData.map(r => ({
+              <DataExportButton data={reservationReportData.map(r => ({
                   code: r.reservation_code, guest: r.guest_name, room: r.room_types?.name || '—',
                   check_in: r.check_in, check_out: r.check_out, status: r.status,
                   total_price: r.total_price || 0, source: r.booking_source || 'direct',
-                })), 'reservation-report'
-              )}>
-                <Download size={14} /> Export CSV
-              </Button>
+                }))} filename="reservation-report" />
             </div>
             <div className="overflow-auto">
               <Table>
