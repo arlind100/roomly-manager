@@ -559,7 +559,7 @@ const AdminAnalytics = () => {
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><TrendingUp size={18} className="text-primary" /></div>
                 <div>
                   <p className="text-xs text-muted-foreground">RevPAR</p>
-                  <p className="text-xl font-semibold">{formatCurrency(revpar, cur)}</p>
+                  <p className="text-xl font-semibold">{displayPrice(revpar, cur)}</p>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">Revenue per available room</p>
