@@ -90,6 +90,7 @@ const AdminSettings = () => {
       check_out_time: hotel.check_out_time, booking_policy: hotel.booking_policy,
       cancellation_policy: hotel.cancellation_policy, tax_percentage: hotel.tax_percentage,
       conflict_policy: hotel.conflict_policy,
+      cleaning_duration_minutes: hotel.cleaning_duration_minutes || 120,
       updated_at: new Date().toISOString(),
     }).eq('id', hotel.id);
     setSaving(false);
