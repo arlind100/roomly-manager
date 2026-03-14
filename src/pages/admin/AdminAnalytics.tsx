@@ -505,14 +505,10 @@ const AdminAnalytics = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><Activity size={16} /> Cancellation Report</h3>
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => exportCSV(
-                filtered.filter(r => r.status === 'cancelled').map(r => ({
+              <DataExportButton data={filtered.filter(r => r.status === 'cancelled').map(r => ({
                   code: r.reservation_code, guest: r.guest_name, room: r.room_types?.name || '—',
                   check_in: r.check_in, check_out: r.check_out, notes: r.notes || '—',
-                })), 'cancellation-report'
-              )}>
-                <Download size={14} /> Export CSV
-              </Button>
+                }))} filename="cancellation-report" />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
               <StatCard label="Cancelled Reservations" value={cancelledRes} icon={CalendarDays} />
