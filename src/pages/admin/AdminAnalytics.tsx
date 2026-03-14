@@ -548,7 +548,7 @@ const AdminAnalytics = () => {
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><DollarSign size={18} className="text-primary" /></div>
                 <div>
                   <p className="text-xs text-muted-foreground">ADR (Average Daily Rate)</p>
-                  <p className="text-xl font-semibold">{formatCurrency(adr, cur)}</p>
+                  <p className="text-xl font-semibold">{displayPrice(adr, cur)}</p>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">Average revenue per occupied room per day</p>
