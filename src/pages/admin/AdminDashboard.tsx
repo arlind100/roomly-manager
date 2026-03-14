@@ -424,7 +424,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* ===== ROOM STATUS OVERVIEW ===== */}
-      <div className="bg-card rounded-lg border border-border p-5">
+      <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
         <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><BedDouble size={14} /> {t('admin.roomStatusBoard')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {roomStatusBoard.map(rt => (
