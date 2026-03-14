@@ -284,7 +284,7 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard label={t('admin.occupancy')} value={`${stats.occupancy}%`} icon={BarChart3} />
         <StatCard label={t('admin.totalReservations')} value={stats.todayReservations} icon={CalendarDays} />
-        <StatCard label={t('admin.revenueToday')} value={formatCurrency(stats.todayRevenue, cur)} icon={DollarSign} />
+        <StatCard label={t('admin.revenueToday')} value={displayPrice(stats.todayRevenue, cur)} icon={DollarSign} />
         <StatCard label={t('admin.availableRooms')} value={stats.available} icon={BedDouble} />
         <StatCard label={t('admin.checkInsToday')} value={stats.checkIns} icon={LogIn} />
         <StatCard label={t('admin.checkOutsToday')} value={stats.checkOuts} icon={LogOutIcon} />
