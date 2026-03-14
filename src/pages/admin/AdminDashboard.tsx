@@ -373,10 +373,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* Departures Today */}
-        <div className="bg-card rounded-lg border border-border p-5">
+        <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
             <LogOutIcon size={14} className="text-amber-600" /> {t('admin.upcomingDepartures')}
-            <span className="ml-auto text-xs bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full">{todayDepartures.length}</span>
+            <span className="ml-auto text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full shadow-sm">{todayDepartures.length}</span>
           </h3>
           {todayDepartures.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noCheckOutsToday')}</p>
