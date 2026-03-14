@@ -348,7 +348,7 @@ const AdminDashboard = () => {
         <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
             <LogIn size={14} className="text-green-600" /> {t('admin.upcomingArrivals')}
-            <span className="ml-auto text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full">{todayArrivals.length}</span>
+            <span className="ml-auto text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full shadow-sm">{todayArrivals.length}</span>
           </h3>
           {todayArrivals.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noCheckInsToday')}</p>
