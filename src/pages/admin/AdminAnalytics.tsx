@@ -475,7 +475,7 @@ const AdminAnalytics = () => {
                       <TableCell className="text-sm">{r.check_in}</TableCell>
                       <TableCell className="text-sm">{r.check_out}</TableCell>
                       <TableCell><StatusBadge status={r.status} /></TableCell>
-                      <TableCell className="text-sm">{formatCurrency(Number(r.total_price) || 0, cur)}</TableCell>
+                      <TableCell className="text-sm">{displayPrice(Number(r.total_price) || 0, cur)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{r.booking_source || 'direct'}</TableCell>
                     </TableRow>
                   ))}
