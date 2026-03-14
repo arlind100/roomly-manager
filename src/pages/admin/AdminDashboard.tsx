@@ -345,7 +345,7 @@ const AdminDashboard = () => {
       {/* ===== TODAY ACTIVITY ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Arrivals Today */}
-        <div className="bg-card rounded-lg border border-border p-5">
+        <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
             <LogIn size={14} className="text-green-600" /> {t('admin.upcomingArrivals')}
             <span className="ml-auto text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full">{todayArrivals.length}</span>
