@@ -101,8 +101,8 @@ const AdminPricing = () => {
               <tbody>{roomTypes.map(rt => (
                 <tr key={rt.id} className="border-b border-border/50">
                   <td className="py-3 px-4 font-medium">{rt.name}</td>
-                  <td className="py-3 px-4 text-primary font-semibold">{formatCurrency(Number(rt.base_price), cur)}</td>
-                  <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{rt.weekend_price ? formatCurrency(Number(rt.weekend_price), cur) : '—'}</td>
+                  <td className="py-3 px-4 text-primary font-semibold">{displayPrice(Number(rt.base_price), cur)}</td>
+                  <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{rt.weekend_price ? displayPrice(Number(rt.weekend_price), cur) : '—'}</td>
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{rt.available_units}</td>
                   <td className="py-3 px-4 text-right">
                     <Button variant="ghost" size="sm" onClick={() => openEditPrice(rt)}><Pencil size={14} className="mr-1" /> {t('admin.edit')}</Button>
