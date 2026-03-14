@@ -63,6 +63,7 @@ export type Database = {
           cancellation_policy: string | null
           check_in_time: string | null
           check_out_time: string | null
+          cleaning_duration_minutes: number
           conflict_policy: string
           created_at: string
           currency: string
@@ -80,6 +81,7 @@ export type Database = {
           cancellation_policy?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
+          cleaning_duration_minutes?: number
           conflict_policy?: string
           created_at?: string
           currency?: string
@@ -97,6 +99,7 @@ export type Database = {
           cancellation_policy?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
+          cleaning_duration_minutes?: number
           conflict_policy?: string
           created_at?: string
           currency?: string
@@ -364,6 +367,7 @@ export type Database = {
           payment_method: string | null
           payment_status: string | null
           reservation_code: string
+          room_id: string | null
           room_type_id: string | null
           special_requests: string | null
           status: string
@@ -396,6 +400,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           reservation_code?: string
+          room_id?: string | null
           room_type_id?: string | null
           special_requests?: string | null
           status?: string
@@ -428,6 +433,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           reservation_code?: string
+          room_id?: string | null
           room_type_id?: string | null
           special_requests?: string | null
           status?: string
@@ -440,6 +446,13 @@ export type Database = {
             columns: ["hotel_id"]
             isOneToOne: false
             referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
           {
@@ -506,6 +519,66 @@ export type Database = {
             columns: ["hotel_id"]
             isOneToOne: false
             referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          cleaning_expected_done_at: string | null
+          cleaning_started_at: string | null
+          created_at: string
+          floor: string | null
+          hotel_id: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          operational_status: string
+          room_number: string
+          room_type_id: string
+          updated_at: string
+        }
+        Insert: {
+          cleaning_expected_done_at?: string | null
+          cleaning_started_at?: string | null
+          created_at?: string
+          floor?: string | null
+          hotel_id: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          operational_status?: string
+          room_number: string
+          room_type_id: string
+          updated_at?: string
+        }
+        Update: {
+          cleaning_expected_done_at?: string | null
+          cleaning_started_at?: string | null
+          created_at?: string
+          floor?: string | null
+          hotel_id?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          operational_status?: string
+          room_number?: string
+          room_type_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
             referencedColumns: ["id"]
           },
         ]
