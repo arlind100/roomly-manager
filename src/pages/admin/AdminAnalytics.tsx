@@ -277,8 +277,8 @@ const AdminAnalytics = () => {
             <StatCard label="Total Reservations" value={totalReservations} icon={CalendarDays} />
             <StatCard label="Confirmed" value={confirmedRes} icon={CalendarDays} />
             <StatCard label="Cancelled" value={cancelledRes} icon={CalendarDays} />
-            <StatCard label="Total Revenue" value={formatCurrency(totalRevenue, cur)} icon={DollarSign} />
-            <StatCard label="Avg. Booking Value" value={formatCurrency(avgBookingValue, cur)} icon={TrendingUp} />
+            <StatCard label="Total Revenue" value={displayPrice(totalRevenue, cur)} icon={DollarSign} />
+            <StatCard label="Avg. Booking Value" value={displayPrice(avgBookingValue, cur)} icon={TrendingUp} />
             <StatCard label="Occupancy Rate" value={`${occupancyRate}%`} icon={BedDouble} />
           </div>
 
