@@ -321,7 +321,14 @@ const AdminSettings = () => {
           <div><Label>{t('admin.checkInTime')}</Label><Input type="time" value={hotel.check_in_time || ''} onChange={e => update('check_in_time', e.target.value)} /></div>
           <div><Label>{t('admin.checkOutTime')}</Label><Input type="time" value={hotel.check_out_time || ''} onChange={e => update('check_out_time', e.target.value)} /></div>
         </div>
-        <div><Label>{t('admin.taxPercentage')}</Label><Input type="number" min={0} max={100} step={0.01} value={hotel.tax_percentage || 0} onChange={e => update('tax_percentage', parseFloat(e.target.value) || 0)} className="max-w-[200px]" /></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><Label>{t('admin.taxPercentage')}</Label><Input type="number" min={0} max={100} step={0.01} value={hotel.tax_percentage || 0} onChange={e => update('tax_percentage', parseFloat(e.target.value) || 0)} /></div>
+          <div>
+            <Label>Cleaning Duration (minutes)</Label>
+            <Input type="number" min={15} max={480} step={15} value={hotel.cleaning_duration_minutes || 120} onChange={e => update('cleaning_duration_minutes', parseInt(e.target.value) || 120)} />
+            <p className="text-xs text-muted-foreground mt-1">Time rooms are marked as "Cleaning" after checkout</p>
+          </div>
+        </div>
       </section>
 
       {/* Policies */}
