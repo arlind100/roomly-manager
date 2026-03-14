@@ -196,17 +196,33 @@ const AdminAnalytics = () => {
     return Object.entries(map).map(([name, revenue]) => ({ name, revenue }));
   }, [nonCancelled]);
 
-  // Export functions
-  const exportCSV = useCallback((data: any[], filename: string) => {
-    if (!data.length) return;
-    const headers = Object.keys(data[0]);
-    const csv = [headers.join(','), ...data.map(row => headers.map(h => `"${row[h] ?? ''}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `${filename}.csv`; a.click();
-    URL.revokeObjectURL(url);
-  }, []);
+  // Revenue by source
+  const revenueBySource = useMemo(() => {
+    const map: Record<string, number> = {};
+    nonCancelled.forEach(r => {
+      const src = r.booking_source || 'direct';
+      map[src] = (map[src] || 0) + (Number(r.total_price) || 0);
+    });
+    return Object.entries(map).map(([name, revenue]) => ({ name, revenue }));
+  }, [nonCancelled]);
+
+  // Export data builder
+  const buildExportData = useCallback((type: string) => {
+    switch (type) {
+      case 'reservations':
+        return nonCancelled.map(r => ({
+          Code: r.reservation_code, Guest: r.guest_name, Room: r.room_types?.name || '',
+          'Check-In': r.check_in, 'Check-Out': r.check_out, Status: r.status,
+          'Total Price': r.total_price || 0, Source: r.booking_source || 'direct',
+        }));
+      case 'occupancy':
+        return occupancyReportData;
+      case 'revenue':
+        return revenueByRoomType.map(r => ({ ...r, revenue: Number(r.revenue.toFixed(2)) }));
+      default:
+        return [];
+    }
+  }, [nonCancelled, occupancyReportData, revenueByRoomType]);
 
   const tooltipStyle = { background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' };
 
