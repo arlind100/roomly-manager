@@ -476,7 +476,7 @@ const AdminDashboard = () => {
                     <SelectItem key={rt.id} value={rt.id}>
                       <div className="flex items-center gap-2">
                         <img src={getRoomImage(rt)} alt="" className="w-6 h-6 rounded object-cover" />
-                        {rt.name} — {formatCurrency(rt.base_price, cur)}/night
+                        {rt.name} — {displayPrice(rt.base_price, cur)}/night
                       </div>
                     </SelectItem>
                   ))}
