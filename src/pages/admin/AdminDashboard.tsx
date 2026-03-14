@@ -355,13 +355,13 @@ const AdminDashboard = () => {
           ) : (
             <div className="space-y-2">
               {todayArrivals.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/50 bg-muted/20">
+                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] border border-border/40 bg-green-50/30 transition-all duration-200 hover:shadow-sm">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{r.guest_name}</p>
                     <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'} · <StatusBadge status={r.status} /></p>
                   </div>
                   <div className="flex items-center gap-1.5 ml-2">
-                    <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white text-xs h-7 px-2" onClick={() => handleCheckIn(r.id)}>
+                    <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-primary-foreground text-xs h-7 px-2 shadow-sm" onClick={() => handleCheckIn(r.id)}>
                       <LogIn size={12} /> {t('admin.checkInAction')}
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedRes(r)}><Eye size={12} /></Button>
