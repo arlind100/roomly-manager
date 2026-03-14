@@ -364,14 +364,12 @@ const AdminAnalytics = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><CalendarDays size={16} /> Daily Report — {format(new Date(), 'MMM dd, yyyy')}</h3>
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => exportCSV([
+              <DataExportButton data={[
                 { metric: 'Arrivals Today', value: dailyArrivals.length },
                 { metric: 'Departures Today', value: dailyDepartures.length },
                 { metric: 'Currently Staying', value: currentlyStaying.length },
                 { metric: 'Revenue Today', value: dailyRevenue },
-              ], 'daily-report')}>
-                <Download size={14} /> Export CSV
-              </Button>
+              ]} filename="daily-report" />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard label="Arrivals Today" value={dailyArrivals.length} icon={Users} />
