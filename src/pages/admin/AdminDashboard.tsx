@@ -53,11 +53,11 @@ function getRoomImage(rt: any): string {
 }
 
 const statusColor: Record<string, string> = {
-  available: 'bg-green-500/15 text-green-600 border-green-500/30',
-  occupied: 'bg-red-500/15 text-red-600 border-red-500/30',
-  reserved: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/30',
-  cleaning: 'bg-blue-500/15 text-blue-600 border-blue-500/30',
-  maintenance: 'bg-muted text-muted-foreground border-border',
+  available: 'bg-green-50 text-green-700 border-green-200/60 shadow-sm',
+  occupied: 'bg-red-50 text-red-700 border-red-200/60 shadow-sm',
+  reserved: 'bg-yellow-50 text-yellow-700 border-yellow-200/60 shadow-sm',
+  cleaning: 'bg-blue-50 text-blue-700 border-blue-200/60 shadow-sm',
+  maintenance: 'bg-muted text-muted-foreground border-border/60 shadow-sm',
 };
 
 const AdminDashboard = () => {
