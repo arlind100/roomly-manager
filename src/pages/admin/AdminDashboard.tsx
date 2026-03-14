@@ -291,7 +291,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* ===== QUICK ACTIONS ===== */}
-      <div className="bg-card rounded-lg border border-border p-5">
+      <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
         <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Users size={14} /> {t('admin.quickActions')}</h3>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-md">
