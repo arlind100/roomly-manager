@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, CalendarDays, BedDouble, CalendarRange, DollarSign,
   Users, FileText, Settings, LogOut, Menu, X, ChevronDown, Sun, Moon,
-  BarChart3,
+  BarChart3, DoorOpen,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -27,6 +27,7 @@ export default function AdminLayout() {
     { path: '/admin', icon: LayoutDashboard, label: t('admin.dashboard'), exact: true },
     { path: '/admin/reservations', icon: CalendarDays, label: t('admin.reservations') },
     { path: '/admin/room-types', icon: BedDouble, label: t('admin.roomTypes') },
+    { path: '/admin/rooms', icon: DoorOpen, label: 'Rooms' },
     { path: '/admin/availability', icon: CalendarRange, label: t('admin.availability') },
     { path: '/admin/pricing', icon: DollarSign, label: t('admin.pricing') },
     { path: '/admin/staff', icon: Users, label: t('admin.staff') },

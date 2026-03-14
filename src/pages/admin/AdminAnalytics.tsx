@@ -5,6 +5,8 @@ import { useHotel } from '@/hooks/useHotel';
 import { displayPrice } from '@/lib/currency';
 import { StatCard } from '@/components/admin/StatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
+import { SourceBadge } from '@/components/admin/SourceBadge';
+import { DataExportButton } from '@/components/admin/DataExportButton';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -194,17 +196,33 @@ const AdminAnalytics = () => {
     return Object.entries(map).map(([name, revenue]) => ({ name, revenue }));
   }, [nonCancelled]);
 
-  // Export functions
-  const exportCSV = useCallback((data: any[], filename: string) => {
-    if (!data.length) return;
-    const headers = Object.keys(data[0]);
-    const csv = [headers.join(','), ...data.map(row => headers.map(h => `"${row[h] ?? ''}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `${filename}.csv`; a.click();
-    URL.revokeObjectURL(url);
-  }, []);
+  // Revenue by source
+  const revenueBySource = useMemo(() => {
+    const map: Record<string, number> = {};
+    nonCancelled.forEach(r => {
+      const src = r.booking_source || 'direct';
+      map[src] = (map[src] || 0) + (Number(r.total_price) || 0);
+    });
+    return Object.entries(map).map(([name, revenue]) => ({ name, revenue }));
+  }, [nonCancelled]);
+
+  // Export data builder
+  const buildExportData = useCallback((type: string) => {
+    switch (type) {
+      case 'reservations':
+        return nonCancelled.map(r => ({
+          Code: r.reservation_code, Guest: r.guest_name, Room: r.room_types?.name || '',
+          'Check-In': r.check_in, 'Check-Out': r.check_out, Status: r.status,
+          'Total Price': r.total_price || 0, Source: r.booking_source || 'direct',
+        }));
+      case 'occupancy':
+        return occupancyReportData;
+      case 'revenue':
+        return revenueByRoomType.map(r => ({ ...r, revenue: Number(r.revenue.toFixed(2)) }));
+      default:
+        return [];
+    }
+  }, [nonCancelled, occupancyReportData, revenueByRoomType]);
 
   const tooltipStyle = { background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px', color: 'hsl(var(--foreground))' };
 
@@ -346,14 +364,12 @@ const AdminAnalytics = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><CalendarDays size={16} /> Daily Report — {format(new Date(), 'MMM dd, yyyy')}</h3>
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => exportCSV([
+              <DataExportButton data={[
                 { metric: 'Arrivals Today', value: dailyArrivals.length },
                 { metric: 'Departures Today', value: dailyDepartures.length },
                 { metric: 'Currently Staying', value: currentlyStaying.length },
                 { metric: 'Revenue Today', value: dailyRevenue },
-              ], 'daily-report')}>
-                <Download size={14} /> Export CSV
-              </Button>
+              ]} filename="daily-report" />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard label="Arrivals Today" value={dailyArrivals.length} icon={Users} />
@@ -367,9 +383,7 @@ const AdminAnalytics = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><BedDouble size={16} /> Occupancy Report</h3>
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => exportCSV(occupancyReportData, 'occupancy-report')}>
-                <Download size={14} /> Export CSV
-              </Button>
+              <DataExportButton data={occupancyReportData} filename="occupancy-report" />
             </div>
             <div className="overflow-auto max-h-[400px]">
               <Table>
@@ -399,9 +413,7 @@ const AdminAnalytics = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><DollarSign size={16} /> Revenue Report</h3>
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => exportCSV(revenueByRoomType, 'revenue-report')}>
-                <Download size={14} /> Export CSV
-              </Button>
+              <DataExportButton data={revenueByRoomType} filename="revenue-report" />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Table>
@@ -442,15 +454,11 @@ const AdminAnalytics = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><CalendarDays size={16} /> Reservation Report</h3>
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => exportCSV(
-                reservationReportData.map(r => ({
+              <DataExportButton data={reservationReportData.map(r => ({
                   code: r.reservation_code, guest: r.guest_name, room: r.room_types?.name || '—',
                   check_in: r.check_in, check_out: r.check_out, status: r.status,
                   total_price: r.total_price || 0, source: r.booking_source || 'direct',
-                })), 'reservation-report'
-              )}>
-                <Download size={14} /> Export CSV
-              </Button>
+                }))} filename="reservation-report" />
             </div>
             <div className="overflow-auto">
               <Table>
@@ -497,14 +505,10 @@ const AdminAnalytics = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><Activity size={16} /> Cancellation Report</h3>
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => exportCSV(
-                filtered.filter(r => r.status === 'cancelled').map(r => ({
+              <DataExportButton data={filtered.filter(r => r.status === 'cancelled').map(r => ({
                   code: r.reservation_code, guest: r.guest_name, room: r.room_types?.name || '—',
                   check_in: r.check_in, check_out: r.check_out, notes: r.notes || '—',
-                })), 'cancellation-report'
-              )}>
-                <Download size={14} /> Export CSV
-              </Button>
+                }))} filename="cancellation-report" />
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
               <StatCard label="Cancelled Reservations" value={cancelledRes} icon={CalendarDays} />

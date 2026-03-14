@@ -14,6 +14,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminReservations from "./pages/admin/AdminReservations";
 import AdminRoomTypes from "./pages/admin/AdminRoomTypes";
+import AdminRooms from "./pages/admin/AdminRooms";
 import AdminAvailability from "./pages/admin/AdminAvailability";
 import AdminPricing from "./pages/admin/AdminPricing";
 import AdminStaff from "./pages/admin/AdminStaff";
@@ -41,6 +42,7 @@ const App = () => (
                 <Route index element={<AdminDashboard />} />
                 <Route path="reservations" element={<AdminReservations />} />
                 <Route path="room-types" element={<AdminRoomTypes />} />
+                <Route path="rooms" element={<AdminRooms />} />
                 <Route path="availability" element={<AdminAvailability />} />
                 <Route path="pricing" element={<AdminPricing />} />
                 <Route path="staff" element={<AdminStaff />} />
