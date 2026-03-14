@@ -16,9 +16,20 @@ export function useAdminTheme() {
     };
   }, [theme]);
 
+  // Sync across multiple hook instances via custom event
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<AdminTheme>).detail;
+      setThemeState(detail);
+    };
+    window.addEventListener('admin-theme-change', handler);
+    return () => window.removeEventListener('admin-theme-change', handler);
+  }, []);
+
   const setTheme = (t: AdminTheme) => {
     setThemeState(t);
     localStorage.setItem('admin_theme', t);
+    window.dispatchEvent(new CustomEvent('admin-theme-change', { detail: t }));
   };
 
   const toggle = () => setTheme(theme === 'light' ? 'dark' : 'light');

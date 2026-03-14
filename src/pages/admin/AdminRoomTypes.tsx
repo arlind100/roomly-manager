@@ -204,7 +204,7 @@ const AdminRoomTypes = () => {
                   <img src={form.image_url} alt="Room preview" className="w-full h-40 object-cover" />
                   <button
                     onClick={removeImage}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 border border-border shadow-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
                   >
                     <X size={14} />
                   </button>

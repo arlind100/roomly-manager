@@ -17,7 +17,7 @@ export function StatCard({ label, value, icon: Icon, trend, trendUp, className }
       className
     )}>
       <div className="flex items-center justify-between mb-3">
-        <div className="w-9 h-9 rounded-xl bg-primary/8 backdrop-blur-sm flex items-center justify-center transition-all duration-300 group-hover:bg-primary/15 group-hover:shadow-sm">
+        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center transition-all duration-300 group-hover:bg-primary/15 group-hover:shadow-sm">
           <Icon size={16} className="text-primary transition-colors duration-300" />
         </div>
         {trend && (

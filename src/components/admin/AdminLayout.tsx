@@ -117,7 +117,7 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <div className="flex-1 lg:ml-60 flex flex-col min-h-screen">
-        <header className="h-14 border-b border-border/60 bg-card/80 backdrop-blur-xl sticky top-0 z-20 flex items-center justify-between px-4 lg:px-6 shadow-sm">
+        <header className="h-14 border-b border-border/60 bg-card sticky top-0 z-20 flex items-center justify-between px-4 lg:px-6 shadow-card">
           <div className="flex items-center gap-3">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors">
               <Menu size={20} />
