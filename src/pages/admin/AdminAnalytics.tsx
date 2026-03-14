@@ -359,7 +359,7 @@ const AdminAnalytics = () => {
               <StatCard label="Arrivals Today" value={dailyArrivals.length} icon={Users} />
               <StatCard label="Departures Today" value={dailyDepartures.length} icon={Users} />
               <StatCard label="Currently Staying" value={currentlyStaying.length} icon={Hotel} />
-              <StatCard label="Revenue Today" value={formatCurrency(dailyRevenue, cur)} icon={DollarSign} />
+              <StatCard label="Revenue Today" value={displayPrice(dailyRevenue, cur)} icon={DollarSign} />
             </div>
           </div>
 
