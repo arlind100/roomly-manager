@@ -413,9 +413,7 @@ const AdminAnalytics = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><DollarSign size={16} /> Revenue Report</h3>
-              <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => exportCSV(revenueByRoomType, 'revenue-report')}>
-                <Download size={14} /> Export CSV
-              </Button>
+              <DataExportButton data={revenueByRoomType} filename="revenue-report" />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Table>
