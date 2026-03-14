@@ -105,7 +105,7 @@ export default function AdminLayout() {
       {/* Mobile Sidebar */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute inset-0 bg-foreground/20" onClick={() => setSidebarOpen(false)} />
           <aside className="absolute left-0 inset-y-0 w-64 bg-card flex flex-col shadow-elevated border-r border-border/60">
             <div className="absolute right-3 top-3">
               <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground transition-colors"><X size={18} /></button>
