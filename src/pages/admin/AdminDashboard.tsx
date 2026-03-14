@@ -318,7 +318,7 @@ const AdminDashboard = () => {
 
         {/* Search Results */}
         {searchQuery.trim() && (
-          <div className="mt-4 border-t border-border pt-4">
+          <div className="mt-4 border-t border-border/60 pt-4">
             <p className="text-xs text-muted-foreground mb-2">{t('admin.searchResults')} ({searchResults.length})</p>
             {searchResults.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">{t('admin.noData')}</p>
