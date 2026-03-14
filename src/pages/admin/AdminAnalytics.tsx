@@ -430,7 +430,7 @@ const AdminAnalytics = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={11} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v, cur)} />
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => displayPrice(v, cur)} />
                     <Line type="monotone" dataKey="revenue" stroke="hsl(142, 70%, 45%)" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
