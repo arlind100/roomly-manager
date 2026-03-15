@@ -90,24 +90,7 @@ const AdminInvoices = () => {
     if (!email) { toast.error('No guest email found'); return; }
     setSendingId(inv.id);
     try {
-      const doc = generateInvoicePdf({
-        invoiceNumber: inv.invoice_number,
-        issuedAt: inv.issued_at || inv.created_at,
-        hotelName: hotel?.name || 'Hotel',
-        hotelAddress: hotel?.address || '',
-        hotelEmail: hotel?.email || '',
-        hotelPhone: hotel?.phone || '',
-        guestName: inv.reservations?.guest_name || '—',
-        guestEmail: email,
-        reservationCode: inv.reservations?.reservation_code || '',
-        checkIn: inv.reservations?.check_in || '',
-        checkOut: inv.reservations?.check_out || '',
-        roomName: inv.reservations?.room_types?.name || '',
-        amount: Number(inv.amount),
-        currency: cur,
-        taxPercentage: hotel?.tax_percentage || 0,
-        status: inv.status,
-      });
+      const doc = generateInvoicePdf(buildInvoiceData(inv));
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       const { error } = await supabase.functions.invoke('send-invoice-email', {
         body: {
