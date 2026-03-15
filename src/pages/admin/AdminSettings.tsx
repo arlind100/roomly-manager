@@ -66,6 +66,7 @@ const AdminSettings = () => {
   const [newFeed, setNewFeed] = useState({ name: '', ical_url: '', room_type_id: '' });
   const [addingFeed, setAddingFeed] = useState(false);
   const [syncingFeedId, setSyncingFeedId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => { fetchAll(); fetchExchangeRates(); }, []);
 
