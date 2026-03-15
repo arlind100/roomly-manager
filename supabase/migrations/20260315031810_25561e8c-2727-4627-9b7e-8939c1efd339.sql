@@ -1,0 +1,1 @@
+DROP TRIGGER validate_reservation_before_insert ON public.reservations;
