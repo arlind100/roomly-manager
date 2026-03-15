@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS validate_reservation ON public.reservations;
