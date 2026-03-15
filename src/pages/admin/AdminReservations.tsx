@@ -335,7 +335,7 @@ const AdminReservations = () => {
           </Select>
         </div>
         <div className="flex gap-2">
-          <DataExportButton data={exportData} filename="reservations" />
+          <DataExportButton data={exportData} filename="reservations" hotelName={hotel?.name} />
           <Button variant="outline" onClick={() => setShowImport(true)}><Upload size={16} className="mr-1" /> {t('admin.importReservations')}</Button>
           <Button onClick={() => setShowCreate(true)}><Plus size={16} className="mr-1" /> {t('admin.newReservation')}</Button>
         </div>
