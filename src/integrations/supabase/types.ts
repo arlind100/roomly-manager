@@ -68,6 +68,7 @@ export type Database = {
           created_at: string
           currency: string
           email: string | null
+          ical_token: string
           id: string
           logo_url: string | null
           name: string
@@ -86,6 +87,7 @@ export type Database = {
           created_at?: string
           currency?: string
           email?: string | null
+          ical_token?: string
           id?: string
           logo_url?: string | null
           name?: string
@@ -104,6 +106,7 @@ export type Database = {
           created_at?: string
           currency?: string
           email?: string | null
+          ical_token?: string
           id?: string
           logo_url?: string | null
           name?: string
