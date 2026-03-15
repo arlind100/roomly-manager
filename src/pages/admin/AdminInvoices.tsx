@@ -29,7 +29,7 @@ const AdminInvoices = () => {
 
   const fetchData = async () => {
     const [invRes, resRes] = await Promise.all([
-      supabase.from('invoices').select('*, reservations(guest_name, guest_email, reservation_code, check_in, check_out, room_type_id, room_types(name))').order('created_at', { ascending: false }),
+      supabase.from('invoices').select('*, reservations(guest_name, guest_email, guest_phone, reservation_code, check_in, check_out, guests_count, room_type_id, room_id, room_types(name), rooms(room_number))').order('created_at', { ascending: false }),
       supabase.from('reservations').select('id, guest_name, reservation_code, total_price').order('created_at', { ascending: false }),
     ]);
     setInvoices(invRes.data || []);
@@ -54,25 +54,33 @@ const AdminInvoices = () => {
     fetchData();
   };
 
+  const buildInvoiceData = (inv: any) => ({
+    invoiceNumber: inv.invoice_number,
+    issuedAt: inv.issued_at || inv.created_at,
+    dueAt: inv.due_at || '',
+    hotelName: hotel?.name || 'Hotel',
+    hotelAddress: hotel?.address || '',
+    hotelEmail: hotel?.email || '',
+    hotelPhone: hotel?.phone || '',
+    hotelLogoUrl: hotel?.logo_url || '',
+    guestName: inv.reservations?.guest_name || '—',
+    guestEmail: inv.reservations?.guest_email || '',
+    guestPhone: inv.reservations?.guest_phone || '',
+    reservationCode: inv.reservations?.reservation_code || '',
+    checkIn: inv.reservations?.check_in || '',
+    checkOut: inv.reservations?.check_out || '',
+    roomName: inv.reservations?.room_types?.name || '',
+    roomNumber: inv.reservations?.rooms?.room_number || '',
+    guestsCount: inv.reservations?.guests_count || 1,
+    amount: Number(inv.amount),
+    currency: cur,
+    taxPercentage: hotel?.tax_percentage || 0,
+    status: inv.status,
+    cancellationPolicy: hotel?.cancellation_policy || '',
+  });
+
   const handleDownload = (inv: any) => {
-    const doc = generateInvoicePdf({
-      invoiceNumber: inv.invoice_number,
-      issuedAt: inv.issued_at || inv.created_at,
-      hotelName: hotel?.name || 'Hotel',
-      hotelAddress: hotel?.address || '',
-      hotelEmail: hotel?.email || '',
-      hotelPhone: hotel?.phone || '',
-      guestName: inv.reservations?.guest_name || '—',
-      guestEmail: inv.reservations?.guest_email || '',
-      reservationCode: inv.reservations?.reservation_code || '',
-      checkIn: inv.reservations?.check_in || '',
-      checkOut: inv.reservations?.check_out || '',
-      roomName: inv.reservations?.room_types?.name || '',
-      amount: Number(inv.amount),
-      currency: cur,
-      taxPercentage: hotel?.tax_percentage || 0,
-      status: inv.status,
-    });
+    const doc = generateInvoicePdf(buildInvoiceData(inv));
     doc.save(`${inv.invoice_number}.pdf`);
     toast.success(t('admin.invoiceDownloaded'));
   };
@@ -82,24 +90,7 @@ const AdminInvoices = () => {
     if (!email) { toast.error('No guest email found'); return; }
     setSendingId(inv.id);
     try {
-      const doc = generateInvoicePdf({
-        invoiceNumber: inv.invoice_number,
-        issuedAt: inv.issued_at || inv.created_at,
-        hotelName: hotel?.name || 'Hotel',
-        hotelAddress: hotel?.address || '',
-        hotelEmail: hotel?.email || '',
-        hotelPhone: hotel?.phone || '',
-        guestName: inv.reservations?.guest_name || '—',
-        guestEmail: email,
-        reservationCode: inv.reservations?.reservation_code || '',
-        checkIn: inv.reservations?.check_in || '',
-        checkOut: inv.reservations?.check_out || '',
-        roomName: inv.reservations?.room_types?.name || '',
-        amount: Number(inv.amount),
-        currency: cur,
-        taxPercentage: hotel?.tax_percentage || 0,
-        status: inv.status,
-      });
+      const doc = generateInvoicePdf(buildInvoiceData(inv));
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       const { error } = await supabase.functions.invoke('send-invoice-email', {
         body: {
