@@ -340,6 +340,58 @@ const AdminSettings = () => {
         <div><Label>{t('admin.cancellationPolicy')}</Label><Textarea value={hotel.cancellation_policy || ''} onChange={e => update('cancellation_policy', e.target.value)} rows={3} /></div>
       </section>
 
+      {/* ===== Channel Sync / iCal Export ===== */}
+      <section className="bg-card rounded-[0.625rem] border border-border/60 p-6 space-y-4 shadow-card">
+        <h2 className="text-sm font-semibold flex items-center gap-2"><ExternalLink size={14} /> Channel Sync (iCal Export)</h2>
+        <p className="text-xs text-muted-foreground">
+          Share your availability with external booking platforms. Paste the URL below into your OTA extranet to automatically block dates booked through your direct booking portal.
+        </p>
+
+        {hotel.ical_token ? (
+          <>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Your iCal Feed URL</Label>
+              <div className="flex gap-2">
+                <div className="flex-1 bg-muted/30 border border-border/60 rounded-lg px-3 py-2 text-xs font-mono break-all select-all">
+                  {`${SUPABASE_URL}/functions/v1/ical-export/${hotel.ical_token}`}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0 gap-1.5"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${SUPABASE_URL}/functions/v1/ical-export/${hotel.ical_token}`);
+                    setCopied(true);
+                    toast.success('URL copied to clipboard');
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-muted/20 border border-border/40 rounded-lg p-3">
+              <p className="text-xs font-medium mb-2">Supported Platforms</p>
+              <div className="flex flex-wrap gap-2">
+                {['Booking.com', 'Airbnb', 'Expedia', 'VRBO'].map(platform => (
+                  <span key={platform} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background border border-border/60 text-xs font-medium">
+                    <Globe size={10} className="text-muted-foreground" />
+                    {platform}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Paste this URL in your platform's extranet under Availability → Sync Calendar to automatically block dates booked through Roomly.
+              </p>
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground">Save settings to generate your iCal export token.</p>
+        )}
+      </section>
+
       {/* ===== iCal Synchronization ===== */}
       <section className="bg-card rounded-[0.625rem] border border-border/60 p-6 space-y-4 shadow-card">
         <div className="flex items-center justify-between">
