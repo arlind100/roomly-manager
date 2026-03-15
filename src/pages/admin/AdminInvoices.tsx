@@ -29,7 +29,7 @@ const AdminInvoices = () => {
 
   const fetchData = async () => {
     const [invRes, resRes] = await Promise.all([
-      supabase.from('invoices').select('*, reservations(guest_name, guest_email, reservation_code, check_in, check_out, room_type_id, room_types(name))').order('created_at', { ascending: false }),
+      supabase.from('invoices').select('*, reservations(guest_name, guest_email, guest_phone, reservation_code, check_in, check_out, guests_count, room_type_id, room_id, room_types(name), rooms(room_number))').order('created_at', { ascending: false }),
       supabase.from('reservations').select('id, guest_name, reservation_code, total_price').order('created_at', { ascending: false }),
     ]);
     setInvoices(invRes.data || []);
