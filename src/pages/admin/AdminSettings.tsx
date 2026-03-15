@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { languageNames, type Language } from '@/i18n/translations';
-import { Sun, Moon, Plus, Trash2, RefreshCw, ChevronDown, Rss, Globe, Upload, X, ImageIcon } from 'lucide-react';
+import { Sun, Moon, Plus, Trash2, RefreshCw, ChevronDown, Rss, Globe, Upload, X, ImageIcon, Copy, Check, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const SUPABASE_URL = "https://qdxtmdyagsxtvtjaxqou.supabase.co";
