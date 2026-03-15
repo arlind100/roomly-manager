@@ -54,25 +54,33 @@ const AdminInvoices = () => {
     fetchData();
   };
 
+  const buildInvoiceData = (inv: any) => ({
+    invoiceNumber: inv.invoice_number,
+    issuedAt: inv.issued_at || inv.created_at,
+    dueAt: inv.due_at || '',
+    hotelName: hotel?.name || 'Hotel',
+    hotelAddress: hotel?.address || '',
+    hotelEmail: hotel?.email || '',
+    hotelPhone: hotel?.phone || '',
+    hotelLogoUrl: hotel?.logo_url || '',
+    guestName: inv.reservations?.guest_name || '—',
+    guestEmail: inv.reservations?.guest_email || '',
+    guestPhone: inv.reservations?.guest_phone || '',
+    reservationCode: inv.reservations?.reservation_code || '',
+    checkIn: inv.reservations?.check_in || '',
+    checkOut: inv.reservations?.check_out || '',
+    roomName: inv.reservations?.room_types?.name || '',
+    roomNumber: inv.reservations?.rooms?.room_number || '',
+    guestsCount: inv.reservations?.guests_count || 1,
+    amount: Number(inv.amount),
+    currency: cur,
+    taxPercentage: hotel?.tax_percentage || 0,
+    status: inv.status,
+    cancellationPolicy: hotel?.cancellation_policy || '',
+  });
+
   const handleDownload = (inv: any) => {
-    const doc = generateInvoicePdf({
-      invoiceNumber: inv.invoice_number,
-      issuedAt: inv.issued_at || inv.created_at,
-      hotelName: hotel?.name || 'Hotel',
-      hotelAddress: hotel?.address || '',
-      hotelEmail: hotel?.email || '',
-      hotelPhone: hotel?.phone || '',
-      guestName: inv.reservations?.guest_name || '—',
-      guestEmail: inv.reservations?.guest_email || '',
-      reservationCode: inv.reservations?.reservation_code || '',
-      checkIn: inv.reservations?.check_in || '',
-      checkOut: inv.reservations?.check_out || '',
-      roomName: inv.reservations?.room_types?.name || '',
-      amount: Number(inv.amount),
-      currency: cur,
-      taxPercentage: hotel?.tax_percentage || 0,
-      status: inv.status,
-    });
+    const doc = generateInvoicePdf(buildInvoiceData(inv));
     doc.save(`${inv.invoice_number}.pdf`);
     toast.success(t('admin.invoiceDownloaded'));
   };
