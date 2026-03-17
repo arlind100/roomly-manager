@@ -107,10 +107,10 @@ const AdminRooms = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this room?')) return;
     const { error } = await supabase.from('rooms').delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
     toast.success('Room deleted');
+    setDeleteId(null);
     fetchData();
   };
 
