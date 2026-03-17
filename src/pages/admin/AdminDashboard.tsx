@@ -183,6 +183,7 @@ const AdminDashboard = () => {
       check_in_time: timeNow,
       guests_count: walkIn.guests_count, total_price: walkIn.total_price,
       payment_method: walkIn.payment_method, notes: walkIn.notes || null,
+      payment_status: walkIn.payment_received ? 'paid' : 'unpaid',
       status: 'checked_in', booking_source: 'walk-in',
     });
     setCreating(false);
