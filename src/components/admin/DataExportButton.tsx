@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx-js-style';
 
 interface DataExportButtonProps {
   data: Record<string, any>[];
@@ -16,7 +16,6 @@ function formatDateDDMMYYYY(val: any): string {
   if (!val) return '';
   const s = String(val);
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
-  // Parse yyyy-MM-dd manually to avoid UTC timezone issues
   const match = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (match) {
     return `${match[3]}/${match[2]}/${match[1]}`;
@@ -71,29 +70,28 @@ export function DataExportButton({ data, filename, label = 'Export', hotelName }
       const headers = Object.keys(data[0]);
       const exportDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-      // Build rows: title row, blank, headers, data, blank, summary
-      const wsData: any[][] = [];
-
-      // Row 0: Hotel name + export date
-      const titleRow: any[] = [hotelName || 'Data Export', '', '', `Exported: ${exportDate}`];
-      wsData.push(titleRow);
-      wsData.push([]); // blank row
-
-      // Row 2: Column headers
       const prettyHeaders = headers.map(h =>
         h.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
       );
+
+      // Build sheet data
+      const wsData: any[][] = [];
+
+      // Row 0: Title
+      wsData.push([hotelName || 'Data Export', ...new Array(Math.max(headers.length - 4, 0)).fill(''), '', '', `Exported: ${exportDate}`]);
+      wsData.push([]); // blank row
+
+      // Row 2: Headers
       wsData.push(prettyHeaders);
 
-      // Data rows with formatted dates
+      // Data rows
       const formatted = formatForCSV(data);
       for (const row of formatted) {
         wsData.push(headers.map(h => row[h] ?? ''));
       }
 
-      // Summary row
-      wsData.push([]); // blank
-      const totalRes = data.length;
+      // Summary
+      wsData.push([]);
       const revenueIdx = headers.findIndex(h => /total_price|amount|revenue/i.test(h));
       const checkInIdx = headers.findIndex(h => /check_in/i.test(h));
       const checkOutIdx = headers.findIndex(h => /check_out/i.test(h));
@@ -119,45 +117,51 @@ export function DataExportButton({ data, filename, label = 'Export', hotelName }
 
       const summaryRow: any[] = new Array(headers.length).fill('');
       summaryRow[0] = 'SUMMARY';
-      summaryRow[1] = `Total: ${totalRes} reservations`;
+      summaryRow[1] = `Total: ${data.length} reservations`;
       if (revenueIdx >= 0) summaryRow[2] = `Revenue: ${totalRevenue.toFixed(2)}`;
       if (nightsCount > 0) summaryRow[3] = `Avg Stay: ${(totalNights / nightsCount).toFixed(1)} nights`;
       wsData.push(summaryRow);
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-      // Column widths - auto-fit based on content
+      // Column widths
       const colWidths = headers.map((h, i) => {
         let maxLen = prettyHeaders[i].length;
         for (const row of formatted) {
           const cellLen = String(row[h] ?? '').length;
           if (cellLen > maxLen) maxLen = cellLen;
         }
-        return { wch: Math.min(Math.max(maxLen + 2, 10), 40) };
+        return { wch: Math.min(Math.max(maxLen + 2, 12), 40) };
       });
       ws['!cols'] = colWidths;
 
-      // Freeze panes: freeze row 3 (the header row, 0-indexed row 2)
-      ws['!freeze'] = { xSplit: 0, ySplit: 3 };
-      // SheetJS uses '!freeze' sometimes but the standard is views:
+      // Freeze header row
       if (!ws['!views']) ws['!views'] = [];
       (ws['!views'] as any[]).push({ state: 'frozen', ySplit: 3 });
 
-      // Styling via cell properties
-      const headerRowIdx = 2; // 0-indexed
+      // Merge title across columns
+      if (!ws['!merges']) ws['!merges'] = [];
+      ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: Math.min(2, headers.length - 1) } });
+
+      const headerRowIdx = 2;
       const dataStartRow = 3;
       const dataEndRow = dataStartRow + data.length - 1;
       const summaryRowIdx = dataEndRow + 2;
       const totalRows = wsData.length;
 
-      // Apply styles
+      // Styles — xlsx-js-style supports actual cell styling
+      const borderThin = {
+        top: { style: 'thin' as const, color: { rgb: 'D0D0D0' } },
+        bottom: { style: 'thin' as const, color: { rgb: 'D0D0D0' } },
+        left: { style: 'thin' as const, color: { rgb: 'D0D0D0' } },
+        right: { style: 'thin' as const, color: { rgb: 'D0D0D0' } },
+      };
+
       for (let R = 0; R < totalRows; R++) {
         for (let C = 0; C < headers.length; C++) {
           const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
           if (!ws[cellRef]) ws[cellRef] = { v: '', t: 's' };
           const cell = ws[cellRef];
-
-          if (!cell.s) cell.s = {};
 
           // Title row
           if (R === 0) {
@@ -166,51 +170,40 @@ export function DataExportButton({ data, filename, label = 'Export', hotelName }
               fill: { fgColor: { rgb: 'FFFFFF' } },
             };
           }
-          // Header row
+          // Header row — dark background, white text
           else if (R === headerRowIdx) {
             cell.s = {
               font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
-              fill: { fgColor: { rgb: '1A1A2E' } },
-              alignment: { horizontal: 'center', vertical: 'center' },
-              border: {
-                top: { style: 'thin', color: { rgb: '1A1A2E' } },
-                bottom: { style: 'thin', color: { rgb: '1A1A2E' } },
-                left: { style: 'thin', color: { rgb: '1A1A2E' } },
-                right: { style: 'thin', color: { rgb: '1A1A2E' } },
-              },
+              fill: { fgColor: { rgb: '2D3748' } },
+              alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+              border: borderThin,
             };
           }
-          // Data rows - alternating colors
+          // Data rows — alternating zebra stripes with borders
           else if (R >= dataStartRow && R <= dataEndRow) {
             const isEven = (R - dataStartRow) % 2 === 0;
             cell.s = {
-              font: { sz: 9 },
-              fill: { fgColor: { rgb: isEven ? 'FFFFFF' : 'F5F5F5' } },
-              border: {
-                top: { style: 'thin', color: { rgb: 'E0E0E0' } },
-                bottom: { style: 'thin', color: { rgb: 'E0E0E0' } },
-                left: { style: 'thin', color: { rgb: 'E0E0E0' } },
-                right: { style: 'thin', color: { rgb: 'E0E0E0' } },
-              },
+              font: { sz: 10, color: { rgb: '2D3748' } },
+              fill: { fgColor: { rgb: isEven ? 'FFFFFF' : 'F7FAFC' } },
+              border: borderThin,
+              alignment: { vertical: 'center' },
             };
           }
-          // Summary row
+          // Summary row — accent background
           else if (R === summaryRowIdx) {
             cell.s = {
               font: { bold: true, sz: 10, color: { rgb: '1A1A2E' } },
-              fill: { fgColor: { rgb: 'E8EAF6' } },
+              fill: { fgColor: { rgb: 'E2E8F0' } },
               border: {
-                top: { style: 'medium', color: { rgb: '1A1A2E' } },
-                bottom: { style: 'medium', color: { rgb: '1A1A2E' } },
+                top: { style: 'medium' as const, color: { rgb: '2D3748' } },
+                bottom: { style: 'medium' as const, color: { rgb: '2D3748' } },
+                left: { style: 'thin' as const, color: { rgb: 'D0D0D0' } },
+                right: { style: 'thin' as const, color: { rgb: 'D0D0D0' } },
               },
             };
           }
         }
       }
-
-      // Merge title cell across first 3 columns
-      if (!ws['!merges']) ws['!merges'] = [];
-      ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 2 } });
 
       XLSX.utils.book_append_sheet(wb, ws, 'Reservations');
       XLSX.writeFile(wb, `${filename}.xlsx`, { bookSST: true });
