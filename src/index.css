@@ -83,33 +83,33 @@
 
 /* ======= ADMIN DARK THEME (scoped to wrapper) ======= */
 .admin-dark {
-  --background: 222 47% 6%;
-  --foreground: 210 40% 98%;
-  --card: 222 47% 9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222 47% 9%;
-  --popover-foreground: 210 40% 98%;
+  --background: 222 25% 12%;
+  --foreground: 210 40% 96%;
+  --card: 222 22% 16%;
+  --card-foreground: 210 40% 96%;
+  --popover: 222 22% 16%;
+  --popover-foreground: 210 40% 96%;
   --primary: 234 85% 65%;
-  --primary-foreground: 222 47% 6%;
-  --secondary: 217 33% 17%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
-  --accent: 217 33% 17%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 63% 31%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 18% 22%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 220 18% 22%;
+  --muted-foreground: 215 15% 58%;
+  --accent: 220 18% 22%;
+  --accent-foreground: 210 40% 96%;
+  --destructive: 0 63% 45%;
   --destructive-foreground: 0 0% 98%;
-  --border: 217 33% 17%;
-  --input: 217 33% 17%;
+  --border: 220 15% 24%;
+  --input: 220 15% 24%;
   --ring: 234 85% 65%;
 
-  --sidebar-background: 222 47% 7%;
-  --sidebar-foreground: 210 40% 98%;
+  --sidebar-background: 222 22% 14%;
+  --sidebar-foreground: 210 40% 96%;
   --sidebar-primary: 234 85% 65%;
-  --sidebar-primary-foreground: 222 47% 6%;
-  --sidebar-accent: 217 33% 17%;
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-border: 217 33% 17%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 18% 22%;
+  --sidebar-accent-foreground: 210 40% 96%;
+  --sidebar-border: 220 15% 24%;
   --sidebar-ring: 234 85% 65%;
 
   --font-display: 'Inter', system-ui, sans-serif;
