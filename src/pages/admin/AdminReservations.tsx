@@ -107,7 +107,6 @@ const AdminReservations = () => {
   const [editForm, setEditForm] = useState<ReservationForm>(emptyForm);
   const [currentPage, setCurrentPage] = useState(0);
   const [confirmAction, setConfirmAction] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
-  const [editForm, setEditForm] = useState<ReservationForm>(emptyForm);
 
   useEffect(() => { fetchData(); }, []);
 
