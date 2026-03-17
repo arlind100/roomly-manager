@@ -291,7 +291,9 @@ const DashboardAssistant = forwardRef<HTMLDivElement>(function DashboardAssistan
       )}
     </>
   );
-}
+});
+
+export default DashboardAssistant;
 
 function ResultsTable({ results }: { results: ReservationResult[] }) {
   return (
