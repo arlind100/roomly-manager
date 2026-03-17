@@ -313,7 +313,7 @@ const AdminDashboard = () => {
                   <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] hover:bg-muted/50 transition-all duration-200">
                     <div>
                       <p className="text-sm font-medium">{r.guest_name}</p>
-                      <p className="text-xs text-muted-foreground">{r.reservation_code} · {r.room_types?.name || '—'} · {r.check_in} → {r.check_out}</p>
+                      <p className="text-xs text-muted-foreground">{r.reservation_code} · {r.room_types?.name || '—'} · {format(new Date(r.check_in + 'T00:00:00'), 'MMM dd')} → {format(new Date(r.check_out + 'T00:00:00'), 'MMM dd')}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <SourceBadge source={r.booking_source} />
