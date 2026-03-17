@@ -190,7 +190,7 @@ const AdminDashboard = () => {
     if (error) { toast.error(error.message); return; }
     toast.success('Walk-in reservation created');
     setShowWalkIn(false);
-    setWalkIn({ guest_name: '', guest_phone: '', nights: 1, guests_count: 1, room_type_id: '', total_price: 0, payment_method: 'cash', notes: '' });
+    setWalkIn({ guest_name: '', guest_phone: '', nights: 1, guests_count: 1, room_type_id: '', total_price: 0, payment_method: 'cash', notes: '', payment_received: false });
     fetchData();
   };
 
