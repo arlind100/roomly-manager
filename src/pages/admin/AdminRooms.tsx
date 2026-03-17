@@ -231,7 +231,7 @@ const AdminRooms = () => {
                   <Button variant="outline" size="sm" className="flex-1 text-[10px] h-7" onClick={() => { setEditing(room.id); setForm({ room_number: room.room_number, floor: room.floor || '', room_type_id: room.room_type_id, notes: room.notes || '' }); setShowForm(true); }}>
                     <Pencil size={10} className="mr-1" /> Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="text-destructive border-destructive/30 text-[10px] h-7" onClick={() => handleDelete(room.id)}>
+                  <Button variant="outline" size="sm" className="text-destructive border-destructive/30 text-[10px] h-7" onClick={() => setDeleteId(room.id)}>
                     <Trash2 size={10} />
                   </Button>
                 </div>
