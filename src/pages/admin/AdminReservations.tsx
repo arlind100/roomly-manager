@@ -391,7 +391,7 @@ const AdminReservations = () => {
                     <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.status')}</th>
                     <th className="text-right py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.actions')}</th>
                   </tr></thead>
-                  <tbody>{filtered.map(r => (
+                  <tbody>{paged.map(r => (
                     <tr key={r.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                       <td className="py-3 px-4 font-mono text-xs">
                         {r.reservation_code}
@@ -400,11 +400,11 @@ const AdminReservations = () => {
                       <td className="py-3 px-4"><div>{r.guest_name}</div><div className="text-xs text-muted-foreground">{r.guest_email}</div></td>
                       <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{r.room_types?.name || '—'}</td>
                       <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">
-                        {r.check_in}
+                        {format(new Date(r.check_in + 'T00:00:00'), 'MMM dd, yyyy')}
                         {r.check_in_time && <span className="text-[10px] ml-1 text-muted-foreground">@ {r.check_in_time}</span>}
                       </td>
                       <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">
-                        {r.check_out}
+                        {format(new Date(r.check_out + 'T00:00:00'), 'MMM dd, yyyy')}
                         {r.check_out_time && <span className="text-[10px] ml-1 text-muted-foreground">@ {r.check_out_time}</span>}
                       </td>
                       <td className="py-3 px-4 hidden xl:table-cell"><SourceBadge source={r.booking_source} /></td>
@@ -421,16 +421,16 @@ const AdminReservations = () => {
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedRes(r)}><Eye size={14} /></Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(r)}><Pencil size={14} /></Button>
                           {r.status === 'pending' && <>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={() => updateStatus(r.id, 'confirmed')}><Check size={14} /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => updateStatus(r.id, 'cancelled')}><X size={14} /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={() => confirmAndUpdateStatus(r.id, 'confirmed')}><Check size={14} /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => confirmAndUpdateStatus(r.id, 'cancelled')}><X size={14} /></Button>
                           </>}
                           {r.status === 'confirmed' && (
-                            <Button variant="ghost" size="sm" className="h-8 text-xs text-blue-600 gap-1" onClick={() => updateStatus(r.id, 'checked_in')}>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs text-blue-600 gap-1" onClick={() => confirmAndUpdateStatus(r.id, 'checked_in')}>
                               <LogIn size={14} /> {t('admin.checkInAction')}
                             </Button>
                           )}
                           {r.status === 'checked_in' && (
-                            <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => updateStatus(r.id, 'completed')}>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => confirmAndUpdateStatus(r.id, 'completed')}>
                               <LogOutIcon size={14} /> {t('admin.checkOutAction')}
                             </Button>
                           )}
