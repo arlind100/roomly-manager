@@ -41,6 +41,7 @@ const AdminRooms = () => {
   const [saving, setSaving] = useState(false);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkForm, setBulkForm] = useState({ room_type_id: '', prefix: '', start: 1, count: 5, floor: '' });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
