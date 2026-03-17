@@ -17,7 +17,7 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-export default function DashboardAssistant() {
+const DashboardAssistant = forwardRef<HTMLDivElement>(function DashboardAssistant(_props, ref) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<AssistantMessage[]>([
     { id: 'welcome', role: 'assistant', content: 'Hello! How can I help you today?' },
