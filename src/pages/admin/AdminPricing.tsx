@@ -136,7 +136,7 @@ const AdminPricing = () => {
               <tbody>{overrides.map(o => (
                 <tr key={o.id} className={`border-b border-border/50 ${!o.is_active ? 'opacity-50' : ''}`}>
                   <td className="py-3 px-4">{o.room_types?.name}</td>
-                  <td className="py-3 px-4 text-muted-foreground">{o.start_date} → {o.end_date}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{o.start_date?.match?.(/^(\d{4})-(\d{2})-(\d{2})/) ? (() => { const [,y,m,d] = o.start_date.match(/^(\d{4})-(\d{2})-(\d{2})/); return `${d}/${m}/${y}`; })() : o.start_date} → {o.end_date?.match?.(/^(\d{4})-(\d{2})-(\d{2})/) ? (() => { const [,y,m,d] = o.end_date.match(/^(\d{4})-(\d{2})-(\d{2})/); return `${d}/${m}/${y}`; })() : o.end_date}</td>
                   <td className="py-3 px-4 text-primary font-semibold">{displayPrice(Number(o.price), cur)}</td>
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{o.label || '—'}</td>
                   <td className="py-3 px-4 text-center"><Switch checked={o.is_active} onCheckedChange={() => toggleOverride(o.id, o.is_active)} /></td>
