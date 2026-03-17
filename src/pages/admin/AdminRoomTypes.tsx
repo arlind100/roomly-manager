@@ -158,8 +158,8 @@ const AdminRoomTypes = () => {
           {roomTypes.map(rt => (
             <div key={rt.id} className="bg-card rounded-lg border border-border overflow-hidden">
               <div className="h-40 bg-muted relative">
-                {rt.image_url ? (
-                  <img src={rt.image_url} alt={rt.name} className="w-full h-full object-cover" />
+                {(rt.image_url || getRoomFallbackImage(rt.name) !== roomStandard) ? (
+                  <img src={rt.image_url || getRoomFallbackImage(rt.name)} alt={rt.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
                     <BedDouble size={32} className="mb-1 opacity-40" />
