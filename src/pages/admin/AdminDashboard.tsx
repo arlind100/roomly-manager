@@ -71,6 +71,7 @@ const AdminDashboard = () => {
   const [walkIn, setWalkIn] = useState({
     guest_name: '', guest_phone: '', nights: 1, guests_count: 1,
     room_type_id: '', total_price: 0, payment_method: 'cash', notes: '',
+    payment_received: false,
   });
 
   useEffect(() => { fetchData(); }, []);
