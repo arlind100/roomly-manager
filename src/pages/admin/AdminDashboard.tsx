@@ -497,6 +497,10 @@ const AdminDashboard = () => {
                 </Select>
               </div>
             </div>
+            <div className="flex items-center justify-between">
+              <Label>Payment received?</Label>
+              <Switch checked={walkIn.payment_received} onCheckedChange={v => setWalkIn(p => ({ ...p, payment_received: v }))} />
+            </div>
             <div><Label>{t('admin.notes')}</Label><Textarea value={walkIn.notes} onChange={e => setWalkIn(p => ({ ...p, notes: e.target.value }))} rows={2} placeholder="VIP, extra bed, late checkout..." /></div>
             <Button onClick={handleWalkInSubmit} disabled={creating} className="w-full gap-2">
               <UserPlus size={16} /> {creating ? t('admin.creating') : t('admin.createWalkIn')}
