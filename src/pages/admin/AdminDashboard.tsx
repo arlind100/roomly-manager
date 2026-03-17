@@ -197,8 +197,15 @@ const AdminDashboard = () => {
 
   const handleCheckIn = async (id: string) => {
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const res = reservations.find(r => r.id === id);
     const { error } = await supabase.from('reservations').update({ status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) { toast.error(error.message); return; }
+
+    // Mark the assigned room as occupied
+    if (res?.room_id) {
+      await supabase.from('rooms').update({ operational_status: 'occupied', updated_at: new Date().toISOString() }).eq('id', res.room_id);
+    }
+
     toast.success(t('admin.checkedIn'));
     fetchData();
   };
