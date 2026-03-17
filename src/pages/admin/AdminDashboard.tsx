@@ -257,7 +257,7 @@ const AdminDashboard = () => {
 
       {/* ===== CONFLICT WARNINGS ===== */}
       {conflictReservations.length > 0 && (
-        <div className="bg-red-50 border border-red-200/60 rounded-[0.625rem] p-4 space-y-3 shadow-card">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200/60 dark:border-red-800/40 rounded-[0.625rem] p-4 space-y-3 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 text-destructive">
             <AlertTriangle size={16} /> Reservation Conflicts ({conflictReservations.length})
           </h3>
