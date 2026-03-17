@@ -53,9 +53,9 @@ const AdminStaff = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('admin.removeStaff'))) return;
     await supabase.from('staff').delete().eq('id', id);
     toast.success('Staff removed');
+    setDeleteId(null);
     fetchStaff();
   };
 
