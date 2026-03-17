@@ -98,7 +98,11 @@ const AdminDashboard = () => {
     const checkOuts = reservations.filter(r => r.check_out === today && (r.status === 'confirmed' || r.status === 'checked_in')).length;
     const todayRevenue = reservations
       .filter(r => r.status !== 'cancelled' && r.check_in <= today && r.check_out > today)
-      .reduce((s, r) => s + (Number(r.total_price) || 0), 0);
+      .reduce((s, r) => {
+        const totalPrice = Number(r.total_price) || 0;
+        const nights = Math.max(1, Math.ceil((new Date(r.check_out).getTime() - new Date(r.check_in).getTime()) / (1000 * 60 * 60 * 24)));
+        return s + (totalPrice / nights);
+      }, 0);
     const todayReservations = reservations.filter(r => r.created_at?.startsWith(today)).length;
     const occupancy = totalUnits > 0 ? Math.round((occupied / totalUnits) * 100) : 0;
     return { occupancy, todayReservations, todayRevenue, available: Math.max(0, totalUnits - occupied), checkIns, checkOuts };
