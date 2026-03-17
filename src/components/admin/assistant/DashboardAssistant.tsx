@@ -138,7 +138,7 @@ export default function DashboardAssistant({ open, onOpenChange }: DashboardAssi
             </div>
             <div>
               <DialogTitle className="text-sm font-semibold">Dashboard Assistant</DialogTitle>
-              <p className="text-xs text-muted-foreground">Select a question below</p>
+              <DialogDescription className="text-xs text-muted-foreground">Select a question below</DialogDescription>
             </div>
           </div>
         </DialogHeader>
