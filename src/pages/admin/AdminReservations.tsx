@@ -307,6 +307,12 @@ const AdminReservations = () => {
     return matchSearch && matchStatus && matchSource;
   });
 
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paged = useMemo(() => filtered.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE), [filtered, currentPage]);
+
+  // Reset page when filters change
+  useMemo(() => { setCurrentPage(0); }, [search, statusFilter, sourceFilter]);
+
   // Export data
   const exportData = filtered.map(r => ({
     Code: r.reservation_code,
