@@ -258,7 +258,7 @@ const AdminDashboard = () => {
                       <p className="text-sm font-medium">{r.guest_name}
                         {r.is_external && <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 gap-0.5"><Globe size={10} /> External</Badge>}
                       </p>
-                      <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'} · {r.check_in} → {r.check_out}</p>
+                      <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'} · {format(new Date(r.check_in + 'T00:00:00'), 'MMM dd, yyyy')} → {format(new Date(r.check_out + 'T00:00:00'), 'MMM dd, yyyy')}</p>
                       {conflictWith && (
                         <p className="text-xs text-destructive mt-1">⚡ Conflicts with: {conflictWith.guest_name} ({conflictWith.check_in} → {conflictWith.check_out})</p>
                       )}
