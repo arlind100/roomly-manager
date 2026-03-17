@@ -440,20 +440,20 @@ const AdminReservations = () => {
                   ))}</tbody>
                 </table>
               </div>
-            </div>
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                <p className="text-xs text-muted-foreground">
-                  Showing {currentPage * ITEMS_PER_PAGE + 1}–{Math.min((currentPage + 1) * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} reservations
-                </p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="text-xs" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
-                  <Button variant="outline" size="sm" className="text-xs" disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {currentPage * ITEMS_PER_PAGE + 1}–{Math.min((currentPage + 1) * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} reservations
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="text-xs" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
+                    <Button variant="outline" size="sm" className="text-xs" disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="timeline" className="mt-4">
