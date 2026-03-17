@@ -40,8 +40,8 @@ const AdminPricing = () => {
 
   const handleAdd = async () => {
     if (!form.room_type_id || !form.start_date || !form.end_date || !form.price) { toast.error('Fill all required fields'); return; }
-    const hotel = (await supabase.from('hotels').select('id').limit(1).single()).data;
-    const { error } = await supabase.from('pricing_overrides').insert({ hotel_id: hotel?.id, ...form });
+    const hotelData = (await supabase.from('hotels').select('id').limit(1).single()).data;
+    const { error } = await supabase.from('pricing_overrides').insert({ hotel_id: hotelData?.id, ...form });
     if (error) { toast.error(error.message); return; }
     toast.success('Pricing override added');
     setShowAdd(false);

@@ -39,8 +39,10 @@ const AdminStaff = () => {
   const handleSave = async () => {
     if (!form.name || !form.role) { toast.error('Name and role required'); return; }
     setSaving(true);
-    const hotel = (await supabase.from('hotels').select('id').limit(1).single()).data;
-    const payload = { hotel_id: hotel?.id, ...form };
+    const hotelData = (await supabase.from('hotels').select('id').limit(1).single()).data;
+    const payload = editing
+      ? { ...form }
+      : { hotel_id: hotelData?.id, ...form };
     const { error } = editing
       ? await supabase.from('staff').update(payload).eq('id', editing)
       : await supabase.from('staff').insert(payload);
