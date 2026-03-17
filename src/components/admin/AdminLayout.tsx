@@ -17,6 +17,7 @@ import {
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
   const { theme, toggle } = useAdminTheme();
