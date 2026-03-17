@@ -89,7 +89,7 @@ const AdminStaff = () => {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => openEdit(s)} className="flex-1 text-xs"><Pencil size={12} className="mr-1" /> {t('admin.edit')}</Button>
-                <Button variant="outline" size="sm" onClick={() => handleDelete(s.id)} className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs"><Trash2 size={12} /></Button>
+                <Button variant="outline" size="sm" onClick={() => setDeleteId(s.id)} className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs"><Trash2 size={12} /></Button>
               </div>
             </div>
           ))}
