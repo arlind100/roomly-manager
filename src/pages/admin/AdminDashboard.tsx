@@ -516,8 +516,8 @@ const AdminDashboard = () => {
                 <div><p className="text-xs text-muted-foreground">{t('admin.status')}</p><StatusBadge status={selectedRes.status} /></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.guestName')}</p><p className="font-medium">{selectedRes.guest_name}</p></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.roomType')}</p><p>{selectedRes.room_types?.name || '—'}</p></div>
-                <div><p className="text-xs text-muted-foreground">{t('admin.checkIn')}</p><p>{selectedRes.check_in} {selectedRes.check_in_time && <span className="text-muted-foreground">@ {selectedRes.check_in_time}</span>}</p></div>
-                <div><p className="text-xs text-muted-foreground">{t('admin.checkOut')}</p><p>{selectedRes.check_out} {selectedRes.check_out_time && <span className="text-muted-foreground">@ {selectedRes.check_out_time}</span>}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.checkIn')}</p><p>{format(new Date(selectedRes.check_in + 'T00:00:00'), 'MMM dd, yyyy')} {selectedRes.check_in_time && <span className="text-muted-foreground">@ {selectedRes.check_in_time}</span>}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.checkOut')}</p><p>{format(new Date(selectedRes.check_out + 'T00:00:00'), 'MMM dd, yyyy')} {selectedRes.check_out_time && <span className="text-muted-foreground">@ {selectedRes.check_out_time}</span>}</p></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.guests')}</p><p>{selectedRes.guests_count}</p></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.totalPrice')}</p><p className="font-semibold">{displayPrice(Number(selectedRes.total_price) || 0, cur)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Source</p><SourceBadge source={selectedRes.booking_source} /></div>
