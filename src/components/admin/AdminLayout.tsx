@@ -76,6 +76,10 @@ export default function AdminLayout() {
       </nav>
 
       <div className="p-3 border-t border-border/60 space-y-0.5">
+        <button onClick={() => { setAssistantOpen(true); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200">
+          <BotMessageSquare size={18} />
+          Assistant
+        </button>
         <button onClick={toggle} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200">
           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           {theme === 'light' ? t('admin.dark') : t('admin.light')}
