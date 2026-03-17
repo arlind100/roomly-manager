@@ -527,6 +527,20 @@ const AdminReservations = () => {
       </Dialog>
 
       <ImportReservationsModal open={showImport} onOpenChange={setShowImport} roomTypes={roomTypes} hotelId={hotel?.id || reservations[0]?.hotel_id || ''} onImported={fetchData} />
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={v => { if (!v) setConfirmAction(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmAction?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmAction?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmAction?.onConfirm()}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
