@@ -396,7 +396,7 @@ const AdminDashboard = () => {
                     <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
                   </div>
                   <div className="text-right ml-2">
-                    <p className="text-[10px] text-muted-foreground">{r.check_in} → {r.check_out}</p>
+                    <p className="text-[10px] text-muted-foreground">{format(new Date(r.check_in + 'T00:00:00'), 'MMM dd, yyyy')} → {format(new Date(r.check_out + 'T00:00:00'), 'MMM dd, yyyy')}</p>
                     {r.check_in_time && <p className="text-[10px] text-muted-foreground">In: {r.check_in_time}</p>}
                   </div>
                 </div>
