@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, XCircle, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx-js-style';
 
 interface ImportReservationsModalProps {
   open: boolean;

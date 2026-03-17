@@ -46,10 +46,10 @@ function getRoomImage(rt: any): string {
 }
 
 const statusColor: Record<string, string> = {
-  available: 'bg-green-50 text-green-700 border-green-200/60 shadow-sm',
-  occupied: 'bg-red-50 text-red-700 border-red-200/60 shadow-sm',
-  reserved: 'bg-yellow-50 text-yellow-700 border-yellow-200/60 shadow-sm',
-  cleaning: 'bg-blue-50 text-blue-700 border-blue-200/60 shadow-sm',
+  available: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200/60 dark:border-green-800/40 shadow-sm',
+  occupied: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200/60 dark:border-red-800/40 shadow-sm',
+  reserved: 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200/60 dark:border-yellow-800/40 shadow-sm',
+  cleaning: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/40 shadow-sm',
   maintenance: 'bg-muted text-muted-foreground border-border/60 shadow-sm',
 };
 
@@ -257,7 +257,7 @@ const AdminDashboard = () => {
 
       {/* ===== CONFLICT WARNINGS ===== */}
       {conflictReservations.length > 0 && (
-        <div className="bg-red-50 border border-red-200/60 rounded-[0.625rem] p-4 space-y-3 shadow-card">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200/60 dark:border-red-800/40 rounded-[0.625rem] p-4 space-y-3 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 text-destructive">
             <AlertTriangle size={16} /> Reservation Conflicts ({conflictReservations.length})
           </h3>
@@ -265,7 +265,7 @@ const AdminDashboard = () => {
             {conflictReservations.slice(0, 5).map(r => {
               const conflictWith = r.conflict_with_reservation_id ? reservations.find(x => x.id === r.conflict_with_reservation_id) : null;
               return (
-                <div key={r.id} className="bg-card rounded-[0.625rem] border border-red-200/60 p-3 shadow-sm">
+                <div key={r.id} className="bg-card rounded-[0.625rem] border border-red-200/60 dark:border-red-800/40 p-3 shadow-sm">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">{r.guest_name}
@@ -342,25 +342,25 @@ const AdminDashboard = () => {
       </div>
 
       {/* ===== TODAY ACTIVITY + HOUSEKEEPING ===== */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Arrivals */}
-        <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
-          <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
-            <LogIn size={14} className="text-green-600" /> {t('admin.upcomingArrivals')}
-            <span className="ml-auto text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full shadow-sm">{todayArrivals.length}</span>
+        <div className="bg-card rounded-[0.625rem] border border-border/60 p-4 shadow-card">
+          <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
+            <LogIn size={14} className="text-green-600 dark:text-green-400" /> {t('admin.upcomingArrivals')}
+            <span className="ml-auto text-[10px] bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">{todayArrivals.length}</span>
           </h3>
           {todayArrivals.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noCheckInsToday')}</p>
+            <p className="text-sm text-muted-foreground text-center py-6">{t('admin.noCheckInsToday')}</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
               {todayArrivals.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] border border-border/40 bg-green-50/30 transition-all duration-200 hover:shadow-sm">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{r.guest_name}</p>
-                    <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
+                <div key={r.id} className="flex items-center justify-between py-2 px-2.5 rounded-lg border border-border/40 bg-green-50/30 dark:bg-green-900/10 transition-all duration-200 hover:shadow-sm">
+                  <div className="min-w-0 flex-1 mr-2">
+                    <p className="text-xs font-medium truncate">{r.guest_name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{r.room_types?.name || '—'}</p>
                   </div>
-                  <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-primary-foreground text-xs h-7 px-2 shadow-sm ml-2" onClick={() => handleCheckIn(r.id)}>
-                    <LogIn size={12} /> {t('admin.checkInAction')}
+                  <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white text-[10px] h-6 px-2 shrink-0" onClick={() => handleCheckIn(r.id)}>
+                    <LogIn size={10} /> {t('admin.checkInAction')}
                   </Button>
                 </div>
               ))}
@@ -369,23 +369,23 @@ const AdminDashboard = () => {
         </div>
 
         {/* Departures */}
-        <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
-          <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
-            <LogOutIcon size={14} className="text-amber-600" /> {t('admin.upcomingDepartures')}
-            <span className="ml-auto text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full shadow-sm">{todayDepartures.length}</span>
+        <div className="bg-card rounded-[0.625rem] border border-border/60 p-4 shadow-card">
+          <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
+            <LogOutIcon size={14} className="text-amber-600 dark:text-amber-400" /> {t('admin.upcomingDepartures')}
+            <span className="ml-auto text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">{todayDepartures.length}</span>
           </h3>
           {todayDepartures.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noCheckOutsToday')}</p>
+            <p className="text-sm text-muted-foreground text-center py-6">{t('admin.noCheckOutsToday')}</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
               {todayDepartures.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] border border-border/40 bg-amber-50/30 transition-all duration-200 hover:shadow-sm">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{r.guest_name}</p>
-                    <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
+                <div key={r.id} className="flex items-center justify-between py-2 px-2.5 rounded-lg border border-border/40 bg-amber-50/30 dark:bg-amber-900/10 transition-all duration-200 hover:shadow-sm">
+                  <div className="min-w-0 flex-1 mr-2">
+                    <p className="text-xs font-medium truncate">{r.guest_name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{r.room_types?.name || '—'}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="gap-1 text-xs h-7 px-2 ml-2 shadow-sm" onClick={() => handleCheckOut(r.id)}>
-                    <LogOutIcon size={12} /> {t('admin.checkOutAction')}
+                  <Button size="sm" variant="outline" className="gap-1 text-[10px] h-6 px-2 shrink-0" onClick={() => handleCheckOut(r.id)}>
+                    <LogOutIcon size={10} /> {t('admin.checkOutAction')}
                   </Button>
                 </div>
               ))}
@@ -394,24 +394,23 @@ const AdminDashboard = () => {
         </div>
 
         {/* Current Guests */}
-        <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
-          <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
+        <div className="bg-card rounded-[0.625rem] border border-border/60 p-4 shadow-card">
+          <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
             <Users size={14} className="text-primary" /> Current Guests
-            <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full shadow-sm">{currentGuests.length}</span>
+            <span className="ml-auto text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{currentGuests.length}</span>
           </h3>
           {currentGuests.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">{t('admin.noData')}</p>
+            <p className="text-sm text-muted-foreground text-center py-6">{t('admin.noData')}</p>
           ) : (
-            <div className="space-y-2 max-h-[320px] overflow-y-auto">
+            <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
               {currentGuests.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] border border-border/40 bg-muted/30 transition-all duration-200 hover:shadow-sm">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{r.guest_name}</p>
-                    <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
+                <div key={r.id} className="flex items-center justify-between py-2 px-2.5 rounded-lg border border-border/40 bg-muted/20 transition-all duration-200 hover:shadow-sm">
+                  <div className="min-w-0 flex-1 mr-2">
+                    <p className="text-xs font-medium truncate">{r.guest_name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{r.room_types?.name || '—'}</p>
                   </div>
-                  <div className="text-right ml-2">
-                    <p className="text-[10px] text-muted-foreground">{format(new Date(r.check_in + 'T00:00:00'), 'MMM dd, yyyy')} → {format(new Date(r.check_out + 'T00:00:00'), 'MMM dd, yyyy')}</p>
-                    {r.check_in_time && <p className="text-[10px] text-muted-foreground">In: {r.check_in_time}</p>}
+                  <div className="text-right shrink-0">
+                    <p className="text-[10px] text-muted-foreground whitespace-nowrap">{format(new Date(r.check_out + 'T00:00:00'), 'MMM dd')}</p>
                   </div>
                 </div>
               ))}
@@ -420,10 +419,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* Housekeeping Board */}
-        <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
-          <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
-            <Sparkles size={14} className="text-blue-600" /> Housekeeping
-            <span className="ml-auto text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full shadow-sm">
+        <div className="bg-card rounded-[0.625rem] border border-border/60 p-4 shadow-card">
+          <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
+            <Sparkles size={14} className="text-blue-600 dark:text-blue-400" /> Housekeeping
+            <span className="ml-auto text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
               {rooms.filter(r => r.operational_status !== 'available' && r.operational_status !== 'occupied').length}
             </span>
           </h3>

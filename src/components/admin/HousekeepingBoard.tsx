@@ -33,9 +33,9 @@ const statusIcons: Record<string, any> = {
 };
 
 const statusColors: Record<string, string> = {
-  dirty: 'border-amber-200/60 bg-amber-50/50',
-  cleaning: 'border-blue-200/60 bg-blue-50/50',
-  maintenance: 'border-red-200/60 bg-red-50/50',
+  dirty: 'border-amber-200/60 bg-amber-50/50 dark:border-amber-800/40 dark:bg-amber-900/20',
+  cleaning: 'border-blue-200/60 bg-blue-50/50 dark:border-blue-800/40 dark:bg-blue-900/20',
+  maintenance: 'border-red-200/60 bg-red-50/50 dark:border-red-800/40 dark:bg-red-900/20',
   out_of_service: 'border-muted bg-muted/30',
 };
 
