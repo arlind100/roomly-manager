@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Users, Plus, Pencil, Trash2, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,6 +22,7 @@ const AdminStaff = () => {
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => { fetchStaff(); }, []);
 
@@ -39,11 +41,10 @@ const AdminStaff = () => {
   const handleSave = async () => {
     if (!form.name || !form.role) { toast.error('Name and role required'); return; }
     setSaving(true);
-    const hotel = (await supabase.from('hotels').select('id').limit(1).single()).data;
-    const payload = { hotel_id: hotel?.id, ...form };
+    const hotelData = (await supabase.from('hotels').select('id').limit(1).single()).data;
     const { error } = editing
-      ? await supabase.from('staff').update(payload).eq('id', editing)
-      : await supabase.from('staff').insert(payload);
+      ? await supabase.from('staff').update({ ...form, updated_at: new Date().toISOString() }).eq('id', editing)
+      : await supabase.from('staff').insert({ hotel_id: hotelData?.id!, ...form });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(editing ? 'Staff updated' : 'Staff added');
@@ -52,9 +53,9 @@ const AdminStaff = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('admin.removeStaff'))) return;
     await supabase.from('staff').delete().eq('id', id);
     toast.success('Staff removed');
+    setDeleteId(null);
     fetchStaff();
   };
 
@@ -88,7 +89,7 @@ const AdminStaff = () => {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => openEdit(s)} className="flex-1 text-xs"><Pencil size={12} className="mr-1" /> {t('admin.edit')}</Button>
-                <Button variant="outline" size="sm" onClick={() => handleDelete(s.id)} className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs"><Trash2 size={12} /></Button>
+                <Button variant="outline" size="sm" onClick={() => setDeleteId(s.id)} className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs"><Trash2 size={12} /></Button>
               </div>
             </div>
           ))}
@@ -110,6 +111,20 @@ const AdminStaff = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={v => { if (!v) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this staff member?</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure? This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && handleDelete(deleteId)}>Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -168,7 +168,7 @@ const AdminAnalytics = () => {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const dailyArrivals = reservations.filter(r => r.check_in === todayStr && r.status !== 'cancelled');
   const dailyDepartures = reservations.filter(r => r.check_out === todayStr && r.status !== 'cancelled');
-  const currentlyStaying = reservations.filter(r => r.check_in <= todayStr && r.check_out > todayStr && r.status === 'confirmed');
+  const currentlyStaying = reservations.filter(r => r.check_in <= todayStr && r.check_out > todayStr && (r.status === 'confirmed' || r.status === 'checked_in'));
   const dailyRevenue = currentlyStaying.reduce((s, r) => s + (Number(r.total_price) || 0), 0);
 
   // Occupancy report by day

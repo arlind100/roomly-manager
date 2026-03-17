@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
@@ -17,8 +17,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle, Upload, LogIn, LogOut as LogOutIcon, Globe, List, CalendarRange } from 'lucide-react';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { ImportReservationsModal } from '@/components/admin/ImportReservationsModal';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const BOOKING_SOURCES = [
   { value: 'website', label: 'Website' },
@@ -82,6 +84,8 @@ const FormFields = ({ f, setF, roomTypes, t }: FormFieldsProps) => (
   </div>
 );
 
+const ITEMS_PER_PAGE = 25;
+
 const AdminReservations = () => {
   const { t } = useLanguage();
   const { hotel } = useHotel();
@@ -101,6 +105,8 @@ const AdminReservations = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<ReservationForm>(emptyForm);
   const [editForm, setEditForm] = useState<ReservationForm>(emptyForm);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [confirmAction, setConfirmAction] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -124,6 +130,20 @@ const AdminReservations = () => {
     const { count } = await query;
     const rt = roomTypes.find(r => r.id === roomTypeId);
     return (count || 0) < (rt?.available_units || 1);
+  };
+
+  const confirmAndUpdateStatus = (id: string, status: string) => {
+    const labels: Record<string, string> = {
+      cancelled: 'Cancel this reservation',
+      confirmed: 'Confirm this reservation',
+      checked_in: 'Check in this guest',
+      completed: 'Check out this guest',
+    };
+    setConfirmAction({
+      title: labels[status] || `Change status to ${status}`,
+      description: 'Are you sure? This action cannot be undone.',
+      onConfirm: () => { updateStatus(id, status); setConfirmAction(null); },
+    });
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -287,6 +307,12 @@ const AdminReservations = () => {
     return matchSearch && matchStatus && matchSource;
   });
 
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paged = useMemo(() => filtered.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE), [filtered, currentPage]);
+
+  // Reset page when filters change
+  useMemo(() => { setCurrentPage(0); }, [search, statusFilter, sourceFilter]);
+
   // Export data
   const exportData = filtered.map(r => ({
     Code: r.reservation_code,
@@ -365,7 +391,7 @@ const AdminReservations = () => {
                     <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.status')}</th>
                     <th className="text-right py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.actions')}</th>
                   </tr></thead>
-                  <tbody>{filtered.map(r => (
+                  <tbody>{paged.map(r => (
                     <tr key={r.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                       <td className="py-3 px-4 font-mono text-xs">
                         {r.reservation_code}
@@ -374,11 +400,11 @@ const AdminReservations = () => {
                       <td className="py-3 px-4"><div>{r.guest_name}</div><div className="text-xs text-muted-foreground">{r.guest_email}</div></td>
                       <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{r.room_types?.name || '—'}</td>
                       <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">
-                        {r.check_in}
+                        {format(new Date(r.check_in + 'T00:00:00'), 'MMM dd, yyyy')}
                         {r.check_in_time && <span className="text-[10px] ml-1 text-muted-foreground">@ {r.check_in_time}</span>}
                       </td>
                       <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">
-                        {r.check_out}
+                        {format(new Date(r.check_out + 'T00:00:00'), 'MMM dd, yyyy')}
                         {r.check_out_time && <span className="text-[10px] ml-1 text-muted-foreground">@ {r.check_out_time}</span>}
                       </td>
                       <td className="py-3 px-4 hidden xl:table-cell"><SourceBadge source={r.booking_source} /></td>
@@ -395,16 +421,16 @@ const AdminReservations = () => {
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedRes(r)}><Eye size={14} /></Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(r)}><Pencil size={14} /></Button>
                           {r.status === 'pending' && <>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={() => updateStatus(r.id, 'confirmed')}><Check size={14} /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => updateStatus(r.id, 'cancelled')}><X size={14} /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={() => confirmAndUpdateStatus(r.id, 'confirmed')}><Check size={14} /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => confirmAndUpdateStatus(r.id, 'cancelled')}><X size={14} /></Button>
                           </>}
                           {r.status === 'confirmed' && (
-                            <Button variant="ghost" size="sm" className="h-8 text-xs text-blue-600 gap-1" onClick={() => updateStatus(r.id, 'checked_in')}>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs text-blue-600 gap-1" onClick={() => confirmAndUpdateStatus(r.id, 'checked_in')}>
                               <LogIn size={14} /> {t('admin.checkInAction')}
                             </Button>
                           )}
                           {r.status === 'checked_in' && (
-                            <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => updateStatus(r.id, 'completed')}>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => confirmAndUpdateStatus(r.id, 'completed')}>
                               <LogOutIcon size={14} /> {t('admin.checkOutAction')}
                             </Button>
                           )}
@@ -414,6 +440,18 @@ const AdminReservations = () => {
                   ))}</tbody>
                 </table>
               </div>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {currentPage * ITEMS_PER_PAGE + 1}–{Math.min((currentPage + 1) * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} reservations
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="text-xs" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
+                    <Button variant="outline" size="sm" className="text-xs" disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
@@ -442,8 +480,8 @@ const AdminReservations = () => {
                 <div><span className="text-muted-foreground block text-xs">{t('admin.guestPhone')}</span>{selectedRes.guest_phone || '—'}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.room')}</span>{selectedRes.room_types?.name || '—'}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.guests')}</span>{selectedRes.guests_count}</div>
-                <div><span className="text-muted-foreground block text-xs">{t('admin.checkIn')}</span>{selectedRes.check_in} {selectedRes.check_in_time && <span className="text-muted-foreground">@ {selectedRes.check_in_time}</span>}</div>
-                <div><span className="text-muted-foreground block text-xs">{t('admin.checkOut')}</span>{selectedRes.check_out} {selectedRes.check_out_time && <span className="text-muted-foreground">@ {selectedRes.check_out_time}</span>}</div>
+                <div><span className="text-muted-foreground block text-xs">{t('admin.checkIn')}</span>{format(new Date(selectedRes.check_in + 'T00:00:00'), 'MMM dd, yyyy')} {selectedRes.check_in_time && <span className="text-muted-foreground">@ {selectedRes.check_in_time}</span>}</div>
+                <div><span className="text-muted-foreground block text-xs">{t('admin.checkOut')}</span>{format(new Date(selectedRes.check_out + 'T00:00:00'), 'MMM dd, yyyy')} {selectedRes.check_out_time && <span className="text-muted-foreground">@ {selectedRes.check_out_time}</span>}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.totalPrice')}</span>{displayPrice(selectedRes.total_price || 0, cur)}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.payment')}</span><StatusBadge status={selectedRes.payment_status || 'unpaid'} /></div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.source')}</span><SourceBadge source={selectedRes.booking_source} /></div>
@@ -454,15 +492,15 @@ const AdminReservations = () => {
               <div className="flex gap-2 pt-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={() => openEdit(selectedRes)}><Pencil size={14} className="mr-1" /> {t('admin.edit')}</Button>
                 {selectedRes.status === 'pending' && <>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => updateStatus(selectedRes.id, 'confirmed')}><Check size={14} className="mr-1" /> {t('admin.confirm')}</Button>
-                  <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => updateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'confirmed')}><Check size={14} className="mr-1" /> {t('admin.confirm')}</Button>
+                  <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
                 </>}
                 {selectedRes.status === 'confirmed' && <>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-1" onClick={() => updateStatus(selectedRes.id, 'checked_in')}><LogIn size={14} /> {t('admin.checkInAction')}</Button>
-                  <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => updateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-1" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'checked_in')}><LogIn size={14} /> {t('admin.checkInAction')}</Button>
+                  <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
                 </>}
                 {selectedRes.status === 'checked_in' && (
-                  <Button size="sm" variant="outline" className="gap-1" onClick={() => updateStatus(selectedRes.id, 'completed')}><LogOutIcon size={14} /> {t('admin.checkOutAction')}</Button>
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'completed')}><LogOutIcon size={14} /> {t('admin.checkOutAction')}</Button>
                 )}
               </div>
             </div>
@@ -489,6 +527,20 @@ const AdminReservations = () => {
       </Dialog>
 
       <ImportReservationsModal open={showImport} onOpenChange={setShowImport} roomTypes={roomTypes} hotelId={hotel?.id || reservations[0]?.hotel_id || ''} onImported={fetchData} />
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={v => { if (!v) setConfirmAction(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmAction?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmAction?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmAction?.onConfirm()}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

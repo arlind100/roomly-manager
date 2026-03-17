@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, forwardRef } from 'react';
 import { MessageCircle, X, Send, ArrowLeft, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-export default function DashboardAssistant() {
+const DashboardAssistant = forwardRef<HTMLDivElement>(function DashboardAssistant(_props, ref) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<AssistantMessage[]>([
     { id: 'welcome', role: 'assistant', content: 'Hello! How can I help you today?' },
@@ -291,7 +291,9 @@ export default function DashboardAssistant() {
       )}
     </>
   );
-}
+});
+
+export default DashboardAssistant;
 
 function ResultsTable({ results }: { results: ReservationResult[] }) {
   return (

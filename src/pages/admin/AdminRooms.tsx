@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -40,6 +41,7 @@ const AdminRooms = () => {
   const [saving, setSaving] = useState(false);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkForm, setBulkForm] = useState({ room_type_id: '', prefix: '', start: 1, count: 5, floor: '' });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -105,10 +107,10 @@ const AdminRooms = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this room?')) return;
     const { error } = await supabase.from('rooms').delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
     toast.success('Room deleted');
+    setDeleteId(null);
     fetchData();
   };
 
@@ -229,7 +231,7 @@ const AdminRooms = () => {
                   <Button variant="outline" size="sm" className="flex-1 text-[10px] h-7" onClick={() => { setEditing(room.id); setForm({ room_number: room.room_number, floor: room.floor || '', room_type_id: room.room_type_id, notes: room.notes || '' }); setShowForm(true); }}>
                     <Pencil size={10} className="mr-1" /> Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="text-destructive border-destructive/30 text-[10px] h-7" onClick={() => handleDelete(room.id)}>
+                  <Button variant="outline" size="sm" className="text-destructive border-destructive/30 text-[10px] h-7" onClick={() => setDeleteId(room.id)}>
                     <Trash2 size={10} />
                   </Button>
                 </div>
@@ -285,6 +287,20 @@ const AdminRooms = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={v => { if (!v) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this room?</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure? This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && handleDelete(deleteId)}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

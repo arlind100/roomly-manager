@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -71,6 +72,7 @@ const AdminDashboard = () => {
   const [walkIn, setWalkIn] = useState({
     guest_name: '', guest_phone: '', nights: 1, guests_count: 1,
     room_type_id: '', total_price: 0, payment_method: 'cash', notes: '',
+    payment_received: false,
   });
 
   useEffect(() => { fetchData(); }, []);
@@ -97,7 +99,11 @@ const AdminDashboard = () => {
     const checkOuts = reservations.filter(r => r.check_out === today && (r.status === 'confirmed' || r.status === 'checked_in')).length;
     const todayRevenue = reservations
       .filter(r => r.status !== 'cancelled' && r.check_in <= today && r.check_out > today)
-      .reduce((s, r) => s + (Number(r.total_price) || 0), 0);
+      .reduce((s, r) => {
+        const totalPrice = Number(r.total_price) || 0;
+        const nights = Math.max(1, Math.ceil((new Date(r.check_out).getTime() - new Date(r.check_in).getTime()) / (1000 * 60 * 60 * 24)));
+        return s + (totalPrice / nights);
+      }, 0);
     const todayReservations = reservations.filter(r => r.created_at?.startsWith(today)).length;
     const occupancy = totalUnits > 0 ? Math.round((occupied / totalUnits) * 100) : 0;
     return { occupancy, todayReservations, todayRevenue, available: Math.max(0, totalUnits - occupied), checkIns, checkOuts };
@@ -178,13 +184,14 @@ const AdminDashboard = () => {
       check_in_time: timeNow,
       guests_count: walkIn.guests_count, total_price: walkIn.total_price,
       payment_method: walkIn.payment_method, notes: walkIn.notes || null,
+      payment_status: walkIn.payment_received ? 'paid' : 'unpaid',
       status: 'checked_in', booking_source: 'walk-in',
     });
     setCreating(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Walk-in reservation created');
     setShowWalkIn(false);
-    setWalkIn({ guest_name: '', guest_phone: '', nights: 1, guests_count: 1, room_type_id: '', total_price: 0, payment_method: 'cash', notes: '' });
+    setWalkIn({ guest_name: '', guest_phone: '', nights: 1, guests_count: 1, room_type_id: '', total_price: 0, payment_method: 'cash', notes: '', payment_received: false });
     fetchData();
   };
 
@@ -202,9 +209,15 @@ const AdminDashboard = () => {
     const { error } = await supabase.from('reservations').update({ status: 'completed', check_out_time: timeNow, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) { toast.error(error.message); return; }
 
-    // Mark room as dirty if assigned
+    // Mark room as dirty on checkout
     if (res?.room_id) {
       await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: new Date().toISOString() }).eq('id', res.room_id);
+    } else if (res?.room_type_id) {
+      // No specific room assigned — mark all available rooms of that type as dirty
+      const { data: typeRooms } = await supabase.from('rooms').select('id').eq('room_type_id', res.room_type_id).eq('operational_status', 'available').eq('is_active', true);
+      if (typeRooms && typeRooms.length > 0) {
+        await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: new Date().toISOString() }).in('id', typeRooms.slice(0, 1).map(r => r.id));
+      }
     }
 
     toast.success('Guest checked out');
@@ -245,7 +258,7 @@ const AdminDashboard = () => {
                       <p className="text-sm font-medium">{r.guest_name}
                         {r.is_external && <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 gap-0.5"><Globe size={10} /> External</Badge>}
                       </p>
-                      <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'} · {r.check_in} → {r.check_out}</p>
+                      <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'} · {format(new Date(r.check_in + 'T00:00:00'), 'MMM dd, yyyy')} → {format(new Date(r.check_out + 'T00:00:00'), 'MMM dd, yyyy')}</p>
                       {conflictWith && (
                         <p className="text-xs text-destructive mt-1">⚡ Conflicts with: {conflictWith.guest_name} ({conflictWith.check_in} → {conflictWith.check_out})</p>
                       )}
@@ -300,7 +313,7 @@ const AdminDashboard = () => {
                   <div key={r.id} className="flex items-center justify-between py-2 px-3 rounded-[0.5rem] hover:bg-muted/50 transition-all duration-200">
                     <div>
                       <p className="text-sm font-medium">{r.guest_name}</p>
-                      <p className="text-xs text-muted-foreground">{r.reservation_code} · {r.room_types?.name || '—'} · {r.check_in} → {r.check_out}</p>
+                      <p className="text-xs text-muted-foreground">{r.reservation_code} · {r.room_types?.name || '—'} · {format(new Date(r.check_in + 'T00:00:00'), 'MMM dd')} → {format(new Date(r.check_out + 'T00:00:00'), 'MMM dd')}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <SourceBadge source={r.booking_source} />
@@ -384,7 +397,7 @@ const AdminDashboard = () => {
                     <p className="text-xs text-muted-foreground">{r.room_types?.name || '—'}</p>
                   </div>
                   <div className="text-right ml-2">
-                    <p className="text-[10px] text-muted-foreground">{r.check_in} → {r.check_out}</p>
+                    <p className="text-[10px] text-muted-foreground">{format(new Date(r.check_in + 'T00:00:00'), 'MMM dd, yyyy')} → {format(new Date(r.check_out + 'T00:00:00'), 'MMM dd, yyyy')}</p>
                     {r.check_in_time && <p className="text-[10px] text-muted-foreground">In: {r.check_in_time}</p>}
                   </div>
                 </div>
@@ -485,6 +498,10 @@ const AdminDashboard = () => {
                 </Select>
               </div>
             </div>
+            <div className="flex items-center justify-between">
+              <Label>Payment received?</Label>
+              <Switch checked={walkIn.payment_received} onCheckedChange={v => setWalkIn(p => ({ ...p, payment_received: v }))} />
+            </div>
             <div><Label>{t('admin.notes')}</Label><Textarea value={walkIn.notes} onChange={e => setWalkIn(p => ({ ...p, notes: e.target.value }))} rows={2} placeholder="VIP, extra bed, late checkout..." /></div>
             <Button onClick={handleWalkInSubmit} disabled={creating} className="w-full gap-2">
               <UserPlus size={16} /> {creating ? t('admin.creating') : t('admin.createWalkIn')}
@@ -504,8 +521,8 @@ const AdminDashboard = () => {
                 <div><p className="text-xs text-muted-foreground">{t('admin.status')}</p><StatusBadge status={selectedRes.status} /></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.guestName')}</p><p className="font-medium">{selectedRes.guest_name}</p></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.roomType')}</p><p>{selectedRes.room_types?.name || '—'}</p></div>
-                <div><p className="text-xs text-muted-foreground">{t('admin.checkIn')}</p><p>{selectedRes.check_in} {selectedRes.check_in_time && <span className="text-muted-foreground">@ {selectedRes.check_in_time}</span>}</p></div>
-                <div><p className="text-xs text-muted-foreground">{t('admin.checkOut')}</p><p>{selectedRes.check_out} {selectedRes.check_out_time && <span className="text-muted-foreground">@ {selectedRes.check_out_time}</span>}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.checkIn')}</p><p>{format(new Date(selectedRes.check_in + 'T00:00:00'), 'MMM dd, yyyy')} {selectedRes.check_in_time && <span className="text-muted-foreground">@ {selectedRes.check_in_time}</span>}</p></div>
+                <div><p className="text-xs text-muted-foreground">{t('admin.checkOut')}</p><p>{format(new Date(selectedRes.check_out + 'T00:00:00'), 'MMM dd, yyyy')} {selectedRes.check_out_time && <span className="text-muted-foreground">@ {selectedRes.check_out_time}</span>}</p></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.guests')}</p><p>{selectedRes.guests_count}</p></div>
                 <div><p className="text-xs text-muted-foreground">{t('admin.totalPrice')}</p><p className="font-semibold">{displayPrice(Number(selectedRes.total_price) || 0, cur)}</p></div>
                 <div><p className="text-xs text-muted-foreground">Source</p><SourceBadge source={selectedRes.booking_source} /></div>
