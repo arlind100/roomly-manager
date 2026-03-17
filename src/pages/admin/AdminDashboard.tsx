@@ -220,10 +220,16 @@ const AdminDashboard = () => {
     if (res?.room_id) {
       await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: new Date().toISOString() }).eq('id', res.room_id);
     } else if (res?.room_type_id) {
-      // No specific room assigned — mark all available rooms of that type as dirty
-      const { data: typeRooms } = await supabase.from('rooms').select('id').eq('room_type_id', res.room_type_id).eq('operational_status', 'available').eq('is_active', true);
-      if (typeRooms && typeRooms.length > 0) {
-        await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: new Date().toISOString() }).in('id', typeRooms.slice(0, 1).map(r => r.id));
+      // No specific room assigned — mark first occupied room of that type as dirty (or any active room if none occupied)
+      const { data: occupiedRooms } = await supabase.from('rooms').select('id').eq('room_type_id', res.room_type_id).eq('operational_status', 'occupied').eq('is_active', true).limit(1);
+      if (occupiedRooms && occupiedRooms.length > 0) {
+        await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: new Date().toISOString() }).eq('id', occupiedRooms[0].id);
+      } else {
+        // Fallback: mark first available room of that type as dirty
+        const { data: availRooms } = await supabase.from('rooms').select('id').eq('room_type_id', res.room_type_id).eq('is_active', true).neq('operational_status', 'dirty').limit(1);
+        if (availRooms && availRooms.length > 0) {
+          await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: new Date().toISOString() }).eq('id', availRooms[0].id);
+        }
       }
     }
 
