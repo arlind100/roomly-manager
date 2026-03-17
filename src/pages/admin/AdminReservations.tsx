@@ -84,6 +84,8 @@ const FormFields = ({ f, setF, roomTypes, t }: FormFieldsProps) => (
   </div>
 );
 
+const ITEMS_PER_PAGE = 25;
+
 const AdminReservations = () => {
   const { t } = useLanguage();
   const { hotel } = useHotel();
@@ -102,6 +104,9 @@ const AdminReservations = () => {
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<ReservationForm>(emptyForm);
+  const [editForm, setEditForm] = useState<ReservationForm>(emptyForm);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [confirmAction, setConfirmAction] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
   const [editForm, setEditForm] = useState<ReservationForm>(emptyForm);
 
   useEffect(() => { fetchData(); }, []);
