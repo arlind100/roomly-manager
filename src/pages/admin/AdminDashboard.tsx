@@ -454,13 +454,7 @@ const AdminDashboard = () => {
               className={cn('rounded-[0.625rem] border p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 text-left', statusColor[rt.status])}
             >
               <div className="flex items-center gap-3 mb-2">
-                {rt.image_url ? (
-                  <img src={getRoomImage(rt)} alt={rt.name} className="w-12 h-12 rounded-lg object-cover" />
-                ) : (
-                  <div className="w-12 h-12 rounded-lg bg-muted/60 flex items-center justify-center">
-                    <BedDouble size={18} className="text-muted-foreground" />
-                  </div>
-                )}
+                <img src={getRoomImage(rt)} alt={rt.name} className="w-12 h-12 rounded-lg object-cover" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold truncate">{rt.name}</p>
                   <span className="text-[10px] font-medium uppercase tracking-wider">{t(`admin.room_${rt.status}`)}</span>
