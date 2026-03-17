@@ -492,15 +492,15 @@ const AdminReservations = () => {
               <div className="flex gap-2 pt-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={() => openEdit(selectedRes)}><Pencil size={14} className="mr-1" /> {t('admin.edit')}</Button>
                 {selectedRes.status === 'pending' && <>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => updateStatus(selectedRes.id, 'confirmed')}><Check size={14} className="mr-1" /> {t('admin.confirm')}</Button>
-                  <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => updateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'confirmed')}><Check size={14} className="mr-1" /> {t('admin.confirm')}</Button>
+                  <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
                 </>}
                 {selectedRes.status === 'confirmed' && <>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-1" onClick={() => updateStatus(selectedRes.id, 'checked_in')}><LogIn size={14} /> {t('admin.checkInAction')}</Button>
-                  <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => updateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-1" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'checked_in')}><LogIn size={14} /> {t('admin.checkInAction')}</Button>
+                  <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
                 </>}
                 {selectedRes.status === 'checked_in' && (
-                  <Button size="sm" variant="outline" className="gap-1" onClick={() => updateStatus(selectedRes.id, 'completed')}><LogOutIcon size={14} /> {t('admin.checkOutAction')}</Button>
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'completed')}><LogOutIcon size={14} /> {t('admin.checkOutAction')}</Button>
                 )}
               </div>
             </div>
