@@ -133,6 +133,20 @@ const AdminReservations = () => {
     return (count || 0) < (rt?.available_units || 1);
   };
 
+  const confirmAndUpdateStatus = (id: string, status: string) => {
+    const labels: Record<string, string> = {
+      cancelled: 'Cancel this reservation',
+      confirmed: 'Confirm this reservation',
+      checked_in: 'Check in this guest',
+      completed: 'Check out this guest',
+    };
+    setConfirmAction({
+      title: labels[status] || `Change status to ${status}`,
+      description: 'Are you sure? This action cannot be undone.',
+      onConfirm: () => { updateStatus(id, status); setConfirmAction(null); },
+    });
+  };
+
   const updateStatus = async (id: string, status: string) => {
     const now = new Date().toISOString();
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
