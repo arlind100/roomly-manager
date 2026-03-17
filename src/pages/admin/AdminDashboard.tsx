@@ -46,10 +46,10 @@ function getRoomImage(rt: any): string {
 }
 
 const statusColor: Record<string, string> = {
-  available: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200/60 dark:border-green-800/40 shadow-sm',
-  occupied: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200/60 dark:border-red-800/40 shadow-sm',
-  reserved: 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200/60 dark:border-yellow-800/40 shadow-sm',
-  cleaning: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/40 shadow-sm',
+  available: 'bg-green-500/10 text-green-700 border-green-500/20 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20 shadow-sm',
+  occupied: 'bg-red-500/10 text-red-700 border-red-500/20 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 shadow-sm',
+  reserved: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/20 shadow-sm',
+  cleaning: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20 shadow-sm',
   maintenance: 'bg-muted text-muted-foreground border-border/60 shadow-sm',
 };
 
@@ -454,7 +454,13 @@ const AdminDashboard = () => {
               className={cn('rounded-[0.625rem] border p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 text-left', statusColor[rt.status])}
             >
               <div className="flex items-center gap-3 mb-2">
-                <img src={getRoomImage(rt)} alt={rt.name} className="w-12 h-12 rounded-lg object-cover" />
+                {rt.image_url ? (
+                  <img src={getRoomImage(rt)} alt={rt.name} className="w-12 h-12 rounded-lg object-cover" />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-muted/60 flex items-center justify-center">
+                    <BedDouble size={18} className="text-muted-foreground" />
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold truncate">{rt.name}</p>
                   <span className="text-[10px] font-medium uppercase tracking-wider">{t(`admin.room_${rt.status}`)}</span>

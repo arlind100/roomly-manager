@@ -33,10 +33,10 @@ const statusIcons: Record<string, any> = {
 };
 
 const statusColors: Record<string, string> = {
-  dirty: 'border-amber-200/60 bg-amber-50/50 dark:border-amber-800/40 dark:bg-amber-900/20',
-  cleaning: 'border-blue-200/60 bg-blue-50/50 dark:border-blue-800/40 dark:bg-blue-900/20',
-  maintenance: 'border-red-200/60 bg-red-50/50 dark:border-red-800/40 dark:bg-red-900/20',
-  out_of_service: 'border-muted bg-muted/30',
+  dirty: 'border-amber-500/20 bg-amber-500/10 dark:border-amber-500/20 dark:bg-amber-500/10',
+  cleaning: 'border-blue-500/20 bg-blue-500/10 dark:border-blue-500/20 dark:bg-blue-500/10',
+  maintenance: 'border-red-500/20 bg-red-500/10 dark:border-red-500/20 dark:bg-red-500/10',
+  out_of_service: 'border-border bg-muted/30',
 };
 
 export function HousekeepingBoard({ rooms, roomTypes, todayCheckouts, cleaningDuration, onRefresh }: HousekeepingBoardProps) {
