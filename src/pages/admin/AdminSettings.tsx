@@ -68,6 +68,8 @@ const AdminSettings = () => {
   const [addingFeed, setAddingFeed] = useState(false);
   const [syncingFeedId, setSyncingFeedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [deleteFeedId, setDeleteFeedId] = useState<string | null>(null);
+  const [deletingFeed, setDeletingFeed] = useState(false);
 
   useEffect(() => { fetchAll(); fetchExchangeRates(); }, []);
 
