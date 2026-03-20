@@ -170,11 +170,14 @@ const AdminSettings = () => {
     fetchAll();
   };
 
-  const handleDeleteFeed = async (id: string) => {
-    if (!confirm('Delete this iCal feed?')) return;
-    const { error } = await supabase.from('ical_feeds').delete().eq('id', id);
+  const handleDeleteFeed = async () => {
+    if (!deleteFeedId) return;
+    setDeletingFeed(true);
+    const { error } = await supabase.from('ical_feeds').delete().eq('id', deleteFeedId);
+    setDeletingFeed(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Feed deleted');
+    setDeleteFeedId(null);
     fetchAll();
   };
 
