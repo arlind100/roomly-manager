@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { DoorOpen, Plus, Pencil, Trash2, CheckCircle2, Droplets, Sparkles, Wrench, Ban, Search } from 'lucide-react';
+import { DoorOpen, Plus, Pencil, Trash2, CheckCircle2, Droplets, Sparkles, Wrench, Ban, Search, Loader2 } from 'lucide-react';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   available: { label: 'Available', color: 'bg-green-500/10 text-green-700 border-green-500/20 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20', icon: CheckCircle2 },
