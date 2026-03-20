@@ -184,7 +184,10 @@ const AdminPricing = () => {
             </div>
             <div><Label>{t('admin.overridePrice')}</Label><Input type="number" min={0} value={form.price} onChange={e => setForm(f => ({...f, price: parseFloat(e.target.value) || 0}))} /></div>
             <div><Label>{t('admin.labelOptional')}</Label><Input value={form.label} onChange={e => setForm(f => ({...f, label: e.target.value}))} placeholder="Peak season, holiday, etc." /></div>
-            <Button onClick={handleAdd} className="w-full">{t('admin.addOverride')}</Button>
+            <Button onClick={handleAdd} disabled={addingSaving} className="w-full gap-1.5">
+              {addingSaving && <Loader2 size={14} className="animate-spin" />}
+              {addingSaving ? 'Adding...' : t('admin.addOverride')}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
