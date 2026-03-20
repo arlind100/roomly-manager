@@ -69,6 +69,12 @@ const AdminDashboard = () => {
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [creating, setCreating] = useState(false);
   const [selectedRes, setSelectedRes] = useState<any>(null);
+  const [checkingInId, setCheckingInId] = useState<string | null>(null);
+  const [checkingOutId, setCheckingOutId] = useState<string | null>(null);
+
+  // Confirmation dialogs
+  const [confirmCheckIn, setConfirmCheckIn] = useState<any>(null);
+  const [confirmCheckOut, setConfirmCheckOut] = useState<any>(null);
 
   // Room picker for check-in without room_id
   const [roomPickerRes, setRoomPickerRes] = useState<any>(null);
