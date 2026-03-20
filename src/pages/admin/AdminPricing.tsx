@@ -65,7 +65,9 @@ const AdminPricing = () => {
   };
 
   const toggleOverride = async (id: string, current: boolean) => {
+    setTogglingId(id);
     await supabase.from('pricing_overrides').update({ is_active: !current }).eq('id', id);
+    setTogglingId(null);
     toast.success(!current ? 'Override activated' : 'Override deactivated');
     fetchData();
   };
