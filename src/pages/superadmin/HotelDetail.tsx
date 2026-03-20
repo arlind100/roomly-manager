@@ -57,16 +57,30 @@ export default function HotelDetail() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [{ data: h }, { data: r }, { data: b }, { data: a }] = await Promise.all([
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://qdxtmdyagsxtvtjaxqou.supabase.co";
+    const [{ data: h }, { data: r }, { data: b }] = await Promise.all([
       supabase.from('hotels').select('*').eq('id', hotelId).single(),
       supabase.from('reservations').select('*, room_types(name)').eq('hotel_id', hotelId!).order('created_at', { ascending: false }).limit(50),
       supabase.from('billing_records').select('*').eq('hotel_id', hotelId!).order('payment_date', { ascending: false }),
-      supabase.from('superadmin_audit_log').select('*').eq('target_hotel_id', hotelId!).order('performed_at', { ascending: false }).limit(50),
     ]);
+
+    // Fetch audit logs via edge function (bypasses RLS)
+    let auditData: any[] = [];
+    const token = getSuperadminToken();
+    if (token) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/read-audit-log?hotelId=${hotelId}&limit=50`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        auditData = json.data || [];
+      } catch { /* ignore */ }
+    }
+
     setHotel(h);
     setReservations(r || []);
     setBillingRecords(b || []);
-    setAuditLogs(a || []);
+    setAuditLogs(auditData);
     if (h) {
       setEditData(h);
       setBillingForm(prev => ({ ...prev, amount: String(h.monthly_price || 89) }));
