@@ -176,7 +176,10 @@ const AdminInvoices = () => {
               </Select>
             </div>
             <div><Label>{t('admin.amount')}</Label><Input type="number" min={0} value={form.amount} onChange={e => setForm(f => ({...f, amount: parseFloat(e.target.value) || 0}))} /></div>
-            <Button onClick={handleCreate} className="w-full">{t('admin.createInvoice')}</Button>
+            <Button onClick={handleCreate} disabled={creatingInv} className="w-full gap-1.5">
+              {creatingInv && <Loader2 size={14} className="animate-spin" />}
+              {creatingInv ? 'Creating...' : t('admin.createInvoice')}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

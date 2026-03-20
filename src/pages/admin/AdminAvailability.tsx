@@ -182,7 +182,10 @@ const AdminAvailability = () => {
             </div>
             <div><Label>{t('admin.date')}</Label><Input type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} /></div>
             <div><Label>{t('admin.reason')}</Label><Input value={form.reason} onChange={e => setForm(f => ({...f, reason: e.target.value}))} placeholder="Maintenance, holiday, etc." /></div>
-            <Button onClick={handleAddBlock} className="w-full">{t('admin.blockDate')}</Button>
+            <Button onClick={handleAddBlock} disabled={addingBlock} className="w-full gap-1.5">
+              {addingBlock && <Loader2 size={14} className="animate-spin" />}
+              {addingBlock ? 'Blocking...' : t('admin.blockDate')}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
