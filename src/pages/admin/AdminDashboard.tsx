@@ -219,22 +219,28 @@ const AdminDashboard = () => {
     fetchData();
   };
 
-  const handleCheckIn = async (id: string) => {
+  const initiateCheckIn = (id: string) => {
     const res = reservations.find(r => r.id === id);
-    // If no room assigned, show room picker
     if (res && !res.room_id) {
       setRoomPickerRes(res);
       setPickedRoomId('');
       return;
     }
+    setConfirmCheckIn(res);
+  };
+
+  const handleCheckIn = async (id: string) => {
+    setCheckingInId(id);
+    setConfirmCheckIn(null);
+    const res = reservations.find(r => r.id === id);
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const { error } = await supabase.from('reservations').update({ status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) { toast.error(error.message); return; }
-    // Mark the assigned room as occupied
+    if (error) { toast.error(error.message); setCheckingInId(null); return; }
     if (res?.room_id) {
       await supabase.from('rooms').update({ operational_status: 'occupied', updated_at: new Date().toISOString() }).eq('id', res.room_id);
     }
     toast.success(t('admin.checkedIn'));
+    setCheckingInId(null);
     fetchData();
   };
 
