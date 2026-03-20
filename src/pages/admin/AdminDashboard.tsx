@@ -16,9 +16,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import {
   CalendarDays, DollarSign, LogIn, LogOut as LogOutIcon, BarChart3, Users,
-  BedDouble, UserPlus, Search, Eye, Plus, CalendarRange, Ban, AlertTriangle, Globe, Sparkles,
+  BedDouble, UserPlus, Search, Eye, Plus, CalendarRange, Ban, AlertTriangle, Globe, Sparkles, Loader2,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
@@ -68,6 +69,12 @@ const AdminDashboard = () => {
   const [showWalkIn, setShowWalkIn] = useState(false);
   const [creating, setCreating] = useState(false);
   const [selectedRes, setSelectedRes] = useState<any>(null);
+  const [checkingInId, setCheckingInId] = useState<string | null>(null);
+  const [checkingOutId, setCheckingOutId] = useState<string | null>(null);
+
+  // Confirmation dialogs
+  const [confirmCheckIn, setConfirmCheckIn] = useState<any>(null);
+  const [confirmCheckOut, setConfirmCheckOut] = useState<any>(null);
 
   // Room picker for check-in without room_id
   const [roomPickerRes, setRoomPickerRes] = useState<any>(null);
@@ -212,22 +219,28 @@ const AdminDashboard = () => {
     fetchData();
   };
 
-  const handleCheckIn = async (id: string) => {
+  const initiateCheckIn = (id: string) => {
     const res = reservations.find(r => r.id === id);
-    // If no room assigned, show room picker
     if (res && !res.room_id) {
       setRoomPickerRes(res);
       setPickedRoomId('');
       return;
     }
+    setConfirmCheckIn(res);
+  };
+
+  const handleCheckIn = async (id: string) => {
+    setCheckingInId(id);
+    setConfirmCheckIn(null);
+    const res = reservations.find(r => r.id === id);
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const { error } = await supabase.from('reservations').update({ status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) { toast.error(error.message); return; }
-    // Mark the assigned room as occupied
+    if (error) { toast.error(error.message); setCheckingInId(null); return; }
     if (res?.room_id) {
       await supabase.from('rooms').update({ operational_status: 'occupied', updated_at: new Date().toISOString() }).eq('id', res.room_id);
     }
     toast.success(t('admin.checkedIn'));
+    setCheckingInId(null);
     fetchData();
   };
 
@@ -242,11 +255,18 @@ const AdminDashboard = () => {
     fetchData();
   };
 
+  const initiateCheckOut = (id: string) => {
+    const res = reservations.find(r => r.id === id);
+    setConfirmCheckOut(res);
+  };
+
   const handleCheckOut = async (id: string) => {
+    setCheckingOutId(id);
+    setConfirmCheckOut(null);
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const res = reservations.find(r => r.id === id);
     const { error } = await supabase.from('reservations').update({ status: 'completed', check_out_time: timeNow, updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(error.message); setCheckingOutId(null); return; }
 
     // Mark room as dirty on checkout
     if (res?.room_id) {
@@ -264,6 +284,7 @@ const AdminDashboard = () => {
     }
 
     toast.success('Guest checked out');
+    setCheckingOutId(null);
     fetchData();
   };
 
@@ -389,8 +410,8 @@ const AdminDashboard = () => {
                     <p className="text-xs font-medium truncate">{r.guest_name}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{r.room_types?.name || '—'}</p>
                   </div>
-                  <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white text-[10px] h-6 px-2 shrink-0" onClick={() => handleCheckIn(r.id)}>
-                    <LogIn size={10} /> {t('admin.checkInAction')}
+                  <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white text-[10px] h-6 px-2 shrink-0" disabled={checkingInId === r.id} onClick={() => initiateCheckIn(r.id)}>
+                    {checkingInId === r.id ? <Loader2 size={10} className="animate-spin" /> : <LogIn size={10} />} {checkingInId === r.id ? 'Checking In...' : t('admin.checkInAction')}
                   </Button>
                 </div>
               ))}
@@ -414,8 +435,8 @@ const AdminDashboard = () => {
                     <p className="text-xs font-medium truncate">{r.guest_name}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{r.room_types?.name || '—'}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="gap-1 text-[10px] h-6 px-2 shrink-0" onClick={() => handleCheckOut(r.id)}>
-                    <LogOutIcon size={10} /> {t('admin.checkOutAction')}
+                  <Button size="sm" variant="outline" className="gap-1 text-[10px] h-6 px-2 shrink-0" disabled={checkingOutId === r.id} onClick={() => initiateCheckOut(r.id)}>
+                    {checkingOutId === r.id ? <Loader2 size={10} className="animate-spin" /> : <LogOutIcon size={10} />} {checkingOutId === r.id ? 'Checking Out...' : t('admin.checkOutAction')}
                   </Button>
                 </div>
               ))}
@@ -610,12 +631,12 @@ const AdminDashboard = () => {
               {selectedRes.notes && <div><p className="text-xs text-muted-foreground">{t('admin.notes')}</p><p>{selectedRes.notes}</p></div>}
               <div className="flex gap-2 pt-2">
                 {selectedRes.status === 'confirmed' && (
-                  <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white flex-1" onClick={() => { handleCheckIn(selectedRes.id); setSelectedRes(null); }}>
+                  <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white flex-1" onClick={() => { initiateCheckIn(selectedRes.id); setSelectedRes(null); }}>
                     <LogIn size={14} /> {t('admin.checkInAction')}
                   </Button>
                 )}
                 {(selectedRes.status === 'confirmed' || selectedRes.status === 'checked_in') && (
-                  <Button size="sm" variant="outline" className="gap-1.5 flex-1" onClick={() => { handleCheckOut(selectedRes.id); setSelectedRes(null); }}>
+                  <Button size="sm" variant="outline" className="gap-1.5 flex-1" onClick={() => { initiateCheckOut(selectedRes.id); setSelectedRes(null); }}>
                     <LogOutIcon size={14} /> {t('admin.checkOutAction')}
                   </Button>
                 )}
@@ -624,6 +645,38 @@ const AdminDashboard = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Check-In Confirmation */}
+      <AlertDialog open={!!confirmCheckIn} onOpenChange={v => { if (!v) setConfirmCheckIn(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Check-In</AlertDialogTitle>
+            <AlertDialogDescription>
+              Check in <strong>{confirmCheckIn?.guest_name}</strong> for {confirmCheckIn?.room_types?.name || 'their room'}? This will mark the reservation as active.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleCheckIn(confirmCheckIn?.id)} className="bg-green-600 hover:bg-green-700 text-white">Check In</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Check-Out Confirmation */}
+      <AlertDialog open={!!confirmCheckOut} onOpenChange={v => { if (!v) setConfirmCheckOut(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Check-Out</AlertDialogTitle>
+            <AlertDialogDescription>
+              Check out <strong>{confirmCheckOut?.guest_name}</strong>? An invoice will be generated automatically.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleCheckOut(confirmCheckOut?.id)} className="bg-blue-600 hover:bg-blue-700 text-white">Check Out</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FileText, Plus, Download, Send } from 'lucide-react';
+import { FileText, Plus, Download, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminInvoices = () => {
@@ -24,6 +24,7 @@ const AdminInvoices = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [form, setForm] = useState({ reservation_id: '', amount: 0, status: 'draft' });
+  const [creatingInv, setCreatingInv] = useState(false);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -39,8 +40,10 @@ const AdminInvoices = () => {
 
   const handleCreate = async () => {
     if (!form.reservation_id || !form.amount) { toast.error('Select reservation and amount'); return; }
+    setCreatingInv(true);
     const h = (await supabase.from('hotels').select('id').limit(1).single()).data;
     const { error } = await supabase.from('invoices').insert({ hotel_id: h?.id, ...form });
+    setCreatingInv(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Invoice created');
     setShowCreate(false);
@@ -173,7 +176,10 @@ const AdminInvoices = () => {
               </Select>
             </div>
             <div><Label>{t('admin.amount')}</Label><Input type="number" min={0} value={form.amount} onChange={e => setForm(f => ({...f, amount: parseFloat(e.target.value) || 0}))} /></div>
-            <Button onClick={handleCreate} className="w-full">{t('admin.createInvoice')}</Button>
+            <Button onClick={handleCreate} disabled={creatingInv} className="w-full gap-1.5">
+              {creatingInv && <Loader2 size={14} className="animate-spin" />}
+              {creatingInv ? 'Creating...' : t('admin.createInvoice')}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DollarSign, Plus, Trash2, Pencil } from 'lucide-react';
+import { DollarSign, Plus, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 const AdminPricing = () => {
   const { t } = useLanguage();
@@ -25,6 +26,10 @@ const AdminPricing = () => {
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [editPriceForm, setEditPriceForm] = useState({ base_price: 0, weekend_price: null as number | null });
   const [form, setForm] = useState({ room_type_id: '', start_date: '', end_date: '', price: 0, label: '' });
+  const [addingSaving, setAddingSaving] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -40,8 +45,10 @@ const AdminPricing = () => {
 
   const handleAdd = async () => {
     if (!form.room_type_id || !form.start_date || !form.end_date || !form.price) { toast.error('Fill all required fields'); return; }
+    setAddingSaving(true);
     const hotelData = (await supabase.from('hotels').select('id').limit(1).single()).data;
     const { error } = await supabase.from('pricing_overrides').insert({ hotel_id: hotelData?.id, ...form });
+    setAddingSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Pricing override added');
     setShowAdd(false);
@@ -50,13 +57,17 @@ const AdminPricing = () => {
   };
 
   const deleteOverride = async (id: string) => {
+    setDeletingId(id);
     await supabase.from('pricing_overrides').delete().eq('id', id);
+    setDeletingId(null);
     toast.success('Override removed');
     fetchData();
   };
 
   const toggleOverride = async (id: string, current: boolean) => {
+    setTogglingId(id);
     await supabase.from('pricing_overrides').update({ is_active: !current }).eq('id', id);
+    setTogglingId(null);
     toast.success(!current ? 'Override activated' : 'Override deactivated');
     fetchData();
   };
@@ -69,10 +80,12 @@ const AdminPricing = () => {
 
   const handleEditPrice = async () => {
     if (!editingRoom) return;
+    setEditSaving(true);
     const { error } = await supabase.from('room_types').update({
       base_price: editPriceForm.base_price,
       weekend_price: editPriceForm.weekend_price,
     }).eq('id', editingRoom.id);
+    setEditSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(t('admin.updatePrice'));
     setShowEditPrice(false);
@@ -136,11 +149,17 @@ const AdminPricing = () => {
               <tbody>{overrides.map(o => (
                 <tr key={o.id} className={`border-b border-border/50 ${!o.is_active ? 'opacity-50' : ''}`}>
                   <td className="py-3 px-4">{o.room_types?.name}</td>
-                  <td className="py-3 px-4 text-muted-foreground">{o.start_date?.match?.(/^(\d{4})-(\d{2})-(\d{2})/) ? (() => { const [,y,m,d] = o.start_date.match(/^(\d{4})-(\d{2})-(\d{2})/); return `${d}/${m}/${y}`; })() : o.start_date} → {o.end_date?.match?.(/^(\d{4})-(\d{2})-(\d{2})/) ? (() => { const [,y,m,d] = o.end_date.match(/^(\d{4})-(\d{2})-(\d{2})/); return `${d}/${m}/${y}`; })() : o.end_date}</td>
+                  <td className="py-3 px-4 text-muted-foreground">
+                    {format(new Date(o.start_date + 'T00:00:00'), 'MMM dd, yyyy')} → {format(new Date(o.end_date + 'T00:00:00'), 'MMM dd, yyyy')}
+                  </td>
                   <td className="py-3 px-4 text-primary font-semibold">{displayPrice(Number(o.price), cur)}</td>
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{o.label || '—'}</td>
-                  <td className="py-3 px-4 text-center"><Switch checked={o.is_active} onCheckedChange={() => toggleOverride(o.id, o.is_active)} /></td>
-                  <td className="py-3 px-4 text-right"><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteOverride(o.id)}><Trash2 size={14} /></Button></td>
+                  <td className="py-3 px-4 text-center"><Switch checked={o.is_active} disabled={togglingId === o.id} onCheckedChange={() => toggleOverride(o.id, o.is_active)} /></td>
+                  <td className="py-3 px-4 text-right">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" disabled={deletingId === o.id} onClick={() => deleteOverride(o.id)}>
+                      {deletingId === o.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    </Button>
+                  </td>
                 </tr>
               ))}</tbody>
             </table>
@@ -165,7 +184,10 @@ const AdminPricing = () => {
             </div>
             <div><Label>{t('admin.overridePrice')}</Label><Input type="number" min={0} value={form.price} onChange={e => setForm(f => ({...f, price: parseFloat(e.target.value) || 0}))} /></div>
             <div><Label>{t('admin.labelOptional')}</Label><Input value={form.label} onChange={e => setForm(f => ({...f, label: e.target.value}))} placeholder="Peak season, holiday, etc." /></div>
-            <Button onClick={handleAdd} className="w-full">{t('admin.addOverride')}</Button>
+            <Button onClick={handleAdd} disabled={addingSaving} className="w-full gap-1.5">
+              {addingSaving && <Loader2 size={14} className="animate-spin" />}
+              {addingSaving ? 'Adding...' : t('admin.addOverride')}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -177,7 +199,10 @@ const AdminPricing = () => {
           <div className="space-y-4">
             <div><Label>{t('admin.basePrice')}</Label><Input type="number" min={0} value={editPriceForm.base_price} onChange={e => setEditPriceForm(f => ({...f, base_price: parseFloat(e.target.value) || 0}))} /></div>
             <div><Label>{t('admin.weekendPrice')}</Label><Input type="number" min={0} value={editPriceForm.weekend_price || ''} onChange={e => setEditPriceForm(f => ({...f, weekend_price: parseFloat(e.target.value) || null}))} placeholder="Optional" /></div>
-            <Button onClick={handleEditPrice} className="w-full">{t('admin.updatePrice')}</Button>
+            <Button onClick={handleEditPrice} disabled={editSaving} className="w-full gap-1.5">
+              {editSaving && <Loader2 size={14} className="animate-spin" />}
+              {editSaving ? 'Saving...' : t('admin.updatePrice')}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -181,7 +181,11 @@ const AdminAnalytics = () => {
   const dailyArrivals = reservations.filter(r => r.check_in === todayStr && r.status !== 'cancelled');
   const dailyDepartures = reservations.filter(r => r.check_out === todayStr && r.status !== 'cancelled');
   const currentlyStaying = reservations.filter(r => r.check_in <= todayStr && r.check_out > todayStr && (r.status === 'confirmed' || r.status === 'checked_in'));
-  const dailyRevenue = currentlyStaying.reduce((s, r) => s + (Number(r.total_price) || 0), 0);
+  const dailyRevenue = currentlyStaying.reduce((s, r) => {
+    const totalPrice = Number(r.total_price) || 0;
+    const nights = Math.max(1, differenceInDays(parseISO(r.check_out), parseISO(r.check_in)));
+    return s + (totalPrice / nights);
+  }, 0);
 
   // Occupancy report by day
   const occupancyReportData = useMemo(() => {
@@ -410,7 +414,7 @@ const AdminAnalytics = () => {
                 <TableBody>
                   {occupancyReportData.slice(0, 31).map(row => (
                     <TableRow key={row.date}>
-                      <TableCell className="text-sm">{row.date}</TableCell>
+                      <TableCell className="text-sm">{format(parseISO(row.date), 'MMM dd, yyyy')}</TableCell>
                       <TableCell className="text-sm">{row.booked}</TableCell>
                       <TableCell className="text-sm">{row.available}</TableCell>
                       <TableCell className="text-sm font-medium">{row.rate}%</TableCell>
@@ -492,8 +496,8 @@ const AdminAnalytics = () => {
                       <TableCell className="text-xs font-mono">{r.reservation_code}</TableCell>
                       <TableCell className="text-sm">{r.guest_name}</TableCell>
                       <TableCell className="text-sm">{r.room_types?.name || '—'}</TableCell>
-                      <TableCell className="text-sm">{r.check_in}</TableCell>
-                      <TableCell className="text-sm">{r.check_out}</TableCell>
+                      <TableCell className="text-sm">{format(parseISO(r.check_in), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell className="text-sm">{format(parseISO(r.check_out), 'MMM dd, yyyy')}</TableCell>
                       <TableCell><StatusBadge status={r.status} /></TableCell>
                       <TableCell className="text-sm">{displayPrice(Number(r.total_price) || 0, cur)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{r.booking_source || 'direct'}</TableCell>
@@ -546,7 +550,7 @@ const AdminAnalytics = () => {
                       <TableCell className="text-xs font-mono">{r.reservation_code}</TableCell>
                       <TableCell className="text-sm">{r.guest_name}</TableCell>
                       <TableCell className="text-sm">{r.room_types?.name || '—'}</TableCell>
-                      <TableCell className="text-sm">{r.check_in}</TableCell>
+                      <TableCell className="text-sm">{format(parseISO(r.check_in), 'MMM dd, yyyy')}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{r.notes || '—'}</TableCell>
                     </TableRow>
                   ))}

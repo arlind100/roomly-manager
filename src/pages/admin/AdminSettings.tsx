@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { languageNames, type Language } from '@/i18n/translations';
-import { Sun, Moon, Plus, Trash2, RefreshCw, ChevronDown, Rss, Globe, Upload, X, ImageIcon, Copy, Check, ExternalLink } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Sun, Moon, Plus, Trash2, RefreshCw, ChevronDown, Rss, Globe, Upload, X, ImageIcon, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const SUPABASE_URL = "https://qdxtmdyagsxtvtjaxqou.supabase.co";
@@ -67,6 +68,8 @@ const AdminSettings = () => {
   const [addingFeed, setAddingFeed] = useState(false);
   const [syncingFeedId, setSyncingFeedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [deleteFeedId, setDeleteFeedId] = useState<string | null>(null);
+  const [deletingFeed, setDeletingFeed] = useState(false);
 
   useEffect(() => { fetchAll(); fetchExchangeRates(); }, []);
 
@@ -167,11 +170,14 @@ const AdminSettings = () => {
     fetchAll();
   };
 
-  const handleDeleteFeed = async (id: string) => {
-    if (!confirm('Delete this iCal feed?')) return;
-    const { error } = await supabase.from('ical_feeds').delete().eq('id', id);
+  const handleDeleteFeed = async () => {
+    if (!deleteFeedId) return;
+    setDeletingFeed(true);
+    const { error } = await supabase.from('ical_feeds').delete().eq('id', deleteFeedId);
+    setDeletingFeed(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Feed deleted');
+    setDeleteFeedId(null);
     fetchAll();
   };
 
@@ -473,7 +479,7 @@ const AdminSettings = () => {
                             size="sm"
                             variant="outline"
                             className="text-destructive border-destructive/30"
-                            onClick={() => handleDeleteFeed(feed.id)}
+                            onClick={() => setDeleteFeedId(feed.id)}
                           >
                             <Trash2 size={12} />
                           </Button>
@@ -488,7 +494,27 @@ const AdminSettings = () => {
         )}
       </section>
 
-      <Button onClick={handleSave} disabled={saving}>{saving ? t('admin.saving') : t('admin.saveSettings')}</Button>
+      <Button onClick={handleSave} disabled={saving} className="gap-1.5">
+        {saving && <Loader2 size={14} className="animate-spin" />}
+        {saving ? t('admin.saving') : t('admin.saveSettings')}
+      </Button>
+
+      {/* Delete iCal Feed Confirmation */}
+      <AlertDialog open={!!deleteFeedId} onOpenChange={v => { if (!v) setDeleteFeedId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete this iCal feed and stop syncing reservations from it.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteFeed} disabled={deletingFeed} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5">
+              {deletingFeed && <Loader2 size={14} className="animate-spin" />}
+              {deletingFeed ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add Feed Dialog */}
       <Dialog open={showAddFeed} onOpenChange={setShowAddFeed}>

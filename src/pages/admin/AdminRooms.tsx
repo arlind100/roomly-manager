@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { DoorOpen, Plus, Pencil, Trash2, CheckCircle2, Droplets, Sparkles, Wrench, Ban, Search } from 'lucide-react';
+import { DoorOpen, Plus, Pencil, Trash2, CheckCircle2, Droplets, Sparkles, Wrench, Ban, Search, Loader2 } from 'lucide-react';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   available: { label: 'Available', color: 'bg-green-500/10 text-green-700 border-green-500/20 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20', icon: CheckCircle2 },
@@ -42,6 +42,8 @@ const AdminRooms = () => {
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkForm, setBulkForm] = useState({ room_type_id: '', prefix: '', start: 1, count: 5, floor: '' });
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -90,6 +92,7 @@ const AdminRooms = () => {
   };
 
   const updateStatus = async (id: string, status: string) => {
+    setUpdatingStatusId(id);
     const updateData: Record<string, any> = { operational_status: status, updated_at: new Date().toISOString() };
     if (status === 'cleaning') {
       const now = new Date();
@@ -101,13 +104,16 @@ const AdminRooms = () => {
       updateData.cleaning_expected_done_at = null;
     }
     const { error } = await supabase.from('rooms').update(updateData).eq('id', id);
+    setUpdatingStatusId(null);
     if (error) { toast.error(error.message); return; }
     toast.success(`Status → ${status}`);
     fetchData();
   };
 
   const handleDelete = async (id: string) => {
+    setDeleting(true);
     const { error } = await supabase.from('rooms').delete().eq('id', id);
+    setDeleting(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Room deleted');
     setDeleteId(null);
@@ -206,8 +212,10 @@ const AdminRooms = () => {
                 <div className="flex flex-wrap gap-1 mb-3">
                   {room.operational_status === 'available' && (
                     <>
-                      <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" onClick={() => updateStatus(room.id, 'maintenance')}>Maintenance</Button>
-                      <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" onClick={() => updateStatus(room.id, 'out_of_service')}>Out of Service</Button>
+                    <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" disabled={updatingStatusId === room.id} onClick={() => updateStatus(room.id, 'maintenance')}>
+                      {updatingStatusId === room.id ? <Loader2 size={10} className="animate-spin mr-1" /> : null}Maintenance
+                    </Button>
+                      <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" disabled={updatingStatusId === room.id} onClick={() => updateStatus(room.id, 'out_of_service')}>Out of Service</Button>
                     </>
                   )}
                   {room.operational_status === 'dirty' && (
@@ -297,7 +305,10 @@ const AdminRooms = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteId && handleDelete(deleteId)}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={() => deleteId && handleDelete(deleteId)} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5">
+              {deleting && <Loader2 size={14} className="animate-spin" />}
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

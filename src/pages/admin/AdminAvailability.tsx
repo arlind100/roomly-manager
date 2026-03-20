@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CalendarRange, Plus, Trash2 } from 'lucide-react';
+import { CalendarRange, Plus, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -21,6 +21,9 @@ const AdminAvailability = () => {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ room_type_id: '', date: '', reason: 'blocked' });
+  const [blocking, setBlocking] = useState(false);
+  const [addingBlock, setAddingBlock] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -39,6 +42,7 @@ const AdminAvailability = () => {
 
   const handleBlock = async (date: Date) => {
     if (!selectedRoom) return;
+    setBlocking(true);
     const dateStr = format(date, 'yyyy-MM-dd');
     const existing = blocks.find(b => b.room_type_id === selectedRoom && b.date === dateStr);
     if (existing) {
@@ -49,13 +53,16 @@ const AdminAvailability = () => {
       await supabase.from('availability_blocks').insert({ hotel_id: hotel?.id, room_type_id: selectedRoom, date: dateStr, reason: 'blocked' });
       toast.success('Date blocked');
     }
+    setBlocking(false);
     fetchData();
   };
 
   const handleAddBlock = async () => {
     if (!form.room_type_id || !form.date) { toast.error('Select room and date'); return; }
+    setAddingBlock(true);
     const hotel = (await supabase.from('hotels').select('id').limit(1).single()).data;
     const { error } = await supabase.from('availability_blocks').insert({ hotel_id: hotel?.id, room_type_id: form.room_type_id, date: form.date, reason: form.reason });
+    setAddingBlock(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Block added');
     setShowAdd(false);
@@ -63,7 +70,9 @@ const AdminAvailability = () => {
   };
 
   const deleteBlock = async (id: string) => {
+    setDeletingId(id);
     await supabase.from('availability_blocks').delete().eq('id', id);
+    setDeletingId(null);
     toast.success('Block removed');
     fetchData();
   };
@@ -148,8 +157,10 @@ const AdminAvailability = () => {
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {blocks.filter(b => b.room_type_id === selectedRoom).map(b => (
                     <div key={b.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/50">
-                      <div><p className="text-sm">{b.date}</p><p className="text-xs text-muted-foreground">{b.reason}</p></div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteBlock(b.id)}><Trash2 size={14} /></Button>
+                      <div><p className="text-sm">{format(new Date(b.date + 'T00:00:00'), 'MMM dd, yyyy')}</p><p className="text-xs text-muted-foreground">{b.reason}</p></div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" disabled={deletingId === b.id} onClick={() => deleteBlock(b.id)}>
+                        {deletingId === b.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -171,7 +182,10 @@ const AdminAvailability = () => {
             </div>
             <div><Label>{t('admin.date')}</Label><Input type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} /></div>
             <div><Label>{t('admin.reason')}</Label><Input value={form.reason} onChange={e => setForm(f => ({...f, reason: e.target.value}))} placeholder="Maintenance, holiday, etc." /></div>
-            <Button onClick={handleAddBlock} className="w-full">{t('admin.blockDate')}</Button>
+            <Button onClick={handleAddBlock} disabled={addingBlock} className="w-full gap-1.5">
+              {addingBlock && <Loader2 size={14} className="animate-spin" />}
+              {addingBlock ? 'Blocking...' : t('admin.blockDate')}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
