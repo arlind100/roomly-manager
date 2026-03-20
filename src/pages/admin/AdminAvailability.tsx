@@ -70,7 +70,9 @@ const AdminAvailability = () => {
   };
 
   const deleteBlock = async (id: string) => {
+    setDeletingId(id);
     await supabase.from('availability_blocks').delete().eq('id', id);
+    setDeletingId(null);
     toast.success('Block removed');
     fetchData();
   };
