@@ -1,12 +1,38 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const [roleChecked, setRoleChecked] = useState(false);
   const [hasAdminRole, setHasAdminRole] = useState(false);
+  const [suspended, setSuspended] = useState(false);
+
+  const checkSuspension = useCallback(async () => {
+    if (!user) return;
+    // Get user's hotel_id from user_roles
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('hotel_id')
+      .eq('user_id', user.id)
+      .limit(1);
+    
+    if (roles && roles.length > 0 && roles[0].hotel_id) {
+      const { data: hotel } = await supabase
+        .from('hotels')
+        .select('subscription_status')
+        .eq('id', roles[0].hotel_id)
+        .single();
+      
+      if (hotel?.subscription_status === 'suspended') {
+        setSuspended(true);
+        toast.error('Your account has been suspended. Please contact support.');
+        await signOut();
+      }
+    }
+  }, [user, signOut]);
 
   useEffect(() => {
     if (!user) {
@@ -15,20 +41,31 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
 
     const checkRole = async () => {
-      // Check for admin or manager role
       const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
       if (isAdmin) {
         setHasAdminRole(true);
         setRoleChecked(true);
+        await checkSuspension();
         return;
       }
       const { data: isManager } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'manager' });
       setHasAdminRole(!!isManager);
       setRoleChecked(true);
+      if (isManager) await checkSuspension();
     };
 
     checkRole();
-  }, [user]);
+  }, [user, checkSuspension]);
+
+  // Re-check suspension on every render / route change
+  useEffect(() => {
+    if (!user || !roleChecked || !hasAdminRole) return;
+    checkSuspension();
+  }, [user, roleChecked, hasAdminRole, checkSuspension]);
+
+  if (suspended) {
+    return <Navigate to="/admin/login" replace />;
+  }
 
   if (loading || !roleChecked) {
     return (
