@@ -22,6 +22,18 @@ import AdminInvoices from "./pages/admin/AdminInvoices";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
+// Superadmin
+import SuperadminLogin from "./pages/superadmin/SuperadminLogin";
+import { SuperadminRoute } from "@/components/superadmin/SuperadminRoute";
+import SuperadminLayout from "@/components/superadmin/SuperadminLayout";
+import SuperadminDashboard from "./pages/superadmin/SuperadminDashboard";
+import SuperadminHotels from "./pages/superadmin/SuperadminHotels";
+import CreateHotel from "./pages/superadmin/CreateHotel";
+import HotelDetail from "./pages/superadmin/HotelDetail";
+import SuperadminBilling from "./pages/superadmin/SuperadminBilling";
+import SuperadminAudit from "./pages/superadmin/SuperadminAudit";
+import SuperadminSettings from "./pages/superadmin/SuperadminSettings";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -49,6 +61,18 @@ const App = () => (
                 <Route path="invoices" element={<AdminInvoices />} />
                 <Route path="analytics-reports" element={<AdminAnalytics />} />
                 <Route path="settings" element={<AdminSettings />} />
+              </Route>
+
+              {/* Superadmin */}
+              <Route path="/superadmin/login" element={<SuperadminLogin />} />
+              <Route path="/superadmin" element={<SuperadminRoute><SuperadminLayout /></SuperadminRoute>}>
+                <Route index element={<SuperadminDashboard />} />
+                <Route path="hotels" element={<SuperadminHotels />} />
+                <Route path="hotels/new" element={<CreateHotel />} />
+                <Route path="hotels/:hotelId" element={<HotelDetail />} />
+                <Route path="billing" element={<SuperadminBilling />} />
+                <Route path="audit" element={<SuperadminAudit />} />
+                <Route path="settings" element={<SuperadminSettings />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
