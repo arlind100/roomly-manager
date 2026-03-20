@@ -21,6 +21,9 @@ const AdminAvailability = () => {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ room_type_id: '', date: '', reason: 'blocked' });
+  const [blocking, setBlocking] = useState(false);
+  const [addingBlock, setAddingBlock] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
