@@ -212,8 +212,10 @@ const AdminRooms = () => {
                 <div className="flex flex-wrap gap-1 mb-3">
                   {room.operational_status === 'available' && (
                     <>
-                      <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" onClick={() => updateStatus(room.id, 'maintenance')}>Maintenance</Button>
-                      <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" onClick={() => updateStatus(room.id, 'out_of_service')}>Out of Service</Button>
+                    <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" disabled={updatingStatusId === room.id} onClick={() => updateStatus(room.id, 'maintenance')}>
+                      {updatingStatusId === room.id ? <Loader2 size={10} className="animate-spin mr-1" /> : null}Maintenance
+                    </Button>
+                      <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" disabled={updatingStatusId === room.id} onClick={() => updateStatus(room.id, 'out_of_service')}>Out of Service</Button>
                     </>
                   )}
                   {room.operational_status === 'dirty' && (
