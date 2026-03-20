@@ -92,6 +92,7 @@ const AdminRooms = () => {
   };
 
   const updateStatus = async (id: string, status: string) => {
+    setUpdatingStatusId(id);
     const updateData: Record<string, any> = { operational_status: status, updated_at: new Date().toISOString() };
     if (status === 'cleaning') {
       const now = new Date();
@@ -103,6 +104,7 @@ const AdminRooms = () => {
       updateData.cleaning_expected_done_at = null;
     }
     const { error } = await supabase.from('rooms').update(updateData).eq('id', id);
+    setUpdatingStatusId(null);
     if (error) { toast.error(error.message); return; }
     toast.success(`Status → ${status}`);
     fetchData();
