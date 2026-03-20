@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { getSuperadminToken } from '@/lib/superadmin';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://qdxtmdyagsxtvtjaxqou.supabase.co";
 
 export default function SuperadminAudit() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -18,11 +20,22 @@ export default function SuperadminAudit() {
   useEffect(() => { fetchLogs(); }, [page, actionFilter]);
 
   const fetchLogs = async () => {
-    let query = supabase.from('superadmin_audit_log').select('*', { count: 'exact' }).order('performed_at', { ascending: false });
-    if (actionFilter !== 'all') query = query.eq('action', actionFilter);
-    const { data, count } = await query.range(page * pageSize, (page + 1) * pageSize - 1);
-    setLogs(data || []);
-    setTotal(count || 0);
+    const token = getSuperadminToken();
+    if (!token) return;
+    try {
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      if (actionFilter !== 'all') params.set('action', actionFilter);
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/read-audit-log?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setLogs(data.data || []);
+      setTotal(data.total || 0);
+    } catch {
+      setLogs([]);
+      setTotal(0);
+    }
   };
 
   const filtered = search
@@ -30,6 +43,12 @@ export default function SuperadminAudit() {
     : logs;
 
   const actions = ['hotel_created', 'hotel_suspended', 'hotel_reactivated', 'hotel_deleted', 'hotel_settings_updated', 'password_reset', 'plan_changed', 'payment_recorded', 'superadmin_login', 'superadmin_logout'];
+
+  const formatDetails = (details: any) => {
+    if (!details) return '—';
+    if (typeof details === 'string') return details;
+    return Object.entries(details).map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`).join(', ');
+  };
 
   return (
     <div className="space-y-6">
@@ -66,11 +85,11 @@ export default function SuperadminAudit() {
                   <tr key={log.id} className="border-b border-border/40">
                     <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-full bg-[hsl(263,70%,50%)/0.1] text-[hsl(263,70%,50%)] font-medium">{log.action.replace(/_/g, ' ')}</span></td>
                     <td className="p-3 font-medium">{log.target_hotel_name || '—'}</td>
-                    <td className="p-3 text-muted-foreground text-xs max-w-[300px] truncate">{log.details ? JSON.stringify(log.details) : '—'}</td>
-                    <td className="p-3 text-muted-foreground text-xs">{format(parseISO(log.performed_at), 'MMM dd, yyyy HH:mm')}</td>
+                    <td className="p-3 text-muted-foreground text-xs max-w-[300px] truncate">{formatDetails(log.details)}</td>
+                    <td className="p-3 text-muted-foreground text-xs">{log.performed_at ? format(parseISO(log.performed_at), 'MMM dd, yyyy HH:mm') : '—'}</td>
                   </tr>
                 ))}
-                {filtered.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No audit entries found. Logs are written by superadmin edge functions and may be restricted by RLS.</td></tr>}
+                {filtered.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">No audit entries found.</td></tr>}
               </tbody>
             </table>
           </div>
