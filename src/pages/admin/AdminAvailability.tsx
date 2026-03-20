@@ -158,7 +158,9 @@ const AdminAvailability = () => {
                   {blocks.filter(b => b.room_type_id === selectedRoom).map(b => (
                     <div key={b.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/50">
                       <div><p className="text-sm">{format(new Date(b.date + 'T00:00:00'), 'MMM dd, yyyy')}</p><p className="text-xs text-muted-foreground">{b.reason}</p></div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteBlock(b.id)}><Trash2 size={14} /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" disabled={deletingId === b.id} onClick={() => deleteBlock(b.id)}>
+                        {deletingId === b.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                      </Button>
                     </div>
                   ))}
                 </div>
