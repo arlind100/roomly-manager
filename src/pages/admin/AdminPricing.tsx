@@ -102,7 +102,7 @@ const AdminPricing = () => {
         {roomTypes.length === 0 ? (
           <EmptyState icon={DollarSign} title={t('admin.noRoomTypesTitle')} description={t('admin.noRoomTypesDesc')} />
         ) : (
-          <div className="bg-card rounded-lg border border-border overflow-hidden">
+          <div className="bg-card rounded-[0.625rem] border border-border/60 overflow-hidden shadow-card">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-border bg-muted/50">
                 <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.roomType')}</th>
