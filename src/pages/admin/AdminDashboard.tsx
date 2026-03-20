@@ -502,7 +502,7 @@ const AdminDashboard = () => {
             <button
               key={rt.id}
               onClick={() => navigate('/admin/rooms')}
-              className={cn('rounded-[0.625rem] border p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5 text-left', statusColor[rt.status])}
+              className={cn('rounded-[0.625rem] border p-4 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 text-left', statusColor[rt.status])}
             >
               <div className="flex items-center gap-3 mb-2">
                 <img src={getRoomImage(rt)} alt={rt.name} className="w-12 h-12 rounded-lg object-cover" />

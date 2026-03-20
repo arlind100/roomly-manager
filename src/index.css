@@ -173,7 +173,7 @@
     @apply transition-all duration-300;
   }
   .hover-lift:hover {
-    @apply -translate-y-1 shadow-xl;
+    @apply -translate-y-0.5 shadow-card-hover;
   }
 }
 
