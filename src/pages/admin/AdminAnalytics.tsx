@@ -317,7 +317,7 @@ const AdminAnalytics = () => {
           </div>
 
           {/* Revenue Trend */}
-          <div className="bg-card rounded-lg border border-border p-6">
+          <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
             <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><TrendingUp size={16} /> Revenue Trend</h3>
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={revenueChartData}>
@@ -332,7 +332,7 @@ const AdminAnalytics = () => {
 
           {/* Room Type Bookings + Source Distribution */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card rounded-lg border border-border p-6">
+            <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><BarChart3 size={16} /> Reservations per Room Type</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={roomTypeBookings}>
@@ -346,7 +346,7 @@ const AdminAnalytics = () => {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="bg-card rounded-lg border border-border p-6">
+            <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><PieChartIcon size={16} /> Booking Source Distribution</h3>
               {sourceDistribution.length > 0 ? (
                 <>
@@ -377,7 +377,7 @@ const AdminAnalytics = () => {
         {/* ========== REPORTS TAB ========== */}
         <TabsContent value="reports" className="space-y-6">
           {/* Daily Report */}
-          <div className="bg-card rounded-lg border border-border p-6">
+          <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><CalendarDays size={16} /> Daily Report — {format(new Date(), 'MMM dd, yyyy')}</h3>
               <DataExportButton data={[
@@ -396,7 +396,7 @@ const AdminAnalytics = () => {
           </div>
 
           {/* Occupancy Report */}
-          <div className="bg-card rounded-lg border border-border p-6">
+          <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><BedDouble size={16} /> Occupancy Report</h3>
               <DataExportButton data={occupancyReportData} filename="occupancy-report" />
@@ -426,7 +426,7 @@ const AdminAnalytics = () => {
           </div>
 
           {/* Revenue Report */}
-          <div className="bg-card rounded-lg border border-border p-6">
+          <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><DollarSign size={16} /> Revenue Report</h3>
               <DataExportButton data={revenueByRoomType} filename="revenue-report" />
@@ -467,7 +467,7 @@ const AdminAnalytics = () => {
           </div>
 
           {/* Reservation Report */}
-          <div className="bg-card rounded-lg border border-border p-6">
+          <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><CalendarDays size={16} /> Reservation Report</h3>
               <DataExportButton data={reservationReportData.map(r => ({
@@ -518,7 +518,7 @@ const AdminAnalytics = () => {
           </div>
 
           {/* Cancellation Report */}
-          <div className="bg-card rounded-lg border border-border p-6">
+          <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2"><Activity size={16} /> Cancellation Report</h3>
               <DataExportButton data={filtered.filter(r => r.status === 'cancelled').map(r => ({
@@ -563,7 +563,7 @@ const AdminAnalytics = () => {
         {/* ========== PERFORMANCE TAB ========== */}
         <TabsContent value="performance" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            <div className="bg-card rounded-lg border border-border p-5">
+            <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><DollarSign size={18} className="text-primary" /></div>
                 <div>
@@ -574,7 +574,7 @@ const AdminAnalytics = () => {
               <p className="text-xs text-muted-foreground">Average revenue per occupied room per day</p>
             </div>
 
-            <div className="bg-card rounded-lg border border-border p-5">
+            <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><TrendingUp size={18} className="text-primary" /></div>
                 <div>
@@ -585,7 +585,7 @@ const AdminAnalytics = () => {
               <p className="text-xs text-muted-foreground">Revenue per available room</p>
             </div>
 
-            <div className="bg-card rounded-lg border border-border p-5">
+            <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><Clock size={18} className="text-primary" /></div>
                 <div>
@@ -596,7 +596,7 @@ const AdminAnalytics = () => {
               <p className="text-xs text-muted-foreground">Average number of nights per booking</p>
             </div>
 
-            <div className="bg-card rounded-lg border border-border p-5">
+            <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><Award size={18} className="text-primary" /></div>
                 <div>
@@ -607,7 +607,7 @@ const AdminAnalytics = () => {
               <p className="text-xs text-muted-foreground">Room type with most bookings</p>
             </div>
 
-            <div className="bg-card rounded-lg border border-border p-5">
+            <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><Star size={18} className="text-primary" /></div>
                 <div>
@@ -618,7 +618,7 @@ const AdminAnalytics = () => {
               <p className="text-xs text-muted-foreground">Day with highest number of reservations</p>
             </div>
 
-            <div className="bg-card rounded-lg border border-border p-5">
+            <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center"><Target size={18} className="text-destructive" /></div>
                 <div>
@@ -631,7 +631,7 @@ const AdminAnalytics = () => {
           </div>
 
           {/* Revenue by Room Type chart */}
-          <div className="bg-card rounded-lg border border-border p-6">
+          <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
             <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><DollarSign size={16} /> Revenue by Room Type</h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={revenueByRoomType}>

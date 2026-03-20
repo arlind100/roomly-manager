@@ -73,7 +73,7 @@ const AdminStaff = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {staff.map(s => (
-            <div key={s.id} className="bg-card rounded-lg border border-border p-5">
+            <div key={s.id} className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">

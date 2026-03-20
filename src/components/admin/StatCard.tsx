@@ -13,7 +13,7 @@ interface StatCardProps {
 export function StatCard({ label, value, icon: Icon, trend, trendUp, className }: StatCardProps) {
   return (
     <div className={cn(
-      'group bg-card rounded-[0.625rem] border border-border/60 p-4 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] hover:-translate-y-0.5',
+      'group bg-card rounded-[0.625rem] border border-border/60 p-4 shadow-card transition-colors duration-300',
       className
     )}>
       <div className="flex items-center justify-between mb-3">

@@ -146,8 +146,8 @@ const AdminRooms = () => {
               key={key}
               onClick={() => setStatusFilter(statusFilter === key ? 'all' : key)}
               className={cn(
-                'rounded-[0.625rem] border p-3 text-center transition-all duration-200 hover:shadow-md',
-                statusFilter === key ? 'ring-2 ring-primary shadow-md' : '',
+                'rounded-[0.625rem] border p-3 text-center transition-all duration-200 hover:shadow-card',
+                statusFilter === key ? 'ring-2 ring-primary shadow-card' : '',
                 config.color
               )}
             >
@@ -194,7 +194,7 @@ const AdminRooms = () => {
             const config = STATUS_CONFIG[room.operational_status] || STATUS_CONFIG.available;
             const Icon = config.icon;
             return (
-              <div key={room.id} className={cn('rounded-[0.625rem] border p-4 transition-all duration-200 hover:shadow-md', config.color)}>
+              <div key={room.id} className={cn('rounded-[0.625rem] border p-4 shadow-card transition-colors duration-200', config.color)}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-background/80 flex items-center justify-center shadow-sm">

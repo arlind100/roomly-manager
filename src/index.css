@@ -76,6 +76,9 @@
   --font-display: 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
 
+  --shadow-card: 3px 3px 0px 0px rgba(0, 0, 0, 0.85);
+  --shadow-card-hover: 4px 4px 0px 0px rgba(0, 0, 0, 0.85);
+
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: 'Inter', system-ui, sans-serif;
@@ -115,6 +118,9 @@
   --font-display: 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
 
+  --shadow-card: 3px 3px 0px 0px rgba(255, 255, 255, 0.12);
+  --shadow-card-hover: 4px 4px 0px 0px rgba(255, 255, 255, 0.15);
+
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: 'Inter', system-ui, sans-serif;
@@ -140,10 +146,7 @@
 @layer components {
   /* Floating card with layered depth */
   .card-elevated {
-    @apply bg-card rounded-[0.625rem] border border-border/60 shadow-lg transition-all duration-300;
-  }
-  .card-elevated:hover {
-    @apply shadow-xl -translate-y-0.5;
+    @apply bg-card rounded-[0.625rem] border border-border/60 shadow-card transition-colors duration-300;
   }
 
   /* Icon container */
@@ -176,7 +179,7 @@
     @apply transition-all duration-300;
   }
   .hover-lift:hover {
-    @apply -translate-y-1 shadow-xl;
+    @apply -translate-y-0.5 shadow-card-hover;
   }
 }
 
