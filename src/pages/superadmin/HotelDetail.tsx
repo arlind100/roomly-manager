@@ -231,7 +231,10 @@ export default function HotelDetail() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">Hotel Settings</CardTitle>
               {!editMode ? (
-                <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>Edit</Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={fetchAll}>Refresh</Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>Edit</Button>
+                </div>
               ) : (
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => { setEditMode(false); setEditData(hotel); }}>Cancel</Button>
@@ -241,34 +244,105 @@ export default function HotelDetail() {
                 </div>
               )}
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label>Name</Label><Input disabled={!editMode} value={editData.name || ''} onChange={e => setEditData({ ...editData, name: e.target.value })} /></div>
-                <div><Label>Email</Label><Input disabled={!editMode} value={editData.email || ''} onChange={e => setEditData({ ...editData, email: e.target.value })} /></div>
-                <div><Label>Phone</Label><Input disabled={!editMode} value={editData.phone || ''} onChange={e => setEditData({ ...editData, phone: e.target.value })} /></div>
-                <div><Label>Address</Label><Input disabled={!editMode} value={editData.address || ''} onChange={e => setEditData({ ...editData, address: e.target.value })} /></div>
-                <div><Label>Currency</Label><Input disabled={!editMode} value={editData.currency || ''} onChange={e => setEditData({ ...editData, currency: e.target.value })} /></div>
-                <div><Label>Check-In Time</Label><Input disabled={!editMode} value={editData.check_in_time || ''} onChange={e => setEditData({ ...editData, check_in_time: e.target.value })} /></div>
-                <div><Label>Check-Out Time</Label><Input disabled={!editMode} value={editData.check_out_time || ''} onChange={e => setEditData({ ...editData, check_out_time: e.target.value })} /></div>
-                <div><Label>Tax %</Label><Input disabled={!editMode} type="number" value={editData.tax_percentage || 0} onChange={e => setEditData({ ...editData, tax_percentage: +e.target.value })} /></div>
-                <div>
-                  <Label>Plan</Label>
-                  {editMode ? (
-                    <Select value={editData.subscription_plan || 'starter'} onValueChange={v => setEditData({ ...editData, subscription_plan: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="starter">Starter</SelectItem>
-                        <SelectItem value="business">Business</SelectItem>
-                        <SelectItem value="premium">Premium</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : <Input disabled value={editData.subscription_plan || 'starter'} />}
+            <CardContent className="space-y-6">
+              {/* Hotel Profile */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3">Hotel Profile</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label>Hotel Name</Label><Input disabled={!editMode} value={editData.name || ''} onChange={e => setEditData({ ...editData, name: e.target.value })} /></div>
+                  <div><Label>Contact Email</Label><Input disabled={!editMode} value={editData.email || ''} onChange={e => setEditData({ ...editData, email: e.target.value })} /></div>
+                  <div><Label>Phone</Label><Input disabled={!editMode} value={editData.phone || ''} onChange={e => setEditData({ ...editData, phone: e.target.value })} /></div>
+                  <div><Label>Address</Label><Input disabled={!editMode} value={editData.address || ''} onChange={e => setEditData({ ...editData, address: e.target.value })} /></div>
                 </div>
-                <div><Label>Monthly Price (€)</Label><Input disabled={!editMode} type="number" value={editData.monthly_price || 89} onChange={e => setEditData({ ...editData, monthly_price: +e.target.value })} /></div>
               </div>
-              {editMode && (
-                <div><Label>Notes</Label><Textarea value={editData.superadmin_notes || ''} onChange={e => setEditData({ ...editData, superadmin_notes: e.target.value })} rows={3} /></div>
-              )}
+
+              {/* Operations */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3">Operations</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Currency</Label>
+                    {editMode ? (
+                      <Select value={editData.currency || 'EUR'} onValueChange={v => setEditData({ ...editData, currency: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {['EUR', 'USD', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD'].map(c => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : <Input disabled value={editData.currency || 'EUR'} />}
+                  </div>
+                  <div><Label>Check-In Time</Label><Input disabled={!editMode} type={editMode ? 'time' : 'text'} value={editData.check_in_time || '14:00'} onChange={e => setEditData({ ...editData, check_in_time: e.target.value })} /></div>
+                  <div><Label>Check-Out Time</Label><Input disabled={!editMode} type={editMode ? 'time' : 'text'} value={editData.check_out_time || '11:00'} onChange={e => setEditData({ ...editData, check_out_time: e.target.value })} /></div>
+                  <div><Label>Tax %</Label><Input disabled={!editMode} type="number" value={editData.tax_percentage ?? 0} onChange={e => setEditData({ ...editData, tax_percentage: +e.target.value })} /></div>
+                  <div><Label>Cleaning Duration (min)</Label><Input disabled={!editMode} type="number" value={editData.cleaning_duration_minutes ?? 120} onChange={e => setEditData({ ...editData, cleaning_duration_minutes: +e.target.value })} /></div>
+                  <div>
+                    <Label>Conflict Policy</Label>
+                    {editMode ? (
+                      <Select value={editData.conflict_policy || 'external_priority'} onValueChange={v => setEditData({ ...editData, conflict_policy: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="external_priority">External Priority</SelectItem>
+                          <SelectItem value="website_priority">Website Priority</SelectItem>
+                          <SelectItem value="first_booking">First Booking Wins</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : <Input disabled value={editData.conflict_policy || 'external_priority'} />}
+                  </div>
+                </div>
+              </div>
+
+              {/* Policies */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3">Policies</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <div><Label>Booking Policy</Label><Textarea disabled={!editMode} value={editData.booking_policy || ''} onChange={e => setEditData({ ...editData, booking_policy: e.target.value })} rows={2} /></div>
+                  <div><Label>Cancellation Policy</Label><Textarea disabled={!editMode} value={editData.cancellation_policy || ''} onChange={e => setEditData({ ...editData, cancellation_policy: e.target.value })} rows={2} /></div>
+                </div>
+              </div>
+
+              {/* Subscription (superadmin only) */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3">Subscription</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Plan</Label>
+                    {editMode ? (
+                      <Select value={editData.subscription_plan || 'starter'} onValueChange={v => setEditData({ ...editData, subscription_plan: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="starter">Starter</SelectItem>
+                          <SelectItem value="business">Business</SelectItem>
+                          <SelectItem value="premium">Premium</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : <Input disabled value={editData.subscription_plan || 'starter'} />}
+                  </div>
+                  <div>
+                    <Label>Status</Label>
+                    {editMode ? (
+                      <Select value={editData.subscription_status || 'trial'} onValueChange={v => setEditData({ ...editData, subscription_status: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="trial">Trial</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="suspended">Suspended</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : <Input disabled value={editData.subscription_status || 'trial'} />}
+                  </div>
+                  <div><Label>Monthly Price (€)</Label><Input disabled={!editMode} type="number" value={editData.monthly_price ?? 89} onChange={e => setEditData({ ...editData, monthly_price: +e.target.value })} /></div>
+                  <div><Label>Trial End Date</Label><Input disabled={!editMode} type={editMode ? 'date' : 'text'} value={editData.trial_ends_at ? editData.trial_ends_at.substring(0, 10) : ''} onChange={e => setEditData({ ...editData, trial_ends_at: e.target.value })} /></div>
+                </div>
+              </div>
+
+              {/* Superadmin Notes */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3">Internal Notes</h4>
+                <Textarea disabled={!editMode} value={editData.superadmin_notes || ''} onChange={e => setEditData({ ...editData, superadmin_notes: e.target.value })} rows={3} placeholder="Internal notes about this hotel..." />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
