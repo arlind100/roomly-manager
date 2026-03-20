@@ -17,3 +17,24 @@ verify_jwt = false
 
 [functions.ical-export]
 verify_jwt = false
+
+[functions.superadmin-auth]
+verify_jwt = false
+
+[functions.create-hotel-account]
+verify_jwt = false
+
+[functions.suspend-hotel]
+verify_jwt = false
+
+[functions.reactivate-hotel]
+verify_jwt = false
+
+[functions.delete-hotel]
+verify_jwt = false
+
+[functions.reset-hotel-password]
+verify_jwt = false
+
+[functions.update-hotel-settings]
+verify_jwt = false
