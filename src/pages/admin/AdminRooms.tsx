@@ -147,7 +147,7 @@ const AdminRooms = () => {
               onClick={() => setStatusFilter(statusFilter === key ? 'all' : key)}
               className={cn(
                 'rounded-[0.625rem] border p-3 text-center transition-all duration-200 hover:shadow-card',
-                statusFilter === key ? 'ring-2 ring-primary shadow-md' : '',
+                statusFilter === key ? 'ring-2 ring-primary shadow-card' : '',
                 config.color
               )}
             >
