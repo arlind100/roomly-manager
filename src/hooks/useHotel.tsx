@@ -8,11 +8,34 @@ export function useHotel() {
 
   useEffect(() => {
     const fetchHotel = async () => {
+      // First get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      // Get hotel_id from user_roles
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('hotel_id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (!roles || roles.length === 0 || !roles[0].hotel_id) {
+        setLoading(false);
+        return;
+      }
+
+      const hotelId = roles[0].hotel_id;
+
+      // Fetch the specific hotel
       const { data } = await supabase
         .from('hotels')
         .select('*')
-        .limit(1)
+        .eq('id', hotelId)
         .single();
+      
       setHotel(data);
       setLoading(false);
     };
