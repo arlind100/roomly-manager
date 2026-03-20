@@ -631,12 +631,12 @@ const AdminDashboard = () => {
               {selectedRes.notes && <div><p className="text-xs text-muted-foreground">{t('admin.notes')}</p><p>{selectedRes.notes}</p></div>}
               <div className="flex gap-2 pt-2">
                 {selectedRes.status === 'confirmed' && (
-                  <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white flex-1" onClick={() => { handleCheckIn(selectedRes.id); setSelectedRes(null); }}>
+                  <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white flex-1" onClick={() => { initiateCheckIn(selectedRes.id); setSelectedRes(null); }}>
                     <LogIn size={14} /> {t('admin.checkInAction')}
                   </Button>
                 )}
                 {(selectedRes.status === 'confirmed' || selectedRes.status === 'checked_in') && (
-                  <Button size="sm" variant="outline" className="gap-1.5 flex-1" onClick={() => { handleCheckOut(selectedRes.id); setSelectedRes(null); }}>
+                  <Button size="sm" variant="outline" className="gap-1.5 flex-1" onClick={() => { initiateCheckOut(selectedRes.id); setSelectedRes(null); }}>
                     <LogOutIcon size={14} /> {t('admin.checkOutAction')}
                   </Button>
                 )}
