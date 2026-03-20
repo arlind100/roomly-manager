@@ -59,8 +59,10 @@ const AdminAvailability = () => {
 
   const handleAddBlock = async () => {
     if (!form.room_type_id || !form.date) { toast.error('Select room and date'); return; }
+    setAddingBlock(true);
     const hotel = (await supabase.from('hotels').select('id').limit(1).single()).data;
     const { error } = await supabase.from('availability_blocks').insert({ hotel_id: hotel?.id, room_type_id: form.room_type_id, date: form.date, reason: form.reason });
+    setAddingBlock(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Block added');
     setShowAdd(false);
