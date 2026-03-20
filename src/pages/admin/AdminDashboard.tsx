@@ -16,9 +16,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import {
   CalendarDays, DollarSign, LogIn, LogOut as LogOutIcon, BarChart3, Users,
-  BedDouble, UserPlus, Search, Eye, Plus, CalendarRange, Ban, AlertTriangle, Globe, Sparkles,
+  BedDouble, UserPlus, Search, Eye, Plus, CalendarRange, Ban, AlertTriangle, Globe, Sparkles, Loader2,
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
