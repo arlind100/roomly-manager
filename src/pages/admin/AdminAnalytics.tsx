@@ -181,7 +181,11 @@ const AdminAnalytics = () => {
   const dailyArrivals = reservations.filter(r => r.check_in === todayStr && r.status !== 'cancelled');
   const dailyDepartures = reservations.filter(r => r.check_out === todayStr && r.status !== 'cancelled');
   const currentlyStaying = reservations.filter(r => r.check_in <= todayStr && r.check_out > todayStr && (r.status === 'confirmed' || r.status === 'checked_in'));
-  const dailyRevenue = currentlyStaying.reduce((s, r) => s + (Number(r.total_price) || 0), 0);
+  const dailyRevenue = currentlyStaying.reduce((s, r) => {
+    const totalPrice = Number(r.total_price) || 0;
+    const nights = Math.max(1, differenceInDays(parseISO(r.check_out), parseISO(r.check_in)));
+    return s + (totalPrice / nights);
+  }, 0);
 
   // Occupancy report by day
   const occupancyReportData = useMemo(() => {
