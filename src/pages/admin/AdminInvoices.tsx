@@ -127,7 +127,7 @@ const AdminInvoices = () => {
       {invoices.length === 0 ? (
         <EmptyState icon={FileText} title={t('admin.noInvoices')} description={t('admin.noInvoicesDesc')} />
       ) : (
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
+        <div className="bg-card rounded-[0.625rem] border border-border/60 overflow-hidden shadow-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-border bg-muted/50">

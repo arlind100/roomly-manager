@@ -136,7 +136,7 @@ const AdminPricing = () => {
         {overrides.length === 0 ? (
           <div className="bg-card rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">{t('admin.noOverrides')}</div>
         ) : (
-          <div className="bg-card rounded-lg border border-border overflow-hidden">
+          <div className="bg-card rounded-[0.625rem] border border-border/60 overflow-hidden shadow-card">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-border bg-muted/50">
                 <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.room')}</th>
