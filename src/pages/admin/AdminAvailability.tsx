@@ -134,7 +134,7 @@ const AdminAvailability = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card rounded-lg border border-border p-6">
+            <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
               <p className="text-sm text-muted-foreground mb-4">{t('admin.clickToBlock')}</p>
               <Calendar
                 mode="single"
@@ -149,7 +149,7 @@ const AdminAvailability = () => {
               </div>
             </div>
 
-            <div className="bg-card rounded-lg border border-border p-6">
+            <div className="bg-card rounded-[0.625rem] border border-border/60 p-6 shadow-card">
               <h3 className="text-sm font-semibold mb-4">{t('admin.blockedDates')}</h3>
               {blocks.filter(b => b.room_type_id === selectedRoom).length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t('admin.noBlockedDates')}</p>
