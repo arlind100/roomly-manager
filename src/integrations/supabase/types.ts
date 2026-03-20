@@ -56,6 +56,56 @@ export type Database = {
           },
         ]
       }
+      billing_records: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          hotel_id: string | null
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          hotel_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_date: string
+          payment_method?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          hotel_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_records_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hotels: {
         Row: {
           address: string | null
@@ -66,14 +116,22 @@ export type Database = {
           cleaning_duration_minutes: number
           conflict_policy: string
           created_at: string
+          created_by_superadmin: boolean | null
           currency: string
           email: string | null
           ical_token: string
           id: string
+          last_login_at: string | null
           logo_url: string | null
+          monthly_price: number | null
           name: string
           phone: string | null
+          subscription_paid_until: string | null
+          subscription_plan: string | null
+          subscription_status: string | null
+          superadmin_notes: string | null
           tax_percentage: number | null
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
@@ -85,14 +143,22 @@ export type Database = {
           cleaning_duration_minutes?: number
           conflict_policy?: string
           created_at?: string
+          created_by_superadmin?: boolean | null
           currency?: string
           email?: string | null
           ical_token?: string
           id?: string
+          last_login_at?: string | null
           logo_url?: string | null
+          monthly_price?: number | null
           name?: string
           phone?: string | null
+          subscription_paid_until?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
+          superadmin_notes?: string | null
           tax_percentage?: number | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -104,14 +170,22 @@ export type Database = {
           cleaning_duration_minutes?: number
           conflict_policy?: string
           created_at?: string
+          created_by_superadmin?: boolean | null
           currency?: string
           email?: string | null
           ical_token?: string
           id?: string
+          last_login_at?: string | null
           logo_url?: string | null
+          monthly_price?: number | null
           name?: string
           phone?: string | null
+          subscription_paid_until?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
+          superadmin_notes?: string | null
           tax_percentage?: number | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -624,6 +698,41 @@ export type Database = {
           {
             foreignKeyName: "staff_hotel_id_fkey"
             columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      superadmin_audit_log: {
+        Row: {
+          action: string
+          details: Json | null
+          id: string
+          performed_at: string | null
+          target_hotel_id: string | null
+          target_hotel_name: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          id?: string
+          performed_at?: string | null
+          target_hotel_id?: string | null
+          target_hotel_name?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          id?: string
+          performed_at?: string | null
+          target_hotel_id?: string | null
+          target_hotel_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "superadmin_audit_log_target_hotel_id_fkey"
+            columns: ["target_hotel_id"]
             isOneToOne: false
             referencedRelation: "hotels"
             referencedColumns: ["id"]
