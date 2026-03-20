@@ -26,6 +26,10 @@ const AdminPricing = () => {
   const [editingRoom, setEditingRoom] = useState<any>(null);
   const [editPriceForm, setEditPriceForm] = useState({ base_price: 0, weekend_price: null as number | null });
   const [form, setForm] = useState({ room_type_id: '', start_date: '', end_date: '', price: 0, label: '' });
+  const [addingSaving, setAddingSaving] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
