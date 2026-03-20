@@ -40,8 +40,10 @@ const AdminInvoices = () => {
 
   const handleCreate = async () => {
     if (!form.reservation_id || !form.amount) { toast.error('Select reservation and amount'); return; }
+    setCreatingInv(true);
     const h = (await supabase.from('hotels').select('id').limit(1).single()).data;
     const { error } = await supabase.from('invoices').insert({ hotel_id: h?.id, ...form });
+    setCreatingInv(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Invoice created');
     setShowCreate(false);
