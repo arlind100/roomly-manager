@@ -76,8 +76,8 @@
   --font-display: 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
 
-  --shadow-card: 3px 3px 0px 0px rgba(0, 0, 0, 0.85);
-  --shadow-card-hover: 4px 4px 0px 0px rgba(0, 0, 0, 0.85);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.16);
 
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
