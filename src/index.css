@@ -140,10 +140,7 @@
 @layer components {
   /* Floating card with layered depth */
   .card-elevated {
-    @apply bg-card rounded-[0.625rem] border border-border/60 shadow-lg transition-all duration-300;
-  }
-  .card-elevated:hover {
-    @apply shadow-xl -translate-y-0.5;
+    @apply bg-card rounded-[0.625rem] border border-border/60 shadow-card transition-colors duration-300;
   }
 
   /* Icon container */
