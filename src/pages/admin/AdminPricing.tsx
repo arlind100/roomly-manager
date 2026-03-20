@@ -57,7 +57,9 @@ const AdminPricing = () => {
   };
 
   const deleteOverride = async (id: string) => {
+    setDeletingId(id);
     await supabase.from('pricing_overrides').delete().eq('id', id);
+    setDeletingId(null);
     toast.success('Override removed');
     fetchData();
   };
