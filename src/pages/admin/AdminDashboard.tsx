@@ -435,8 +435,8 @@ const AdminDashboard = () => {
                     <p className="text-xs font-medium truncate">{r.guest_name}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{r.room_types?.name || '—'}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="gap-1 text-[10px] h-6 px-2 shrink-0" onClick={() => handleCheckOut(r.id)}>
-                    <LogOutIcon size={10} /> {t('admin.checkOutAction')}
+                  <Button size="sm" variant="outline" className="gap-1 text-[10px] h-6 px-2 shrink-0" disabled={checkingOutId === r.id} onClick={() => initiateCheckOut(r.id)}>
+                    {checkingOutId === r.id ? <Loader2 size={10} className="animate-spin" /> : <LogOutIcon size={10} />} {checkingOutId === r.id ? 'Checking Out...' : t('admin.checkOutAction')}
                   </Button>
                 </div>
               ))}
