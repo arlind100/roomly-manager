@@ -414,7 +414,7 @@ const AdminAnalytics = () => {
                 <TableBody>
                   {occupancyReportData.slice(0, 31).map(row => (
                     <TableRow key={row.date}>
-                      <TableCell className="text-sm">{row.date}</TableCell>
+                      <TableCell className="text-sm">{format(parseISO(row.date), 'MMM dd, yyyy')}</TableCell>
                       <TableCell className="text-sm">{row.booked}</TableCell>
                       <TableCell className="text-sm">{row.available}</TableCell>
                       <TableCell className="text-sm font-medium">{row.rate}%</TableCell>
