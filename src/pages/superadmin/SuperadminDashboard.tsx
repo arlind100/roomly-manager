@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Building2, TrendingUp, Clock, AlertTriangle, DollarSign, Plus } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { getSuperadminToken } from '@/lib/superadmin';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://qdxtmdyagsxtvtjaxqou.supabase.co";
 
 export default function SuperadminDashboard() {
   const [hotels, setHotels] = useState<any[]>([]);
@@ -21,10 +24,19 @@ export default function SuperadminDashboard() {
     const { data: h } = await supabase.from('hotels').select('*');
     setHotels(h || []);
 
-    // Fetch audit log (we use service key via edge fn, but for read we can try direct)
-    // Since RLS blocks client, we'll show what we can
-    const { data: logs } = await supabase.from('superadmin_audit_log').select('*').order('performed_at', { ascending: false }).limit(10);
-    setAuditLog(logs || []);
+    // Fetch audit log via edge function (bypasses RLS)
+    const token = getSuperadminToken();
+    if (token) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/read-audit-log?limit=10`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setAuditLog(data.data || []);
+      } catch {
+        setAuditLog([]);
+      }
+    }
 
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
