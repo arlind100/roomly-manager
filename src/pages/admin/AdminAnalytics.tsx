@@ -496,8 +496,8 @@ const AdminAnalytics = () => {
                       <TableCell className="text-xs font-mono">{r.reservation_code}</TableCell>
                       <TableCell className="text-sm">{r.guest_name}</TableCell>
                       <TableCell className="text-sm">{r.room_types?.name || '—'}</TableCell>
-                      <TableCell className="text-sm">{r.check_in}</TableCell>
-                      <TableCell className="text-sm">{r.check_out}</TableCell>
+                      <TableCell className="text-sm">{format(parseISO(r.check_in), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell className="text-sm">{format(parseISO(r.check_out), 'MMM dd, yyyy')}</TableCell>
                       <TableCell><StatusBadge status={r.status} /></TableCell>
                       <TableCell className="text-sm">{displayPrice(Number(r.total_price) || 0, cur)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{r.booking_source || 'direct'}</TableCell>
