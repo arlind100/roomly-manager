@@ -479,7 +479,7 @@ const AdminSettings = () => {
                             size="sm"
                             variant="outline"
                             className="text-destructive border-destructive/30"
-                            onClick={() => handleDeleteFeed(feed.id)}
+                            onClick={() => setDeleteFeedId(feed.id)}
                           >
                             <Trash2 size={12} />
                           </Button>
