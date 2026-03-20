@@ -255,11 +255,18 @@ const AdminDashboard = () => {
     fetchData();
   };
 
+  const initiateCheckOut = (id: string) => {
+    const res = reservations.find(r => r.id === id);
+    setConfirmCheckOut(res);
+  };
+
   const handleCheckOut = async (id: string) => {
+    setCheckingOutId(id);
+    setConfirmCheckOut(null);
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const res = reservations.find(r => r.id === id);
     const { error } = await supabase.from('reservations').update({ status: 'completed', check_out_time: timeNow, updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(error.message); setCheckingOutId(null); return; }
 
     // Mark room as dirty on checkout
     if (res?.room_id) {
@@ -277,6 +284,7 @@ const AdminDashboard = () => {
     }
 
     toast.success('Guest checked out');
+    setCheckingOutId(null);
     fetchData();
   };
 
