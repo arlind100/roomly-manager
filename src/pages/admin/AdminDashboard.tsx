@@ -645,6 +645,38 @@ const AdminDashboard = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Check-In Confirmation */}
+      <AlertDialog open={!!confirmCheckIn} onOpenChange={v => { if (!v) setConfirmCheckIn(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Check-In</AlertDialogTitle>
+            <AlertDialogDescription>
+              Check in <strong>{confirmCheckIn?.guest_name}</strong> for {confirmCheckIn?.room_types?.name || 'their room'}? This will mark the reservation as active.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleCheckIn(confirmCheckIn?.id)} className="bg-green-600 hover:bg-green-700 text-white">Check In</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Check-Out Confirmation */}
+      <AlertDialog open={!!confirmCheckOut} onOpenChange={v => { if (!v) setConfirmCheckOut(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Check-Out</AlertDialogTitle>
+            <AlertDialogDescription>
+              Check out <strong>{confirmCheckOut?.guest_name}</strong>? An invoice will be generated automatically.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleCheckOut(confirmCheckOut?.id)} className="bg-blue-600 hover:bg-blue-700 text-white">Check Out</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
