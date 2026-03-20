@@ -70,12 +70,24 @@ const AdminAnalytics = () => {
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
-    const [resResult, roomResult] = await Promise.all([
-      supabase.from('reservations').select('*, room_types(name, available_units, base_price)').order('created_at', { ascending: false }),
-      supabase.from('room_types').select('*'),
-    ]);
-    setReservations(resResult.data || []);
-    setRoomTypes(roomResult.data || []);
+    // Analytics needs all reservations for aggregation - paginate through all
+    let allReservations: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+    while (hasMore) {
+      const { data } = await supabase.from('reservations')
+        .select('*, room_types(name, available_units, base_price)')
+        .order('created_at', { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+      const batch = data || [];
+      allReservations = [...allReservations, ...batch];
+      hasMore = batch.length === pageSize;
+      page++;
+    }
+    const { data: rtData } = await supabase.from('room_types').select('*');
+    setReservations(allReservations);
+    setRoomTypes(rtData || []);
     setLoading(false);
   };
 

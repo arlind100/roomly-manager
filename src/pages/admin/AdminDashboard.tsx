@@ -69,17 +69,22 @@ const AdminDashboard = () => {
   const [creating, setCreating] = useState(false);
   const [selectedRes, setSelectedRes] = useState<any>(null);
 
+  // Room picker for check-in without room_id
+  const [roomPickerRes, setRoomPickerRes] = useState<any>(null);
+  const [pickedRoomId, setPickedRoomId] = useState('');
+
   const [walkIn, setWalkIn] = useState({
     guest_name: '', guest_phone: '', nights: 1, guests_count: 1,
-    room_type_id: '', total_price: 0, payment_method: 'cash', notes: '',
+    room_type_id: '', room_id: '', total_price: 0, payment_method: 'cash', notes: '',
     payment_received: false,
   });
 
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
+    // Dashboard needs current/recent reservations for metrics - fetch with higher limit
     const [resResult, rtResult, roomResult] = await Promise.all([
-      supabase.from('reservations').select('*, room_types(name, available_units)').order('created_at', { ascending: false }),
+      supabase.from('reservations').select('*, room_types(name, available_units)').order('created_at', { ascending: false }).limit(2000),
       supabase.from('room_types').select('*'),
       supabase.from('rooms').select('*, room_types(name)').eq('is_active', true),
     ]);
@@ -162,9 +167,17 @@ const AdminDashboard = () => {
     });
   }, [roomTypes, reservations, today, walkIn.nights]);
 
+  // Physical rooms available for walk-in room picker
+  const walkInPhysicalRooms = useMemo(() => {
+    return rooms.filter(r =>
+      r.room_type_id === walkIn.room_type_id &&
+      (r.operational_status === 'available' || r.operational_status === 'reserved')
+    );
+  }, [rooms, walkIn.room_type_id]);
+
   const handleRoomSelect = (roomTypeId: string) => {
     const rt = roomTypes.find(r => r.id === roomTypeId);
-    setWalkIn(p => ({ ...p, room_type_id: roomTypeId, total_price: (rt?.base_price || 0) * walkIn.nights }));
+    setWalkIn(p => ({ ...p, room_type_id: roomTypeId, room_id: '', total_price: (rt?.base_price || 0) * walkIn.nights }));
   };
 
   const handleNightsChange = (nights: number) => {
@@ -174,39 +187,58 @@ const AdminDashboard = () => {
 
   const handleWalkInSubmit = async () => {
     if (!walkIn.guest_name || !walkIn.room_type_id) { toast.error('Guest name and room are required'); return; }
+    if (!walkIn.room_id) { toast.error('Please assign a specific room for walk-in'); return; }
     setCreating(true);
     const h = hotel?.id || (await supabase.from('hotels').select('id').limit(1).single()).data?.id;
     const checkOut = format(addDays(new Date(), walkIn.nights), 'yyyy-MM-dd');
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const { error } = await supabase.from('reservations').insert({
       hotel_id: h, guest_name: walkIn.guest_name, guest_phone: walkIn.guest_phone || null,
-      room_type_id: walkIn.room_type_id, check_in: today, check_out: checkOut,
+      room_type_id: walkIn.room_type_id, room_id: walkIn.room_id,
+      check_in: today, check_out: checkOut,
       check_in_time: timeNow,
       guests_count: walkIn.guests_count, total_price: walkIn.total_price,
       payment_method: walkIn.payment_method, notes: walkIn.notes || null,
       payment_status: walkIn.payment_received ? 'paid' : 'unpaid',
       status: 'checked_in', booking_source: 'walk-in',
     });
+    if (error) { toast.error(error.message); setCreating(false); return; }
+    // Mark the room as occupied
+    await supabase.from('rooms').update({ operational_status: 'occupied', updated_at: new Date().toISOString() }).eq('id', walkIn.room_id);
     setCreating(false);
-    if (error) { toast.error(error.message); return; }
     toast.success('Walk-in reservation created');
     setShowWalkIn(false);
-    setWalkIn({ guest_name: '', guest_phone: '', nights: 1, guests_count: 1, room_type_id: '', total_price: 0, payment_method: 'cash', notes: '', payment_received: false });
+    setWalkIn({ guest_name: '', guest_phone: '', nights: 1, guests_count: 1, room_type_id: '', room_id: '', total_price: 0, payment_method: 'cash', notes: '', payment_received: false });
     fetchData();
   };
 
   const handleCheckIn = async (id: string) => {
-    const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const res = reservations.find(r => r.id === id);
+    // If no room assigned, show room picker
+    if (res && !res.room_id) {
+      setRoomPickerRes(res);
+      setPickedRoomId('');
+      return;
+    }
+    const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const { error } = await supabase.from('reservations').update({ status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) { toast.error(error.message); return; }
-
     // Mark the assigned room as occupied
     if (res?.room_id) {
       await supabase.from('rooms').update({ operational_status: 'occupied', updated_at: new Date().toISOString() }).eq('id', res.room_id);
     }
-
     toast.success(t('admin.checkedIn'));
+    fetchData();
+  };
+
+  const handleRoomPickerConfirm = async () => {
+    if (!roomPickerRes || !pickedRoomId) { toast.error('Please select a room'); return; }
+    // Assign room and check in
+    const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    await supabase.from('reservations').update({ room_id: pickedRoomId, status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', roomPickerRes.id);
+    await supabase.from('rooms').update({ operational_status: 'occupied', updated_at: new Date().toISOString() }).eq('id', pickedRoomId);
+    toast.success(t('admin.checkedIn'));
+    setRoomPickerRes(null);
     fetchData();
   };
 
@@ -220,12 +252,10 @@ const AdminDashboard = () => {
     if (res?.room_id) {
       await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: new Date().toISOString() }).eq('id', res.room_id);
     } else if (res?.room_type_id) {
-      // No specific room assigned — mark first occupied room of that type as dirty (or any active room if none occupied)
       const { data: occupiedRooms } = await supabase.from('rooms').select('id').eq('room_type_id', res.room_type_id).eq('operational_status', 'occupied').eq('is_active', true).limit(1);
       if (occupiedRooms && occupiedRooms.length > 0) {
         await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: new Date().toISOString() }).eq('id', occupiedRooms[0].id);
       } else {
-        // Fallback: mark first available room of that type as dirty
         const { data: availRooms } = await supabase.from('rooms').select('id').eq('room_type_id', res.room_type_id).eq('is_active', true).neq('operational_status', 'dirty').limit(1);
         if (availRooms && availRooms.length > 0) {
           await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: new Date().toISOString() }).eq('id', availRooms[0].id);
@@ -496,6 +526,19 @@ const AdminDashboard = () => {
                 </SelectContent>
               </Select>
             </div>
+            {walkIn.room_type_id && (
+              <div>
+                <Label>Assign Room *</Label>
+                <Select value={walkIn.room_id} onValueChange={v => setWalkIn(p => ({ ...p, room_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
+                  <SelectContent>
+                    {walkInPhysicalRooms.map(r => (
+                      <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={walkIn.total_price} onChange={e => setWalkIn(p => ({ ...p, total_price: parseFloat(e.target.value) || 0 }))} /></div>
               <div>
@@ -519,6 +562,30 @@ const AdminDashboard = () => {
               <UserPlus size={16} /> {creating ? t('admin.creating') : t('admin.createWalkIn')}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== ROOM PICKER FOR CHECK-IN ===== */}
+      <Dialog open={!!roomPickerRes} onOpenChange={v => { if (!v) setRoomPickerRes(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Assign Room for Check-in</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            No room assigned to <strong>{roomPickerRes?.guest_name}</strong>. Please select a room before checking in.
+          </p>
+          <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
+            <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
+            <SelectContent>
+              {rooms.filter(r =>
+                r.room_type_id === roomPickerRes?.room_type_id &&
+                (r.operational_status === 'available' || r.operational_status === 'reserved')
+              ).map(r => (
+                <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={handleRoomPickerConfirm} disabled={!pickedRoomId} className="w-full gap-1.5">
+            <LogIn size={14} /> Assign & Check In
+          </Button>
         </DialogContent>
       </Dialog>
 

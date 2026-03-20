@@ -34,14 +34,14 @@ const BOOKING_SOURCES = [
 
 type ReservationForm = {
   guest_name: string; guest_email: string; guest_phone: string;
-  room_type_id: string; check_in: string; check_out: string;
+  room_type_id: string; room_id: string; check_in: string; check_out: string;
   check_in_time: string; check_out_time: string;
   guests_count: number; total_price: number; special_requests: string; notes: string;
   booking_source: string;
 };
 
 const emptyForm: ReservationForm = {
-  guest_name: '', guest_email: '', guest_phone: '', room_type_id: '',
+  guest_name: '', guest_email: '', guest_phone: '', room_type_id: '', room_id: '',
   check_in: '', check_out: '', check_in_time: '', check_out_time: '',
   guests_count: 1, total_price: 0, special_requests: '', notes: '',
   booking_source: 'direct',
@@ -51,38 +51,57 @@ interface FormFieldsProps {
   f: ReservationForm;
   setF: (fn: (prev: ReservationForm) => ReservationForm) => void;
   roomTypes: any[];
+  rooms: any[];
   t: (key: string) => string;
 }
 
-const FormFields = ({ f, setF, roomTypes, t }: FormFieldsProps) => (
-  <div className="space-y-4">
-    <div className="grid grid-cols-2 gap-4">
-      <div className="col-span-2"><Label>{t('admin.guestName')} *</Label><Input value={f.guest_name} onChange={e => setF(p => ({...p, guest_name: e.target.value}))} /></div>
-      <div><Label>{t('admin.guestEmail')}</Label><Input type="email" value={f.guest_email} onChange={e => setF(p => ({...p, guest_email: e.target.value}))} /></div>
-      <div><Label>{t('admin.guestPhone')}</Label><Input value={f.guest_phone} onChange={e => setF(p => ({...p, guest_phone: e.target.value}))} /></div>
-      <div><Label>{t('admin.roomType')}</Label>
-        <Select value={f.room_type_id} onValueChange={v => setF(p => ({...p, room_type_id: v}))}>
-          <SelectTrigger><SelectValue placeholder={t('admin.selectRoom')} /></SelectTrigger>
-          <SelectContent>{roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
-        </Select>
+const FormFields = ({ f, setF, roomTypes, rooms, t }: FormFieldsProps) => {
+  const availableRooms = rooms.filter(r =>
+    r.room_type_id === f.room_type_id &&
+    (r.operational_status === 'available' || r.operational_status === 'reserved')
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="col-span-2"><Label>{t('admin.guestName')} *</Label><Input value={f.guest_name} onChange={e => setF(p => ({...p, guest_name: e.target.value}))} /></div>
+        <div><Label>{t('admin.guestEmail')}</Label><Input type="email" value={f.guest_email} onChange={e => setF(p => ({...p, guest_email: e.target.value}))} /></div>
+        <div><Label>{t('admin.guestPhone')}</Label><Input value={f.guest_phone} onChange={e => setF(p => ({...p, guest_phone: e.target.value}))} /></div>
+        <div><Label>{t('admin.roomType')}</Label>
+          <Select value={f.room_type_id} onValueChange={v => setF(p => ({...p, room_type_id: v, room_id: ''}))}>
+            <SelectTrigger><SelectValue placeholder={t('admin.selectRoom')} /></SelectTrigger>
+            <SelectContent>{roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div><Label>Assign Room</Label>
+          <Select value={f.room_id} onValueChange={v => setF(p => ({...p, room_id: v}))}>
+            <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No specific room</SelectItem>
+              {availableRooms.map(r => (
+                <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div><Label>{t('admin.guests')}</Label><Input type="number" min={1} value={f.guests_count} onChange={e => setF(p => ({...p, guests_count: parseInt(e.target.value) || 1}))} /></div>
+        <div><Label>{t('admin.checkIn')} *</Label><Input type="date" value={f.check_in} onChange={e => setF(p => ({...p, check_in: e.target.value}))} /></div>
+        <div><Label>{t('admin.checkOut')} *</Label><Input type="date" value={f.check_out} onChange={e => setF(p => ({...p, check_out: e.target.value}))} /></div>
+        <div><Label>Check-in Time</Label><Input type="time" value={f.check_in_time} onChange={e => setF(p => ({...p, check_in_time: e.target.value}))} /></div>
+        <div><Label>Check-out Time</Label><Input type="time" value={f.check_out_time} onChange={e => setF(p => ({...p, check_out_time: e.target.value}))} /></div>
+        <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={f.total_price} onChange={e => setF(p => ({...p, total_price: parseFloat(e.target.value) || 0}))} /></div>
+        <div><Label>Booking Source</Label>
+          <Select value={f.booking_source} onValueChange={v => setF(p => ({...p, booking_source: v}))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{BOOKING_SOURCES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
       </div>
-      <div><Label>{t('admin.guests')}</Label><Input type="number" min={1} value={f.guests_count} onChange={e => setF(p => ({...p, guests_count: parseInt(e.target.value) || 1}))} /></div>
-      <div><Label>{t('admin.checkIn')} *</Label><Input type="date" value={f.check_in} onChange={e => setF(p => ({...p, check_in: e.target.value}))} /></div>
-      <div><Label>{t('admin.checkOut')} *</Label><Input type="date" value={f.check_out} onChange={e => setF(p => ({...p, check_out: e.target.value}))} /></div>
-      <div><Label>Check-in Time</Label><Input type="time" value={f.check_in_time} onChange={e => setF(p => ({...p, check_in_time: e.target.value}))} /></div>
-      <div><Label>Check-out Time</Label><Input type="time" value={f.check_out_time} onChange={e => setF(p => ({...p, check_out_time: e.target.value}))} /></div>
-      <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={f.total_price} onChange={e => setF(p => ({...p, total_price: parseFloat(e.target.value) || 0}))} /></div>
-      <div><Label>Booking Source</Label>
-        <Select value={f.booking_source} onValueChange={v => setF(p => ({...p, booking_source: v}))}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>{BOOKING_SOURCES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
+      <div><Label>{t('admin.specialRequests')}</Label><Textarea value={f.special_requests} onChange={e => setF(p => ({...p, special_requests: e.target.value}))} rows={2} /></div>
+      <div><Label>{t('admin.notes')}</Label><Textarea value={f.notes} onChange={e => setF(p => ({...p, notes: e.target.value}))} rows={2} /></div>
     </div>
-    <div><Label>{t('admin.specialRequests')}</Label><Textarea value={f.special_requests} onChange={e => setF(p => ({...p, special_requests: e.target.value}))} rows={2} /></div>
-    <div><Label>{t('admin.notes')}</Label><Textarea value={f.notes} onChange={e => setF(p => ({...p, notes: e.target.value}))} rows={2} /></div>
-  </div>
-);
+  );
+};
 
 const ITEMS_PER_PAGE = 25;
 
@@ -91,6 +110,7 @@ const AdminReservations = () => {
   const { hotel } = useHotel();
   const cur = hotel?.currency || 'USD';
   const [reservations, setReservations] = useState<any[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,16 +127,35 @@ const AdminReservations = () => {
   const [editForm, setEditForm] = useState<ReservationForm>(emptyForm);
   const [currentPage, setCurrentPage] = useState(0);
   const [confirmAction, setConfirmAction] = useState<{ title: string; description: string; onConfirm: () => void } | null>(null);
+  // Room picker for check-in
+  const [roomPickerRes, setRoomPickerRes] = useState<any>(null);
+  const [pickedRoomId, setPickedRoomId] = useState('');
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [currentPage, search, statusFilter, sourceFilter]);
 
   const fetchData = async () => {
+    setLoading(true);
+    const from = currentPage * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
+    let query = supabase.from('reservations').select('*, room_types(name)', { count: 'exact' })
+      .order('created_at', { ascending: false });
+
+    if (search) {
+      query = query.or(`guest_name.ilike.%${search}%,guest_email.ilike.%${search}%,guest_phone.ilike.%${search}%,reservation_code.ilike.%${search}%`);
+    }
+    if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+    if (sourceFilter !== 'all') query = query.eq('booking_source', sourceFilter);
+
+    query = query.range(from, to);
+
     const [resResult, rtResult, roomResult] = await Promise.all([
-      supabase.from('reservations').select('*, room_types(name)').order('created_at', { ascending: false }),
+      query,
       supabase.from('room_types').select('*'),
       supabase.from('rooms').select('*, room_types(name)').eq('is_active', true),
     ]);
     setReservations(resResult.data || []);
+    setTotalCount(resResult.count || 0);
     setRoomTypes(rtResult.data || []);
     setRooms(roomResult.data || []);
     setLoading(false);
@@ -133,6 +172,13 @@ const AdminReservations = () => {
   };
 
   const confirmAndUpdateStatus = (id: string, status: string) => {
+    const res = reservations.find(r => r.id === id);
+    // For check-in: if no room_id, show room picker instead
+    if (status === 'checked_in' && res && !res.room_id) {
+      setRoomPickerRes(res);
+      setPickedRoomId('');
+      return;
+    }
     const labels: Record<string, string> = {
       cancelled: 'Cancel this reservation',
       confirmed: 'Confirm this reservation',
@@ -146,7 +192,35 @@ const AdminReservations = () => {
     });
   };
 
-  const updateStatus = async (id: string, status: string) => {
+  const handleRoomPickerConfirm = async () => {
+    if (!roomPickerRes || !pickedRoomId) { toast.error('Please select a room'); return; }
+    // Assign room_id to reservation, then check in
+    await supabase.from('reservations').update({ room_id: pickedRoomId, updated_at: new Date().toISOString() }).eq('id', roomPickerRes.id);
+    // Update local state so updateStatus finds room_id
+    const updatedRes = { ...roomPickerRes, room_id: pickedRoomId };
+    setReservations(prev => prev.map(r => r.id === updatedRes.id ? updatedRes : r));
+    setRoomPickerRes(null);
+    await updateStatus(roomPickerRes.id, 'checked_in', pickedRoomId);
+  };
+
+  const markRoomDirty = async (res: any) => {
+    const now = new Date().toISOString();
+    if (res?.room_id) {
+      await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: now }).eq('id', res.room_id);
+    } else if (res?.room_type_id) {
+      const { data: occupiedRooms } = await supabase.from('rooms').select('id').eq('room_type_id', res.room_type_id).eq('operational_status', 'occupied').eq('is_active', true).limit(1);
+      if (occupiedRooms && occupiedRooms.length > 0) {
+        await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: now }).eq('id', occupiedRooms[0].id);
+      } else {
+        const { data: availRooms } = await supabase.from('rooms').select('id').eq('room_type_id', res.room_type_id).eq('is_active', true).neq('operational_status', 'dirty').limit(1);
+        if (availRooms && availRooms.length > 0) {
+          await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: now }).eq('id', availRooms[0].id);
+        }
+      }
+    }
+  };
+
+  const updateStatus = async (id: string, status: string, overrideRoomId?: string) => {
     const now = new Date().toISOString();
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const updateData: Record<string, any> = { status, updated_at: now };
@@ -158,10 +232,17 @@ const AdminReservations = () => {
     toast.success(`Reservation ${status.replace('_', ' ')}`);
 
     const res = reservations.find(r => r.id === id);
+    const effectiveRoomId = overrideRoomId || res?.room_id;
+
+    // Mark room occupied on check-in
+    if (status === 'checked_in' && effectiveRoomId) {
+      await supabase.from('rooms').update({ operational_status: 'occupied', updated_at: now }).eq('id', effectiveRoomId);
+    }
 
     // Mark room dirty on checkout
-    if (status === 'completed' && res?.room_id) {
-      await supabase.from('rooms').update({ operational_status: 'dirty', updated_at: now }).eq('id', res.room_id);
+    if (status === 'completed') {
+      const resWithRoom = effectiveRoomId ? { ...res, room_id: effectiveRoomId } : res;
+      await markRoomDirty(resWithRoom);
     }
 
     if (status === 'confirmed' && res?.guest_email) {
@@ -235,8 +316,11 @@ const AdminReservations = () => {
     }
     setCreating(true);
     const h = (await supabase.from('hotels').select('id').limit(1).single()).data;
+    const roomId = form.room_id && form.room_id !== 'none' ? form.room_id : null;
     const { error } = await supabase.from('reservations').insert({
-      hotel_id: h?.id, ...form, room_type_id: form.room_type_id || null, status: 'confirmed',
+      hotel_id: h?.id, ...form, room_type_id: form.room_type_id || null,
+      room_id: roomId,
+      status: 'confirmed',
       check_in_time: form.check_in_time || null, check_out_time: form.check_out_time || null,
       booking_source: form.booking_source || 'direct',
     });
@@ -249,7 +333,8 @@ const AdminReservations = () => {
   const openEdit = (r: any) => {
     setEditForm({
       guest_name: r.guest_name, guest_email: r.guest_email || '', guest_phone: r.guest_phone || '',
-      room_type_id: r.room_type_id || '', check_in: r.check_in, check_out: r.check_out,
+      room_type_id: r.room_type_id || '', room_id: r.room_id || '',
+      check_in: r.check_in, check_out: r.check_out,
       check_in_time: r.check_in_time || '', check_out_time: r.check_out_time || '',
       guests_count: r.guests_count, total_price: Number(r.total_price) || 0,
       special_requests: r.special_requests || '', notes: r.notes || '',
@@ -266,9 +351,11 @@ const AdminReservations = () => {
       if (!avail) { toast.error('Room not available'); setSaving(false); return; }
     }
     setSaving(true);
+    const roomId = editForm.room_id && editForm.room_id !== 'none' ? editForm.room_id : null;
     const { error } = await supabase.from('reservations').update({
       guest_name: editForm.guest_name, guest_email: editForm.guest_email, guest_phone: editForm.guest_phone,
-      room_type_id: editForm.room_type_id || null, check_in: editForm.check_in, check_out: editForm.check_out,
+      room_type_id: editForm.room_type_id || null, room_id: roomId,
+      check_in: editForm.check_in, check_out: editForm.check_out,
       check_in_time: editForm.check_in_time || null, check_out_time: editForm.check_out_time || null,
       guests_count: editForm.guests_count, total_price: editForm.total_price,
       special_requests: editForm.special_requests, notes: editForm.notes,
@@ -300,21 +387,10 @@ const AdminReservations = () => {
   };
   const conflictIds = getConflictIds();
 
-  const filtered = reservations.filter(r => {
-    const matchSearch = !search || [r.guest_name, r.guest_email, r.guest_phone, r.reservation_code].some(f => f?.toLowerCase().includes(search.toLowerCase()));
-    const matchStatus = statusFilter === 'all' || r.status === statusFilter;
-    const matchSource = sourceFilter === 'all' || r.booking_source === sourceFilter;
-    return matchSearch && matchStatus && matchSource;
-  });
-
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paged = useMemo(() => filtered.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE), [filtered, currentPage]);
-
-  // Reset page when filters change
-  useMemo(() => { setCurrentPage(0); }, [search, statusFilter, sourceFilter]);
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   // Export data
-  const exportData = filtered.map(r => ({
+  const exportData = reservations.map(r => ({
     Code: r.reservation_code,
     Guest: r.guest_name,
     Email: r.guest_email || '',
@@ -339,9 +415,9 @@ const AdminReservations = () => {
         <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full sm:w-auto">
           <div className="relative flex-1 max-w-sm">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder={t('admin.searchGuests')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder={t('admin.searchGuests')} value={search} onChange={e => { setSearch(e.target.value); setCurrentPage(0); }} className="pl-9" />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setCurrentPage(0); }}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('admin.allStatus')}</SelectItem>
@@ -352,7 +428,7 @@ const AdminReservations = () => {
               <SelectItem value="completed">{t('admin.completed')}</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+          <Select value={sourceFilter} onValueChange={v => { setSourceFilter(v); setCurrentPage(0); }}>
             <SelectTrigger className="w-36"><SelectValue placeholder="All Sources" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sources</SelectItem>
@@ -374,8 +450,8 @@ const AdminReservations = () => {
         </TabsList>
 
         <TabsContent value="list" className="space-y-4 mt-4">
-          <p className="text-xs text-muted-foreground">{filtered.length} {t('admin.reservations').toLowerCase()}</p>
-          {filtered.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{totalCount} {t('admin.reservations').toLowerCase()}</p>
+          {reservations.length === 0 ? (
             <EmptyState icon={CalendarDays} title={t('admin.noReservations')} description={t('admin.noReservationsDesc')} />
           ) : (
             <div className="bg-card rounded-lg border border-border overflow-hidden">
@@ -391,7 +467,7 @@ const AdminReservations = () => {
                     <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.status')}</th>
                     <th className="text-right py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.actions')}</th>
                   </tr></thead>
-                  <tbody>{paged.map(r => (
+                  <tbody>{reservations.map(r => (
                     <tr key={r.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                       <td className="py-3 px-4 font-mono text-xs">
                         {r.reservation_code}
@@ -444,7 +520,7 @@ const AdminReservations = () => {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-border">
                   <p className="text-xs text-muted-foreground">
-                    Showing {currentPage * ITEMS_PER_PAGE + 1}–{Math.min((currentPage + 1) * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} reservations
+                    Showing {currentPage * ITEMS_PER_PAGE + 1}–{Math.min((currentPage + 1) * ITEMS_PER_PAGE, totalCount)} of {totalCount} reservations
                   </p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="text-xs" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
@@ -512,7 +588,7 @@ const AdminReservations = () => {
       <Dialog open={showEdit} onOpenChange={v => { if (!v) { setShowEdit(false); setSelectedRes(null); } }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.editReservation')}</DialogTitle></DialogHeader>
-          <FormFields f={editForm} setF={setEditForm} roomTypes={roomTypes} t={t} />
+          <FormFields f={editForm} setF={setEditForm} roomTypes={roomTypes} rooms={rooms} t={t} />
           <Button onClick={handleEditSave} disabled={saving} className="w-full">{saving ? t('admin.saving') : t('admin.saveChanges')}</Button>
         </DialogContent>
       </Dialog>
@@ -521,8 +597,32 @@ const AdminReservations = () => {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.newReservation')}</DialogTitle></DialogHeader>
-          <FormFields f={form} setF={setForm} roomTypes={roomTypes} t={t} />
+          <FormFields f={form} setF={setForm} roomTypes={roomTypes} rooms={rooms} t={t} />
           <Button onClick={handleCreate} disabled={creating} className="w-full">{creating ? t('admin.creating') : t('admin.createReservation')}</Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Room Picker Dialog for Check-in */}
+      <Dialog open={!!roomPickerRes} onOpenChange={v => { if (!v) setRoomPickerRes(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Assign Room for Check-in</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            No room assigned to <strong>{roomPickerRes?.guest_name}</strong>. Please select a room before checking in.
+          </p>
+          <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
+            <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
+            <SelectContent>
+              {rooms.filter(r =>
+                r.room_type_id === roomPickerRes?.room_type_id &&
+                (r.operational_status === 'available' || r.operational_status === 'reserved')
+              ).map(r => (
+                <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={handleRoomPickerConfirm} disabled={!pickedRoomId} className="w-full gap-1.5">
+            <LogIn size={14} /> Assign & Check In
+          </Button>
         </DialogContent>
       </Dialog>
 
