@@ -80,10 +80,12 @@ const AdminPricing = () => {
 
   const handleEditPrice = async () => {
     if (!editingRoom) return;
+    setEditSaving(true);
     const { error } = await supabase.from('room_types').update({
       base_price: editPriceForm.base_price,
       weekend_price: editPriceForm.weekend_price,
     }).eq('id', editingRoom.id);
+    setEditSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(t('admin.updatePrice'));
     setShowEditPrice(false);
