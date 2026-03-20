@@ -199,7 +199,10 @@ const AdminPricing = () => {
           <div className="space-y-4">
             <div><Label>{t('admin.basePrice')}</Label><Input type="number" min={0} value={editPriceForm.base_price} onChange={e => setEditPriceForm(f => ({...f, base_price: parseFloat(e.target.value) || 0}))} /></div>
             <div><Label>{t('admin.weekendPrice')}</Label><Input type="number" min={0} value={editPriceForm.weekend_price || ''} onChange={e => setEditPriceForm(f => ({...f, weekend_price: parseFloat(e.target.value) || null}))} placeholder="Optional" /></div>
-            <Button onClick={handleEditPrice} className="w-full">{t('admin.updatePrice')}</Button>
+            <Button onClick={handleEditPrice} disabled={editSaving} className="w-full gap-1.5">
+              {editSaving && <Loader2 size={14} className="animate-spin" />}
+              {editSaving ? 'Saving...' : t('admin.updatePrice')}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
