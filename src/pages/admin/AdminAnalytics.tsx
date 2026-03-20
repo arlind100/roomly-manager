@@ -550,7 +550,7 @@ const AdminAnalytics = () => {
                       <TableCell className="text-xs font-mono">{r.reservation_code}</TableCell>
                       <TableCell className="text-sm">{r.guest_name}</TableCell>
                       <TableCell className="text-sm">{r.room_types?.name || '—'}</TableCell>
-                      <TableCell className="text-sm">{r.check_in}</TableCell>
+                      <TableCell className="text-sm">{format(parseISO(r.check_in), 'MMM dd, yyyy')}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{r.notes || '—'}</TableCell>
                     </TableRow>
                   ))}

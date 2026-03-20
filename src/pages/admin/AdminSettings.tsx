@@ -494,7 +494,27 @@ const AdminSettings = () => {
         )}
       </section>
 
-      <Button onClick={handleSave} disabled={saving}>{saving ? t('admin.saving') : t('admin.saveSettings')}</Button>
+      <Button onClick={handleSave} disabled={saving} className="gap-1.5">
+        {saving && <Loader2 size={14} className="animate-spin" />}
+        {saving ? t('admin.saving') : t('admin.saveSettings')}
+      </Button>
+
+      {/* Delete iCal Feed Confirmation */}
+      <AlertDialog open={!!deleteFeedId} onOpenChange={v => { if (!v) setDeleteFeedId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete this iCal feed and stop syncing reservations from it.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteFeed} disabled={deletingFeed} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5">
+              {deletingFeed && <Loader2 size={14} className="animate-spin" />}
+              {deletingFeed ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add Feed Dialog */}
       <Dialog open={showAddFeed} onOpenChange={setShowAddFeed}>

@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BedDouble, Plus, Pencil, Trash2, Users, Maximize, Eye, EyeOff, Upload, X, ImageIcon } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { BedDouble, Plus, Pencil, Trash2, Users, Maximize, Eye, EyeOff, Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -51,6 +52,9 @@ const AdminRoomTypes = () => {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => { fetchRoomTypes(); }, []);
 
@@ -66,42 +70,23 @@ const AdminRoomTypes = () => {
     setShowForm(true);
   };
 
-  // Upload image to Supabase Storage
   const uploadImage = useCallback(async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
-      return;
-    }
-
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be less than 5MB'); return; }
     setUploading(true);
     const ext = file.name.split('.').pop() || 'jpg';
     const fileName = `${crypto.randomUUID()}.${ext}`;
     const filePath = `room-types/${fileName}`;
-
-    const { error } = await supabase.storage.from('room-images').upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: false,
-    });
-
+    const { error } = await supabase.storage.from('room-images').upload(filePath, file, { cacheControl: '3600', upsert: false });
     setUploading(false);
-
-    if (error) {
-      toast.error('Upload failed: ' + error.message);
-      return;
-    }
-
+    if (error) { toast.error('Upload failed: ' + error.message); return; }
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/room-images/${filePath}`;
     setForm(f => ({ ...f, image_url: publicUrl }));
     toast.success('Image uploaded');
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
+    e.preventDefault(); setDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file) uploadImage(file);
   }, [uploadImage]);
@@ -128,17 +113,22 @@ const AdminRoomTypes = () => {
   };
 
   const toggleVisibility = async (id: string, current: boolean) => {
+    setTogglingId(id);
     const { error } = await supabase.from('room_types').update({ show_on_website: !current }).eq('id', id);
+    setTogglingId(null);
     if (error) { toast.error(error.message); return; }
     toast.success(!current ? t('admin.visibleOnWebsite') : t('admin.hiddenFromWebsite'));
     fetchRoomTypes();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('admin.deleteRoomType'))) return;
-    const { error } = await supabase.from('room_types').delete().eq('id', id);
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    const { error } = await supabase.from('room_types').delete().eq('id', deleteId);
+    setDeleting(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Room type deleted');
+    setDeleteId(null);
     fetchRoomTypes();
   };
 
@@ -178,8 +168,12 @@ const AdminRoomTypes = () => {
                   {rt.room_size && <span className="flex items-center gap-1"><Maximize size={12} /> {rt.room_size}</span>}
                   <span>{rt.available_units} {rt.available_units !== 1 ? t('admin.units') : t('admin.unit')}</span>
                 </div>
-                <button onClick={() => toggleVisibility(rt.id, rt.show_on_website)} className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full mb-4 transition-colors ${rt.show_on_website ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                  {rt.show_on_website ? <Eye size={10} /> : <EyeOff size={10} />}
+                <button
+                  onClick={() => toggleVisibility(rt.id, rt.show_on_website)}
+                  disabled={togglingId === rt.id}
+                  className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full mb-4 transition-colors ${rt.show_on_website ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                >
+                  {togglingId === rt.id ? <Loader2 size={10} className="animate-spin" /> : rt.show_on_website ? <Eye size={10} /> : <EyeOff size={10} />}
                   {rt.show_on_website ? t('admin.visibleOnWebsite') : t('admin.hiddenFromWebsite')}
                 </button>
                 {rt.amenities?.length > 0 && (
@@ -190,7 +184,7 @@ const AdminRoomTypes = () => {
                 )}
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => openEdit(rt)} className="flex-1 text-xs"><Pencil size={12} className="mr-1" /> {t('admin.edit')}</Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDelete(rt.id)} className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs"><Trash2 size={12} /></Button>
+                  <Button variant="outline" size="sm" onClick={() => setDeleteId(rt.id)} className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs"><Trash2 size={12} /></Button>
                 </div>
               </div>
             </div>
@@ -205,16 +199,12 @@ const AdminRoomTypes = () => {
             <div><Label>{t('admin.roomName')} *</Label><Input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} /></div>
             <div><Label>{t('admin.description')}</Label><Textarea value={form.description} onChange={e => setForm(f => ({...f, description: e.target.value}))} rows={3} /></div>
             
-            {/* Image Upload - Drag & Drop */}
             <div>
               <Label className="mb-2 block">Room Image</Label>
               {form.image_url ? (
                 <div className="relative rounded-lg overflow-hidden border border-border">
                   <img src={form.image_url} alt="Room preview" className="w-full h-40 object-cover" />
-                  <button
-                    onClick={removeImage}
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 border border-border shadow-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                  >
+                  <button onClick={removeImage} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/90 border border-border shadow-sm flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors">
                     <X size={14} />
                   </button>
                 </div>
@@ -232,7 +222,7 @@ const AdminRoomTypes = () => {
                 >
                   {uploading ? (
                     <>
-                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
+                      <Loader2 size={24} className="animate-spin mb-2 text-primary" />
                       <p className="text-xs text-muted-foreground">Uploading...</p>
                     </>
                   ) : (
@@ -246,13 +236,7 @@ const AdminRoomTypes = () => {
                       <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG, WebP up to 5MB</p>
                     </>
                   )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
                 </div>
               )}
             </div>
@@ -269,10 +253,30 @@ const AdminRoomTypes = () => {
               <div><Label className="text-sm font-medium">{t('admin.showOnWebsite')}</Label><p className="text-xs text-muted-foreground">{t('admin.showOnWebsiteDesc')}</p></div>
               <Switch checked={form.show_on_website} onCheckedChange={v => setForm(f => ({...f, show_on_website: v}))} />
             </div>
-            <Button onClick={handleSave} disabled={saving || uploading} className="w-full">{saving ? t('admin.saving') : editing ? t('admin.saveChanges') : t('admin.create')}</Button>
+            <Button onClick={handleSave} disabled={saving || uploading} className="w-full gap-1.5">
+              {saving && <Loader2 size={14} className="animate-spin" />}
+              {saving ? t('admin.saving') : editing ? t('admin.saveChanges') : t('admin.create')}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={v => { if (!v) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete this room type and cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5">
+              {deleting && <Loader2 size={14} className="animate-spin" />}
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
