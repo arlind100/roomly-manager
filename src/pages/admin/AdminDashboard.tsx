@@ -410,8 +410,8 @@ const AdminDashboard = () => {
                     <p className="text-xs font-medium truncate">{r.guest_name}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{r.room_types?.name || '—'}</p>
                   </div>
-                  <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white text-[10px] h-6 px-2 shrink-0" onClick={() => handleCheckIn(r.id)}>
-                    <LogIn size={10} /> {t('admin.checkInAction')}
+                  <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white text-[10px] h-6 px-2 shrink-0" disabled={checkingInId === r.id} onClick={() => initiateCheckIn(r.id)}>
+                    {checkingInId === r.id ? <Loader2 size={10} className="animate-spin" /> : <LogIn size={10} />} {checkingInId === r.id ? 'Checking In...' : t('admin.checkInAction')}
                   </Button>
                 </div>
               ))}
