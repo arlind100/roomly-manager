@@ -26,12 +26,13 @@ const AdminInvoices = () => {
   const [form, setForm] = useState({ reservation_id: '', amount: 0, status: 'draft' });
   const [creatingInv, setCreatingInv] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
 
   const fetchData = async () => {
+    if (!hotel?.id) return;
     const [invRes, resRes] = await Promise.all([
-      supabase.from('invoices').select('*, reservations(guest_name, guest_email, guest_phone, reservation_code, check_in, check_out, guests_count, room_type_id, room_id, room_types(name), rooms(room_number))').order('created_at', { ascending: false }),
-      supabase.from('reservations').select('id, guest_name, reservation_code, total_price').order('created_at', { ascending: false }),
+      supabase.from('invoices').select('*, reservations(guest_name, guest_email, guest_phone, reservation_code, check_in, check_out, guests_count, room_type_id, room_id, room_types(name), rooms(room_number))').eq('hotel_id', hotel.id).order('created_at', { ascending: false }),
+      supabase.from('reservations').select('id, guest_name, reservation_code, total_price').eq('hotel_id', hotel.id).order('created_at', { ascending: false }),
     ]);
     setInvoices(invRes.data || []);
     setReservations(resRes.data || []);
@@ -40,9 +41,9 @@ const AdminInvoices = () => {
 
   const handleCreate = async () => {
     if (!form.reservation_id || !form.amount) { toast.error('Select reservation and amount'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreatingInv(true);
-    const h = (await supabase.from('hotels').select('id').limit(1).single()).data;
-    const { error } = await supabase.from('invoices').insert({ hotel_id: h?.id, ...form });
+    const { error } = await supabase.from('invoices').insert({ hotel_id: hotel.id, ...form });
     setCreatingInv(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Invoice created');

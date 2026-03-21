@@ -31,12 +31,13 @@ const AdminPricing = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
 
   const fetchData = async () => {
+    if (!hotel?.id) return;
     const [rtRes, ovRes] = await Promise.all([
-      supabase.from('room_types').select('*').order('base_price'),
-      supabase.from('pricing_overrides').select('*, room_types(name)').order('start_date'),
+      supabase.from('room_types').select('*').eq('hotel_id', hotel.id).order('base_price'),
+      supabase.from('pricing_overrides').select('*, room_types(name)').eq('hotel_id', hotel.id).order('start_date'),
     ]);
     setRoomTypes(rtRes.data || []);
     setOverrides(ovRes.data || []);
@@ -45,9 +46,9 @@ const AdminPricing = () => {
 
   const handleAdd = async () => {
     if (!form.room_type_id || !form.start_date || !form.end_date || !form.price) { toast.error('Fill all required fields'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setAddingSaving(true);
-    const hotelData = (await supabase.from('hotels').select('id').limit(1).single()).data;
-    const { error } = await supabase.from('pricing_overrides').insert({ hotel_id: hotelData?.id, ...form });
+    const { error } = await supabase.from('pricing_overrides').insert({ hotel_id: hotel.id, ...form });
     setAddingSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Pricing override added');

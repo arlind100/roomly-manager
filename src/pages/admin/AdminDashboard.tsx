@@ -86,14 +86,14 @@ const AdminDashboard = () => {
     payment_received: false,
   });
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
 
   const fetchData = async () => {
-    // Dashboard needs current/recent reservations for metrics - fetch with higher limit
+    if (!hotel?.id) return;
     const [resResult, rtResult, roomResult] = await Promise.all([
-      supabase.from('reservations').select('*, room_types(name, available_units)').order('created_at', { ascending: false }).limit(2000),
-      supabase.from('room_types').select('*'),
-      supabase.from('rooms').select('*, room_types(name)').eq('is_active', true),
+      supabase.from('reservations').select('*, room_types(name, available_units)').eq('hotel_id', hotel.id).order('created_at', { ascending: false }).limit(2000),
+      supabase.from('room_types').select('*').eq('hotel_id', hotel.id),
+      supabase.from('rooms').select('*, room_types(name)').eq('hotel_id', hotel.id).eq('is_active', true),
     ]);
     setReservations(resResult.data || []);
     setRoomTypes(rtResult.data || []);

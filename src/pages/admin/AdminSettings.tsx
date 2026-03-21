@@ -74,10 +74,17 @@ const AdminSettings = () => {
   useEffect(() => { fetchAll(); fetchExchangeRates(); }, []);
 
   const fetchAll = async () => {
+    // Get user's hotel via user_roles
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+    const { data: roles } = await supabase.from('user_roles').select('hotel_id').eq('user_id', user.id).limit(1);
+    const hotelId = roles?.[0]?.hotel_id;
+    if (!hotelId) { setLoading(false); return; }
+
     const [hotelRes, feedsRes, rtRes] = await Promise.all([
-      supabase.from('hotels').select('*').limit(1).single(),
-      supabase.from('ical_feeds').select('*').order('created_at', { ascending: false }),
-      supabase.from('room_types').select('id, name'),
+      supabase.from('hotels').select('*').eq('id', hotelId).single(),
+      supabase.from('ical_feeds').select('*').eq('hotel_id', hotelId).order('created_at', { ascending: false }),
+      supabase.from('room_types').select('id, name').eq('hotel_id', hotelId),
     ]);
     setHotel(hotelRes.data);
     setFeeds((feedsRes.data as ICalFeed[]) || []);

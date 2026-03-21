@@ -12,8 +12,11 @@ import { CalendarRange, Plus, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
+import { useHotel } from '@/hooks/useHotel';
+
 const AdminAvailability = () => {
   const { t } = useLanguage();
+  const { hotel } = useHotel();
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
   const [blocks, setBlocks] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
@@ -25,13 +28,14 @@ const AdminAvailability = () => {
   const [addingBlock, setAddingBlock] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
 
   const fetchData = async () => {
+    if (!hotel?.id) return;
     const [rtRes, blockRes, resRes] = await Promise.all([
-      supabase.from('room_types').select('*'),
-      supabase.from('availability_blocks').select('*, room_types(name)').order('date'),
-      supabase.from('reservations').select('*').neq('status', 'cancelled'),
+      supabase.from('room_types').select('*').eq('hotel_id', hotel.id),
+      supabase.from('availability_blocks').select('*, room_types(name)').eq('hotel_id', hotel.id).order('date'),
+      supabase.from('reservations').select('*').eq('hotel_id', hotel.id).neq('status', 'cancelled'),
     ]);
     setRoomTypes(rtRes.data || []);
     setBlocks(blockRes.data || []);
