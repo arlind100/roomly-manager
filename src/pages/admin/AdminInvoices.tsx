@@ -41,9 +41,9 @@ const AdminInvoices = () => {
 
   const handleCreate = async () => {
     if (!form.reservation_id || !form.amount) { toast.error('Select reservation and amount'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreatingInv(true);
-    const h = (await supabase.from('hotels').select('id').limit(1).single()).data;
-    const { error } = await supabase.from('invoices').insert({ hotel_id: h?.id, ...form });
+    const { error } = await supabase.from('invoices').insert({ hotel_id: hotel.id, ...form });
     setCreatingInv(false);
     if (error) { toast.error(error.message); return; }
     toast.success('Invoice created');
