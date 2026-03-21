@@ -45,12 +45,13 @@ const AdminRooms = () => {
   const [deleting, setDeleting] = useState(false);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
 
   const fetchData = async () => {
+    if (!hotel?.id) return;
     const [roomRes, rtRes] = await Promise.all([
-      supabase.from('rooms').select('*, room_types(name)').order('room_number'),
-      supabase.from('room_types').select('*'),
+      supabase.from('rooms').select('*, room_types(name)').eq('hotel_id', hotel.id).order('room_number'),
+      supabase.from('room_types').select('*').eq('hotel_id', hotel.id),
     ]);
     setRooms(roomRes.data || []);
     setRoomTypes(rtRes.data || []);

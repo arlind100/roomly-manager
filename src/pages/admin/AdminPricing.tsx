@@ -31,12 +31,13 @@ const AdminPricing = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
 
   const fetchData = async () => {
+    if (!hotel?.id) return;
     const [rtRes, ovRes] = await Promise.all([
-      supabase.from('room_types').select('*').order('base_price'),
-      supabase.from('pricing_overrides').select('*, room_types(name)').order('start_date'),
+      supabase.from('room_types').select('*').eq('hotel_id', hotel.id).order('base_price'),
+      supabase.from('pricing_overrides').select('*, room_types(name)').eq('hotel_id', hotel.id).order('start_date'),
     ]);
     setRoomTypes(rtRes.data || []);
     setOverrides(ovRes.data || []);

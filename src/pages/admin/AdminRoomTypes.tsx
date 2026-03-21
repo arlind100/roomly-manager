@@ -56,10 +56,11 @@ const AdminRoomTypes = () => {
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  useEffect(() => { fetchRoomTypes(); }, []);
+  useEffect(() => { if (hotel?.id) fetchRoomTypes(); }, [hotel?.id]);
 
   const fetchRoomTypes = async () => {
-    const { data } = await supabase.from('room_types').select('*').order('base_price');
+    if (!hotel?.id) return;
+    const { data } = await supabase.from('room_types').select('*').eq('hotel_id', hotel.id).order('base_price');
     setRoomTypes(data || []);
     setLoading(false);
   };

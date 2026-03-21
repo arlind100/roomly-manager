@@ -131,14 +131,16 @@ const AdminReservations = () => {
   const [roomPickerRes, setRoomPickerRes] = useState<any>(null);
   const [pickedRoomId, setPickedRoomId] = useState('');
 
-  useEffect(() => { fetchData(); }, [currentPage, search, statusFilter, sourceFilter]);
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id, currentPage, search, statusFilter, sourceFilter]);
 
   const fetchData = async () => {
+    if (!hotel?.id) return;
     setLoading(true);
     const from = currentPage * ITEMS_PER_PAGE;
     const to = from + ITEMS_PER_PAGE - 1;
 
     let query = supabase.from('reservations').select('*, room_types(name)', { count: 'exact' })
+      .eq('hotel_id', hotel.id)
       .order('created_at', { ascending: false });
 
     if (search) {
@@ -151,8 +153,8 @@ const AdminReservations = () => {
 
     const [resResult, rtResult, roomResult] = await Promise.all([
       query,
-      supabase.from('room_types').select('*'),
-      supabase.from('rooms').select('*, room_types(name)').eq('is_active', true),
+      supabase.from('room_types').select('*').eq('hotel_id', hotel.id),
+      supabase.from('rooms').select('*, room_types(name)').eq('hotel_id', hotel.id).eq('is_active', true),
     ]);
     setReservations(resResult.data || []);
     setTotalCount(resResult.count || 0);
