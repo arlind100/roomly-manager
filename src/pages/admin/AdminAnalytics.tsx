@@ -107,22 +107,15 @@ const AdminAnalytics = () => {
   const totalUnits = useMemo(() => roomTypes.reduce((s, rt) => s + (rt.available_units || 0), 0), [roomTypes]);
   const daysInRange = Math.max(1, differenceInDays(dateRange.to, dateRange.from) + 1);
 
-  // ===== OVERVIEW METRICS =====
-  const totalReservations = filtered.length;
-  const confirmedRes = filtered.filter(r => r.status === 'confirmed').length;
-  const cancelledRes = filtered.filter(r => r.status === 'cancelled').length;
-  const totalRevenue = nonCancelled.reduce((s, r) => s + (Number(r.total_price) || 0), 0);
-  const avgBookingValue = nonCancelled.length > 0 ? totalRevenue / nonCancelled.length : 0;
-  const occupiedRoomDays = nonCancelled.reduce((s, r) => {
-    const ci = r.check_in; const co = r.check_out;
-    const fromStr = format(dateRange.from, 'yyyy-MM-dd');
-    const toStr = format(dateRange.to, 'yyyy-MM-dd');
-    const overlapStart = ci > fromStr ? ci : fromStr;
-    const overlapEnd = co < toStr ? co : toStr;
-    return s + Math.max(0, differenceInDays(parseISO(overlapEnd), parseISO(overlapStart)));
-  }, 0);
-  const totalRoomDays = totalUnits * daysInRange;
-  const occupancyRate = totalRoomDays > 0 ? Math.round((occupiedRoomDays / totalRoomDays) * 100) : 0;
+  // ===== OVERVIEW METRICS (from server-side RPC) =====
+  const totalReservations = summaryStats?.total_reservations ?? filtered.length;
+  const confirmedRes = summaryStats?.confirmed ?? filtered.filter(r => r.status === 'confirmed').length;
+  const cancelledRes = summaryStats?.cancelled ?? filtered.filter(r => r.status === 'cancelled').length;
+  const totalRevenue = Number(summaryStats?.total_revenue ?? 0);
+  const avgBookingValue = Number(summaryStats?.avg_booking_value ?? 0);
+  const occupiedRoomDays = Number(summaryStats?.occupied_room_days ?? 0);
+  const totalRoomDays = Number(summaryStats?.total_room_days ?? (totalUnits * daysInRange));
+  const occupancyRate = Number(summaryStats?.occupancy_rate ?? 0);
 
   // ===== CHARTS DATA =====
   const revenueChartData = useMemo(() => {
