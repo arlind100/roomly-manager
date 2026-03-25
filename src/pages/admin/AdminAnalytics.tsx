@@ -67,29 +67,32 @@ const AdminAnalytics = () => {
     }
   }, [preset, customFrom, customTo]);
 
-  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id, dateRange]);
+
+  const [roomTypes, setRoomTypes] = useState<any[]>([]);
 
   const fetchData = async () => {
     if (!hotel?.id) return;
-    // Analytics needs all reservations for aggregation - paginate through all
-    let allReservations: any[] = [];
-    let page = 0;
-    const pageSize = 1000;
-    let hasMore = true;
-    while (hasMore) {
-      const { data } = await supabase.from('reservations')
-        .select('*, room_types(name, available_units, base_price)')
+    setLoading(true);
+    const fromStr = format(dateRange.from, 'yyyy-MM-dd');
+    const toStr = format(dateRange.to, 'yyyy-MM-dd');
+    
+    const [statsResult, resResult, rtResult] = await Promise.all([
+      (supabase.rpc as any)('get_analytics_summary', { p_hotel_id: hotel.id, p_from: fromStr, p_to: toStr }),
+      // Only fetch reservations overlapping the date range for charts
+      supabase.from('reservations')
+        .select('id, guest_name, reservation_code, check_in, check_out, status, total_price, booking_source, room_type_id, room_types(name, available_units, base_price)')
         .eq('hotel_id', hotel.id)
-        .order('created_at', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-      const batch = data || [];
-      allReservations = [...allReservations, ...batch];
-      hasMore = batch.length === pageSize;
-      page++;
-    }
-    const { data: rtData } = await supabase.from('room_types').select('*').eq('hotel_id', hotel.id);
-    setReservations(allReservations);
-    setRoomTypes(rtData || []);
+        .lt('check_in', format(addDays(dateRange.to, 1), 'yyyy-MM-dd'))
+        .gt('check_out', fromStr)
+        .order('check_in', { ascending: false })
+        .limit(1000),
+      supabase.from('room_types').select('*').eq('hotel_id', hotel.id),
+    ]);
+    
+    setSummaryStats(statsResult.data || null);
+    setReservations(resResult.data || []);
+    setRoomTypes(rtResult.data || []);
     setLoading(false);
   };
 
