@@ -213,8 +213,6 @@ const AdminDashboard = () => {
       p_room_id: walkIn.room_id,
     });
     if (error) { toast.error(error.message); setCreating(false); return; }
-    // Mark the room as occupied
-    await supabase.from('rooms').update({ operational_status: 'occupied', updated_at: new Date().toISOString() }).eq('id', walkIn.room_id);
     setCreating(false);
     toast.success('Walk-in reservation created');
     setShowWalkIn(false);
