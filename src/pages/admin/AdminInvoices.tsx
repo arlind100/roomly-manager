@@ -43,6 +43,13 @@ const AdminInvoices = () => {
     if (!form.reservation_id || !form.amount) { toast.error('Select reservation and amount'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreatingInv(true);
+    // Check for existing invoice on this reservation
+    const { data: existing } = await supabase.from('invoices').select('id').eq('reservation_id', form.reservation_id).neq('status', 'cancelled').limit(1);
+    if (existing && existing.length > 0) {
+      toast.error('An invoice already exists for this reservation');
+      setCreatingInv(false);
+      return;
+    }
     const { error } = await supabase.from('invoices').insert({ hotel_id: hotel.id, ...form });
     setCreatingInv(false);
     if (error) { toast.error(error.message); return; }

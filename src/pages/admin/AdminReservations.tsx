@@ -274,10 +274,17 @@ const AdminReservations = () => {
     if (status === 'completed' && res) {
       const nightsCount = Math.max(1, Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)));
       try {
-        const { data: invoice, error: invError } = await supabase.from('invoices').insert({
-          hotel_id: hotel!.id, reservation_id: res.id, amount: res.total_price || 0, status: 'sent', issued_at: now,
-        }).select().single();
-        if (!invError) toast.success('Invoice ' + (invoice?.invoice_number || '') + ' generated');
+        // Check if invoice already exists for this reservation (prevent duplicates)
+        const { data: existingInv } = await supabase.from('invoices').select('id, invoice_number').eq('reservation_id', res.id).neq('status', 'cancelled').limit(1);
+        let invoice: any = existingInv?.[0];
+        if (!invoice) {
+          const { data: newInv, error: invError } = await supabase.from('invoices').insert({
+            hotel_id: hotel!.id, reservation_id: res.id, amount: res.total_price || 0, status: 'sent', issued_at: now,
+          }).select().single();
+          if (!invError) { invoice = newInv; toast.success('Invoice ' + (newInv?.invoice_number || '') + ' generated'); }
+        } else {
+          toast.info('Invoice ' + invoice.invoice_number + ' already exists');
+        }
 
         if (res.guest_email) {
           await supabase.functions.invoke('send-checkout-email', {
