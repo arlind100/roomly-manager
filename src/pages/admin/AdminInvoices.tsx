@@ -134,7 +134,7 @@ const AdminInvoices = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{invoices.length} {t('admin.invoices').toLowerCase()}</p>
+      <p className="text-sm text-muted-foreground">{totalCount} {t('admin.invoices').toLowerCase()}</p>
         <Button onClick={() => setShowCreate(true)}><Plus size={16} className="mr-1" /> {t('admin.createInvoice')}</Button>
       </div>
 
