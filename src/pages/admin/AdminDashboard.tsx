@@ -231,7 +231,7 @@ const AdminDashboard = () => {
   const handleCheckIn = async (id: string) => {
     setCheckingInId(id);
     setConfirmCheckIn(null);
-    const res = reservations.find(r => r.id === id);
+    const res = allLoadedRes.find(r => r.id === id);
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const { error } = await supabase.from('reservations').update({ status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) { toast.error(error.message); setCheckingInId(null); return; }
