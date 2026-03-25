@@ -255,7 +255,7 @@ const AdminDashboard = () => {
   };
 
   const initiateCheckOut = (id: string) => {
-    const res = reservations.find(r => r.id === id);
+    const res = allLoadedRes.find(r => r.id === id);
     setConfirmCheckOut(res);
   };
 
