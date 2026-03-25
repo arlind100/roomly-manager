@@ -344,11 +344,6 @@ const AdminReservations = () => {
 
   const handleEditSave = async () => {
     if (!selectedRes) return;
-    if (editForm.room_type_id && (editForm.room_type_id !== selectedRes.room_type_id || editForm.check_in !== selectedRes.check_in || editForm.check_out !== selectedRes.check_out)) {
-      setSaving(true);
-      const avail = await checkAvailability(editForm.room_type_id, editForm.check_in, editForm.check_out, selectedRes.id);
-      if (!avail) { toast.error('Room not available'); setSaving(false); return; }
-    }
     setSaving(true);
     const roomId = editForm.room_id && editForm.room_id !== 'none' ? editForm.room_id : null;
     const { error } = await supabase.from('reservations').update({
