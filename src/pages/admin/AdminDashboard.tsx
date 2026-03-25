@@ -141,27 +141,37 @@ const AdminDashboard = () => {
     });
   }, [currentGuests, todayArrivals, roomTypes]);
 
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase();
-    return reservations.filter(r =>
-      r.guest_name?.toLowerCase().includes(q) ||
-      r.guest_phone?.toLowerCase().includes(q) ||
-      r.reservation_code?.toLowerCase().includes(q) ||
-      r.room_types?.name?.toLowerCase().includes(q)
-    ).slice(0, 10);
-  }, [searchQuery, reservations]);
+  // All loaded reservations for lookups (arrivals + departures + current guests, deduped)
+  const allLoadedRes = useMemo(() => {
+    const map = new Map<string, any>();
+    [...todayArrivals, ...todayDepartures, ...currentGuests].forEach(r => map.set(r.id, r));
+    return Array.from(map.values());
+  }, [todayArrivals, todayDepartures, currentGuests]);
+
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  useEffect(() => {
+    if (!searchQuery.trim() || !hotel?.id) { setSearchResults([]); return; }
+    const timeout = setTimeout(async () => {
+      const q = `%${searchQuery.trim()}%`;
+      const { data } = await supabase.from('reservations')
+        .select('*, room_types(name)')
+        .eq('hotel_id', hotel.id)
+        .or(`guest_name.ilike.${q},guest_phone.ilike.${q},reservation_code.ilike.${q}`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      setSearchResults(data || []);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, hotel?.id]);
 
   const availableRooms = useMemo(() => {
-    const checkOut = format(addDays(new Date(), walkIn.nights), 'yyyy-MM-dd');
-    return roomTypes.filter(rt => {
-      const overlapping = reservations.filter(r =>
-        r.room_type_id === rt.id && r.status !== 'cancelled' &&
-        r.check_in < checkOut && r.check_out > today
-      ).length;
-      return overlapping < (rt.available_units || 1);
+    // Use currentGuests count per room type for availability
+    const occupiedByType: Record<string, number> = {};
+    currentGuests.forEach(r => {
+      if (r.room_type_id) occupiedByType[r.room_type_id] = (occupiedByType[r.room_type_id] || 0) + 1;
     });
-  }, [roomTypes, reservations, today, walkIn.nights]);
+    return roomTypes.filter(rt => (occupiedByType[rt.id] || 0) < (rt.available_units || 1));
+  }, [roomTypes, currentGuests]);
 
   // Physical rooms available for walk-in room picker
   const walkInPhysicalRooms = useMemo(() => {
