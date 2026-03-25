@@ -75,10 +75,10 @@ const AdminRooms = () => {
 
   const handleBulkAdd = async () => {
     if (!bulkForm.room_type_id || !bulkForm.count) { toast.error('Select room type and count'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setSaving(true);
-    const h = hotel?.id || (await supabase.from('hotels').select('id').limit(1).single()).data?.id;
     const roomsToInsert = Array.from({ length: bulkForm.count }, (_, i) => ({
-      hotel_id: h,
+      hotel_id: hotel.id,
       room_type_id: bulkForm.room_type_id,
       room_number: `${bulkForm.prefix}${bulkForm.start + i}`,
       floor: bulkForm.floor || null,

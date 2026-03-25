@@ -43,11 +43,11 @@ const AdminStaff = () => {
 
   const handleSave = async () => {
     if (!form.name || !form.role) { toast.error('Name and role required'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setSaving(true);
-    const hotelData = (await supabase.from('hotels').select('id').limit(1).single()).data;
     const { error } = editing
       ? await supabase.from('staff').update({ ...form, updated_at: new Date().toISOString() }).eq('id', editing)
-      : await supabase.from('staff').insert({ hotel_id: hotelData?.id!, ...form });
+      : await supabase.from('staff').insert({ hotel_id: hotel.id, ...form });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(editing ? 'Staff updated' : 'Staff added');

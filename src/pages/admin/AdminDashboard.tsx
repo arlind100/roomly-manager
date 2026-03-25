@@ -195,12 +195,12 @@ const AdminDashboard = () => {
   const handleWalkInSubmit = async () => {
     if (!walkIn.guest_name || !walkIn.room_type_id) { toast.error('Guest name and room are required'); return; }
     if (!walkIn.room_id) { toast.error('Please assign a specific room for walk-in'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreating(true);
-    const h = hotel?.id || (await supabase.from('hotels').select('id').limit(1).single()).data?.id;
     const checkOut = format(addDays(new Date(), walkIn.nights), 'yyyy-MM-dd');
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const { error } = await supabase.from('reservations').insert({
-      hotel_id: h, guest_name: walkIn.guest_name, guest_phone: walkIn.guest_phone || null,
+      hotel_id: hotel.id, guest_name: walkIn.guest_name, guest_phone: walkIn.guest_phone || null,
       room_type_id: walkIn.room_type_id, room_id: walkIn.room_id,
       check_in: today, check_out: checkOut,
       check_in_time: timeNow,
