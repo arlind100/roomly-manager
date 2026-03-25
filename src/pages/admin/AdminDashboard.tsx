@@ -622,17 +622,26 @@ const AdminDashboard = () => {
           <p className="text-sm text-muted-foreground">
             No room assigned to <strong>{roomPickerRes?.guest_name}</strong>. Please select a room before checking in.
           </p>
-          <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
-            <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
-            <SelectContent>
-              {rooms.filter(r =>
-                r.room_type_id === roomPickerRes?.room_type_id &&
-                (r.operational_status === 'available' || r.operational_status === 'reserved')
-              ).map(r => (
-                <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(() => {
+            const assignableRooms = rooms.filter(r =>
+              r.room_type_id === roomPickerRes?.room_type_id &&
+              !['occupied', 'maintenance', 'out_of_service'].includes(r.operational_status)
+            );
+            return assignableRooms.length === 0 ? (
+              <p className="text-sm text-destructive py-2">No assignable rooms available for this type</p>
+            ) : (
+              <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
+                <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
+                <SelectContent>
+                  {assignableRooms.map(r => (
+                    <SelectItem key={r.id} value={r.id}>
+                      Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {r.operational_status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          })()}
           <Button onClick={handleRoomPickerConfirm} disabled={!pickedRoomId} className="w-full gap-1.5">
             <LogIn size={14} /> Assign & Check In
           </Button>
