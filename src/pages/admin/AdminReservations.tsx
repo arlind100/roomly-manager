@@ -303,19 +303,25 @@ const AdminReservations = () => {
   const handleCreate = async () => {
     if (!form.guest_name || !form.check_in || !form.check_out) { toast.error('Please fill required fields'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
-    if (form.room_type_id) {
-      setCreating(true);
-      const avail = await checkAvailability(form.room_type_id, form.check_in, form.check_out);
-      if (!avail) { toast.error('Room not available'); setCreating(false); return; }
-    }
     setCreating(true);
     const roomId = form.room_id && form.room_id !== 'none' ? form.room_id : null;
-    const { error } = await supabase.from('reservations').insert({
-      hotel_id: hotel.id, ...form, room_type_id: form.room_type_id || null,
-      room_id: roomId,
-      status: 'confirmed',
-      check_in_time: form.check_in_time || null, check_out_time: form.check_out_time || null,
-      booking_source: form.booking_source || 'direct',
+    const { error } = await supabase.rpc('create_reservation_if_available', {
+      p_hotel_id: hotel.id,
+      p_guest_name: form.guest_name,
+      p_guest_email: form.guest_email || null,
+      p_guest_phone: form.guest_phone || null,
+      p_room_type_id: form.room_type_id || null,
+      p_room_id: roomId,
+      p_check_in: form.check_in,
+      p_check_out: form.check_out,
+      p_check_in_time: form.check_in_time || null,
+      p_check_out_time: form.check_out_time || null,
+      p_guests_count: form.guests_count,
+      p_total_price: form.total_price || null,
+      p_special_requests: form.special_requests || null,
+      p_notes: form.notes || null,
+      p_booking_source: form.booking_source || 'direct',
+      p_status: 'confirmed',
     });
     setCreating(false);
     if (error) { toast.error(error.message); return; }
