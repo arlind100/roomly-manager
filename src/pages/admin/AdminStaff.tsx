@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useHotel } from '@/hooks/useHotel';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ const emptyForm = { name: '', role: '', email: '', phone: '', is_active: true };
 
 const AdminStaff = () => {
   const { t } = useLanguage();
+  const { hotel } = useHotel();
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -24,10 +26,11 @@ const AdminStaff = () => {
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  useEffect(() => { fetchStaff(); }, []);
+  useEffect(() => { if (hotel?.id) fetchStaff(); }, [hotel?.id]);
 
   const fetchStaff = async () => {
-    const { data } = await supabase.from('staff').select('*').order('name');
+    if (!hotel?.id) return;
+    const { data } = await supabase.from('staff').select('*').eq('hotel_id', hotel.id).order('name');
     setStaff(data || []);
     setLoading(false);
   };
@@ -40,11 +43,11 @@ const AdminStaff = () => {
 
   const handleSave = async () => {
     if (!form.name || !form.role) { toast.error('Name and role required'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setSaving(true);
-    const hotelData = (await supabase.from('hotels').select('id').limit(1).single()).data;
     const { error } = editing
       ? await supabase.from('staff').update({ ...form, updated_at: new Date().toISOString() }).eq('id', editing)
-      : await supabase.from('staff').insert({ hotel_id: hotelData?.id!, ...form });
+      : await supabase.from('staff').insert({ hotel_id: hotel.id, ...form });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(editing ? 'Staff updated' : 'Staff added');

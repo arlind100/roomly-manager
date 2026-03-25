@@ -282,9 +282,8 @@ const AdminReservations = () => {
     if (status === 'completed' && res) {
       const nightsCount = Math.max(1, Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)));
       try {
-        const h = (await supabase.from('hotels').select('id').limit(1).single()).data;
         const { data: invoice, error: invError } = await supabase.from('invoices').insert({
-          hotel_id: h?.id || res.hotel_id, reservation_id: res.id, amount: res.total_price || 0, status: 'sent', issued_at: now,
+          hotel_id: hotel!.id, reservation_id: res.id, amount: res.total_price || 0, status: 'sent', issued_at: now,
         }).select().single();
         if (!invError) toast.success('Invoice ' + (invoice?.invoice_number || '') + ' generated');
 
@@ -311,16 +310,16 @@ const AdminReservations = () => {
 
   const handleCreate = async () => {
     if (!form.guest_name || !form.check_in || !form.check_out) { toast.error('Please fill required fields'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     if (form.room_type_id) {
       setCreating(true);
       const avail = await checkAvailability(form.room_type_id, form.check_in, form.check_out);
       if (!avail) { toast.error('Room not available'); setCreating(false); return; }
     }
     setCreating(true);
-    const h = (await supabase.from('hotels').select('id').limit(1).single()).data;
     const roomId = form.room_id && form.room_id !== 'none' ? form.room_id : null;
     const { error } = await supabase.from('reservations').insert({
-      hotel_id: h?.id, ...form, room_type_id: form.room_type_id || null,
+      hotel_id: hotel.id, ...form, room_type_id: form.room_type_id || null,
       room_id: roomId,
       status: 'confirmed',
       check_in_time: form.check_in_time || null, check_out_time: form.check_out_time || null,

@@ -60,9 +60,9 @@ const AdminRooms = () => {
 
   const handleSave = async () => {
     if (!form.room_number || !form.room_type_id) { toast.error('Room number and type required'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setSaving(true);
-    const h = hotel?.id || (await supabase.from('hotels').select('id').limit(1).single()).data?.id;
-    const payload = { hotel_id: h, room_number: form.room_number, floor: form.floor || null, room_type_id: form.room_type_id, notes: form.notes || null };
+    const payload = { hotel_id: hotel.id, room_number: form.room_number, floor: form.floor || null, room_type_id: form.room_type_id, notes: form.notes || null };
     const { error } = editing
       ? await supabase.from('rooms').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editing)
       : await supabase.from('rooms').insert(payload);
@@ -75,10 +75,10 @@ const AdminRooms = () => {
 
   const handleBulkAdd = async () => {
     if (!bulkForm.room_type_id || !bulkForm.count) { toast.error('Select room type and count'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setSaving(true);
-    const h = hotel?.id || (await supabase.from('hotels').select('id').limit(1).single()).data?.id;
     const roomsToInsert = Array.from({ length: bulkForm.count }, (_, i) => ({
-      hotel_id: h,
+      hotel_id: hotel.id,
       room_type_id: bulkForm.room_type_id,
       room_number: `${bulkForm.prefix}${bulkForm.start + i}`,
       floor: bulkForm.floor || null,

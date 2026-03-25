@@ -74,17 +74,18 @@ const AdminRoomTypes = () => {
   const uploadImage = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error('Image must be less than 5MB'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setUploading(true);
     const ext = file.name.split('.').pop() || 'jpg';
     const fileName = `${crypto.randomUUID()}.${ext}`;
-    const filePath = `room-types/${fileName}`;
+    const filePath = `${hotel.id}/room-types/${fileName}`;
     const { error } = await supabase.storage.from('room-images').upload(filePath, file, { cacheControl: '3600', upsert: false });
     setUploading(false);
     if (error) { toast.error('Upload failed: ' + error.message); return; }
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/room-images/${filePath}`;
     setForm(f => ({ ...f, image_url: publicUrl }));
     toast.success('Image uploaded');
-  }, []);
+  }, [hotel?.id]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault(); setDragOver(false);
@@ -102,9 +103,9 @@ const AdminRoomTypes = () => {
 
   const handleSave = async () => {
     if (!form.name || !form.base_price) { toast.error('Name and price required'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setSaving(true);
-    const h = (await supabase.from('hotels').select('id').limit(1).maybeSingle()).data;
-    const payload = { hotel_id: h?.id, name: form.name, description: form.description || null, max_guests: form.max_guests, base_price: form.base_price, weekend_price: form.weekend_price || null, available_units: form.available_units, amenities: form.amenities ? form.amenities.split(',').map(s => s.trim()).filter(Boolean) : [], room_size: form.room_size || null, image_url: form.image_url || null, show_on_website: form.show_on_website };
+    const payload = { hotel_id: hotel.id, name: form.name, description: form.description || null, max_guests: form.max_guests, base_price: form.base_price, weekend_price: form.weekend_price || null, available_units: form.available_units, amenities: form.amenities ? form.amenities.split(',').map(s => s.trim()).filter(Boolean) : [], room_size: form.room_size || null, image_url: form.image_url || null, show_on_website: form.show_on_website };
     const { error } = editing ? await supabase.from('room_types').update(payload).eq('id', editing) : await supabase.from('room_types').insert(payload);
     setSaving(false);
     if (error) { toast.error(error.message); return; }

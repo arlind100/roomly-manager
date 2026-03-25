@@ -121,11 +121,15 @@ const AdminSettings = () => {
       toast.error('Image must be less than 5MB');
       return;
     }
+    if (!hotel?.id) {
+      toast.error('Hotel not loaded');
+      return;
+    }
 
     setUploading(true);
     const ext = file.name.split('.').pop() || 'png';
     const fileName = `${crypto.randomUUID()}.${ext}`;
-    const filePath = `logos/${fileName}`;
+    const filePath = `${hotel.id}/logos/${fileName}`;
 
     const { error } = await supabase.storage.from('room-images').upload(filePath, file, {
       cacheControl: '3600',
@@ -142,7 +146,7 @@ const AdminSettings = () => {
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/room-images/${filePath}`;
     update('logo_url', publicUrl);
     toast.success('Logo uploaded');
-  }, []);
+  }, [hotel?.id]);
 
   const handleLogoDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
