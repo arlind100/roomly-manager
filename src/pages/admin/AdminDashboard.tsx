@@ -288,8 +288,8 @@ const AdminDashboard = () => {
   };
 
   const conflictReservations = useMemo(() =>
-    reservations.filter(r => r.is_conflict && r.status !== 'cancelled'),
-  [reservations]);
+    allLoadedRes.filter(r => r.is_conflict && r.status !== 'cancelled'),
+  [allLoadedRes]);
 
   const resolveConflict = async (keepId: string, cancelId: string) => {
     const { error: e1 } = await supabase.from('reservations').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', cancelId);
