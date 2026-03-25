@@ -23,7 +23,7 @@ import {
   PieChart as PieChartIcon, Activity, Target, Award,
 } from 'lucide-react';
 import {
-  format, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay,
+  format, subDays, addDays, startOfMonth, endOfMonth, startOfDay, endOfDay,
   eachDayOfInterval, differenceInDays, parseISO, isWithinInterval,
 } from 'date-fns';
 import {
