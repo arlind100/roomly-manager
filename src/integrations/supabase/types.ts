@@ -773,6 +773,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_reservation_if_available: {
+        Args: {
+          p_booking_source?: string
+          p_check_in: string
+          p_check_out: string
+          p_guest_email?: string
+          p_guest_name: string
+          p_guest_phone?: string
+          p_guests_count?: number
+          p_hotel_id: string
+          p_room_id?: string
+          p_room_type_id: string
+          p_total_price?: number
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

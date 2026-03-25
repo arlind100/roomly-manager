@@ -314,21 +314,16 @@ const AdminReservations = () => {
     const roomId = form.room_id && form.room_id !== 'none' ? form.room_id : null;
     const { error } = await (supabase.rpc as any)('create_reservation_if_available', {
       p_hotel_id: hotel.id,
+      p_room_type_id: form.room_type_id || null,
+      p_check_in: form.check_in,
+      p_check_out: form.check_out,
       p_guest_name: form.guest_name,
       p_guest_email: form.guest_email || null,
       p_guest_phone: form.guest_phone || null,
-      p_room_type_id: form.room_type_id || null,
-      p_room_id: roomId,
-      p_check_in: form.check_in,
-      p_check_out: form.check_out,
-      p_check_in_time: form.check_in_time || null,
-      p_check_out_time: form.check_out_time || null,
       p_guests_count: form.guests_count,
       p_total_price: form.total_price || null,
-      p_special_requests: form.special_requests || null,
-      p_notes: form.notes || null,
       p_booking_source: form.booking_source || 'direct',
-      p_status: 'confirmed',
+      p_room_id: roomId,
     });
     setCreating(false);
     if (error) { toast.error(error.message); return; }

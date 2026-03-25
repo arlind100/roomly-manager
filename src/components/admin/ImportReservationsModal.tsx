@@ -239,21 +239,18 @@ export function ImportReservationsModal({ open, onOpenChange, roomTypes, hotelId
       if (row.status === 'conflict' && skipConflicts) { conflicts++; continue; }
       if (row.status === 'conflict') conflicts++;
 
-      const { error } = await supabase.from('reservations').insert({
-        hotel_id: hotelId,
-        guest_name: row.guest_name,
-        check_in: row.check_in,
-        check_out: row.check_out,
-        room_type_id: row.room_type_id,
-        guests_count: row.guests_count,
-        total_price: row.total_price || null,
-        external_reservation_id: row.external_id || null,
-        external_platform: row.platform,
-        import_batch_id: batchId,
-        imported_at: new Date().toISOString(),
-        is_external: true,
-        status: 'confirmed',
-        booking_source: row.platform,
+      const { error } = await (supabase.rpc as any)('create_reservation_if_available', {
+        p_hotel_id: hotelId,
+        p_room_type_id: row.room_type_id,
+        p_check_in: row.check_in,
+        p_check_out: row.check_out,
+        p_guest_name: row.guest_name,
+        p_guest_email: null,
+        p_guest_phone: null,
+        p_guests_count: row.guests_count,
+        p_total_price: row.total_price || null,
+        p_booking_source: row.platform || 'import',
+        p_room_id: null,
       });
 
       if (error) { errors++; console.error('Import row error:', error); }

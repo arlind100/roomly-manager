@@ -198,27 +198,20 @@ const AdminDashboard = () => {
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreating(true);
     const checkOut = format(addDays(new Date(), walkIn.nights), 'yyyy-MM-dd');
-    const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const { error } = await (supabase.rpc as any)('create_reservation_if_available', {
       p_hotel_id: hotel.id,
-      p_guest_name: walkIn.guest_name,
-      p_guest_phone: walkIn.guest_phone || null,
       p_room_type_id: walkIn.room_type_id,
-      p_room_id: walkIn.room_id,
       p_check_in: today,
       p_check_out: checkOut,
-      p_check_in_time: timeNow,
+      p_guest_name: walkIn.guest_name,
+      p_guest_email: null,
+      p_guest_phone: walkIn.guest_phone || null,
       p_guests_count: walkIn.guests_count,
       p_total_price: walkIn.total_price,
-      p_payment_method: walkIn.payment_method,
-      p_notes: walkIn.notes || null,
-      p_payment_status: walkIn.payment_received ? 'paid' : 'unpaid',
-      p_status: 'checked_in',
       p_booking_source: 'walk-in',
+      p_room_id: walkIn.room_id,
     });
     if (error) { toast.error(error.message); setCreating(false); return; }
-    // Mark the room as occupied
-    await supabase.from('rooms').update({ operational_status: 'occupied', updated_at: new Date().toISOString() }).eq('id', walkIn.room_id);
     setCreating(false);
     toast.success('Walk-in reservation created');
     setShowWalkIn(false);
