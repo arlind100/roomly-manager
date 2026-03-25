@@ -61,11 +61,11 @@ const AdminDashboard = () => {
   const cur = hotel?.currency || 'USD';
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<any>({ occupancy: 0, todayReservations: 0, todayRevenue: 0, available: 0, checkIns: 0, checkOuts: 0 });
   const [todayArrivals, setTodayArrivals] = useState<any[]>([]);
   const [todayDepartures, setTodayDepartures] = useState<any[]>([]);
   const [currentGuests, setCurrentGuests] = useState<any[]>([]);
-  const [reservations, setReservations] = useState<any[]>([]); // only for walk-in overlap check + search
+  const [roomTypes, setRoomTypes] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,67 +93,53 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     if (!hotel?.id) return;
-    const [resResult, rtResult, roomResult] = await Promise.all([
-      supabase.from('reservations').select('*, room_types(name, available_units)').eq('hotel_id', hotel.id).order('created_at', { ascending: false }).limit(2000),
+    const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+    const [statsResult, arrivalsResult, departuresResult, guestsResult, rtResult, roomResult] = await Promise.all([
+      (supabase.rpc as any)('get_dashboard_stats', { p_hotel_id: hotel.id, p_today: today }),
+      supabase.from('reservations').select('*, room_types(name, available_units)').eq('hotel_id', hotel.id).eq('check_in', today).in('status', ['confirmed', 'pending']).order('guest_name').limit(20),
+      supabase.from('reservations').select('*, room_types(name, available_units)').eq('hotel_id', hotel.id).eq('check_out', today).in('status', ['confirmed', 'checked_in']).order('guest_name').limit(20),
+      supabase.from('reservations').select('*, room_types(name, available_units)').eq('hotel_id', hotel.id).lte('check_in', today).gt('check_out', today).in('status', ['confirmed', 'checked_in']).order('guest_name').limit(30),
       supabase.from('room_types').select('*').eq('hotel_id', hotel.id),
       supabase.from('rooms').select('*, room_types(name)').eq('hotel_id', hotel.id).eq('is_active', true),
     ]);
-    setReservations(resResult.data || []);
+    if (statsResult.data) {
+      const s = statsResult.data;
+      setStats({
+        occupancy: Number(s.occupancy) || 0,
+        todayReservations: Number(s.today_reservations) || 0,
+        todayRevenue: Number(s.today_revenue) || 0,
+        available: Number(s.available) || 0,
+        checkIns: Number(s.check_ins) || 0,
+        checkOuts: Number(s.check_outs) || 0,
+      });
+    }
+    setTodayArrivals(arrivalsResult.data || []);
+    setTodayDepartures(departuresResult.data || []);
+    setCurrentGuests(guestsResult.data || []);
     setRoomTypes(rtResult.data || []);
     setRooms(roomResult.data || []);
     setLoading(false);
   };
 
-  // ===== METRICS =====
-  const stats = useMemo(() => {
-    const totalUnits = roomTypes.reduce((s, rt) => s + (rt.available_units || 0), 0);
-    const occupied = reservations.filter(r =>
-      r.check_in <= today && r.check_out > today && (r.status === 'confirmed' || r.status === 'checked_in')
-    ).length;
-    const checkIns = reservations.filter(r => r.check_in === today && r.status === 'confirmed').length;
-    const checkOuts = reservations.filter(r => r.check_out === today && (r.status === 'confirmed' || r.status === 'checked_in')).length;
-    const todayRevenue = reservations
-      .filter(r => r.status !== 'cancelled' && r.check_in <= today && r.check_out > today)
-      .reduce((s, r) => {
-        const totalPrice = Number(r.total_price) || 0;
-        const nights = Math.max(1, Math.ceil((new Date(r.check_out).getTime() - new Date(r.check_in).getTime()) / (1000 * 60 * 60 * 24)));
-        return s + (totalPrice / nights);
-      }, 0);
-    const todayReservations = reservations.filter(r => r.created_at?.startsWith(today)).length;
-    const occupancy = totalUnits > 0 ? Math.round((occupied / totalUnits) * 100) : 0;
-    return { occupancy, todayReservations, todayRevenue, available: Math.max(0, totalUnits - occupied), checkIns, checkOuts };
-  }, [reservations, roomTypes, today]);
-
-  const todayArrivals = useMemo(() =>
-    reservations.filter(r => r.check_in === today && (r.status === 'confirmed' || r.status === 'pending')).slice(0, 10),
-  [reservations, today]);
-
-  const todayDepartures = useMemo(() =>
-    reservations.filter(r => r.check_out === today && (r.status === 'confirmed' || r.status === 'checked_in')).slice(0, 10),
-  [reservations, today]);
-
-  const currentGuests = useMemo(() =>
-    reservations.filter(r => r.check_in <= today && r.check_out > today && (r.status === 'confirmed' || r.status === 'checked_in')).slice(0, 15),
-  [reservations, today]);
-
+  // Room status board from room_types + current guests count
   const roomStatusBoard = useMemo(() => {
+    const guestsByType: Record<string, number> = {};
+    currentGuests.forEach(r => {
+      if (r.room_type_id) guestsByType[r.room_type_id] = (guestsByType[r.room_type_id] || 0) + 1;
+    });
+    const arrivalsByType: Record<string, number> = {};
+    todayArrivals.forEach(r => {
+      if (r.room_type_id) arrivalsByType[r.room_type_id] = (arrivalsByType[r.room_type_id] || 0) + 1;
+    });
     return roomTypes.map(rt => {
-      const activeRes = reservations.filter(r =>
-        r.room_type_id === rt.id && r.check_in <= today && r.check_out > today &&
-        (r.status === 'confirmed' || r.status === 'checked_in')
-      );
-      const occupiedCount = activeRes.length;
-      const reservedCount = reservations.filter(r =>
-        r.room_type_id === rt.id && r.check_in > today &&
-        r.check_in <= format(addDays(new Date(), 1), 'yyyy-MM-dd') &&
-        (r.status === 'confirmed' || r.status === 'pending')
-      ).length;
+      const occupiedCount = guestsByType[rt.id] || 0;
+      const reservedCount = arrivalsByType[rt.id] || 0;
       let status: string = 'available';
       if (occupiedCount >= (rt.available_units || 1)) status = 'occupied';
       else if (reservedCount > 0) status = 'reserved';
       return { ...rt, status, occupiedCount, reservedCount, freeUnits: Math.max(0, (rt.available_units || 1) - occupiedCount) };
     });
-  }, [reservations, roomTypes, today]);
+  }, [currentGuests, todayArrivals, roomTypes]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
