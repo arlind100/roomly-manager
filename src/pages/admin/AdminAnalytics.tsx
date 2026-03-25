@@ -160,8 +160,8 @@ const AdminAnalytics = () => {
   }, [nonCancelled]);
 
   // ===== PERFORMANCE METRICS =====
-  const adr = occupiedRoomDays > 0 ? totalRevenue / occupiedRoomDays : 0;
-  const revpar = totalRoomDays > 0 ? totalRevenue / totalRoomDays : 0;
+  const adr = Number(summaryStats?.adr ?? 0);
+  const revpar = Number(summaryStats?.revpar ?? 0);
   const avgLengthOfStay = nonCancelled.length > 0
     ? nonCancelled.reduce((s, r) => s + Math.max(1, differenceInDays(parseISO(r.check_out), parseISO(r.check_in))), 0) / nonCancelled.length
     : 0;
