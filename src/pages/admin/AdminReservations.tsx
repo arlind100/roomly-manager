@@ -345,20 +345,34 @@ const AdminReservations = () => {
   };
 
   const handleEditSave = async () => {
-    if (!selectedRes) return;
+    if (!selectedRes || !hotel?.id) return;
     setSaving(true);
     const roomId = editForm.room_id && editForm.room_id !== 'none' ? editForm.room_id : null;
-    const { error } = await supabase.from('reservations').update({
-      guest_name: editForm.guest_name, guest_email: editForm.guest_email, guest_phone: editForm.guest_phone,
-      room_type_id: editForm.room_type_id || null, room_id: roomId,
-      check_in: editForm.check_in, check_out: editForm.check_out,
-      check_in_time: editForm.check_in_time || null, check_out_time: editForm.check_out_time || null,
-      guests_count: editForm.guests_count, total_price: editForm.total_price,
-      special_requests: editForm.special_requests, notes: editForm.notes,
-      booking_source: editForm.booking_source, updated_at: new Date().toISOString(),
-    }).eq('id', selectedRes.id);
+    const { error } = await (supabase.rpc as any)('update_reservation_if_available', {
+      p_reservation_id: selectedRes.id,
+      p_hotel_id: hotel.id,
+      p_room_type_id: editForm.room_type_id || null,
+      p_room_id: roomId,
+      p_check_in: editForm.check_in || null,
+      p_check_out: editForm.check_out || null,
+      p_guest_name: editForm.guest_name || null,
+      p_guest_email: editForm.guest_email || null,
+      p_guest_phone: editForm.guest_phone || null,
+      p_guests_count: editForm.guests_count,
+      p_total_price: editForm.total_price || null,
+      p_booking_source: editForm.booking_source || null,
+      p_special_requests: editForm.special_requests || null,
+      p_notes: editForm.notes || null,
+    });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      const msg = error.message || '';
+      if (msg.includes('booking conflict')) toast.error('This change would create a booking conflict');
+      else if (msg.includes('exceeds room capacity')) toast.error('Guest count exceeds room capacity');
+      else if (msg.includes('blocked')) toast.error('Some dates are blocked for this room type');
+      else toast.error(msg);
+      return;
+    }
     toast.success(t('admin.saveChanges'));
     setShowEdit(false); setSelectedRes(null); fetchData();
   };
