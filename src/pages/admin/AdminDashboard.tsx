@@ -86,7 +86,7 @@ const AdminDashboard = () => {
   const [walkIn, setWalkIn] = useState({
     guest_name: '', guest_phone: '', nights: 1, guests_count: 1,
     room_type_id: '', room_id: '', total_price: 0, payment_method: 'cash', notes: '',
-    payment_received: false,
+    payment_received: false, check_in_now: true,
   });
 
   useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
@@ -173,11 +173,11 @@ const AdminDashboard = () => {
     return roomTypes.filter(rt => (occupiedByType[rt.id] || 0) < (rt.available_units || 1));
   }, [roomTypes, currentGuests]);
 
-  // Physical rooms available for walk-in room picker
+  // Physical rooms available for walk-in room picker (include dirty/cleaning)
   const walkInPhysicalRooms = useMemo(() => {
     return rooms.filter(r =>
       r.room_type_id === walkIn.room_type_id &&
-      (r.operational_status === 'available' || r.operational_status === 'reserved')
+      !['occupied', 'maintenance', 'out_of_service'].includes(r.operational_status)
     );
   }, [rooms, walkIn.room_type_id]);
 
@@ -192,8 +192,8 @@ const AdminDashboard = () => {
   };
 
   const handleWalkInSubmit = async () => {
-    if (!walkIn.guest_name || !walkIn.room_type_id) { toast.error('Guest name and room are required'); return; }
-    if (!walkIn.room_id) { toast.error('Please assign a specific room for walk-in'); return; }
+    if (!walkIn.guest_name || !walkIn.room_type_id) { toast.error('Guest name and room type are required'); return; }
+    if (walkIn.check_in_now && !walkIn.room_id) { toast.error('Please assign a room for immediate check-in'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreating(true);
     const checkOut = format(addDays(new Date(), walkIn.nights), 'yyyy-MM-dd');
@@ -208,13 +208,33 @@ const AdminDashboard = () => {
       p_guests_count: walkIn.guests_count,
       p_total_price: walkIn.total_price,
       p_booking_source: 'walk-in',
-      p_room_id: walkIn.room_id,
+      p_room_id: walkIn.room_id || null,
     });
-    if (error) { toast.error(error.message); setCreating(false); return; }
+    if (error) {
+      const msg = error.message || '';
+      if (msg.includes('exceeds room capacity')) toast.error('Guest count exceeds room capacity for this room type');
+      else if (msg.includes('No availability')) toast.error('No rooms available for the selected dates');
+      else toast.error(msg);
+      setCreating(false);
+      return;
+    }
+    // If check_in_now, update reservation status to checked_in
+    if (walkIn.check_in_now && walkIn.room_id) {
+      // The RPC already sets status to 'confirmed' and room to 'occupied'
+      // We need to update to checked_in
+      const { data: newRes } = await supabase.from('reservations')
+        .select('id').eq('hotel_id', hotel.id).eq('guest_name', walkIn.guest_name)
+        .eq('check_in', today).eq('booking_source', 'walk-in')
+        .order('created_at', { ascending: false }).limit(1);
+      if (newRes?.[0]) {
+        const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        await supabase.from('reservations').update({ status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', newRes[0].id);
+      }
+    }
     setCreating(false);
-    toast.success('Walk-in reservation created');
+    toast.success(walkIn.check_in_now ? 'Guest checked in successfully' : 'Walk-in reservation created');
     setShowWalkIn(false);
-    setWalkIn({ guest_name: '', guest_phone: '', nights: 1, guests_count: 1, room_type_id: '', room_id: '', total_price: 0, payment_method: 'cash', notes: '', payment_received: false });
+    setWalkIn({ guest_name: '', guest_phone: '', nights: 1, guests_count: 1, room_type_id: '', room_id: '', total_price: 0, payment_method: 'cash', notes: '', payment_received: false, check_in_now: true });
     fetchData();
   };
 
@@ -547,17 +567,27 @@ const AdminDashboard = () => {
               </Select>
             </div>
             {walkIn.room_type_id && (
-              <div>
-                <Label>Assign Room *</Label>
-                <Select value={walkIn.room_id} onValueChange={v => setWalkIn(p => ({ ...p, room_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
-                  <SelectContent>
-                    {walkInPhysicalRooms.map(r => (
-                      <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div className="flex items-center justify-between py-1">
+                  <Label className="text-sm">Check-in immediately</Label>
+                  <Switch checked={walkIn.check_in_now} onCheckedChange={v => setWalkIn(p => ({ ...p, check_in_now: v, room_id: v ? p.room_id : '' }))} />
+                </div>
+                <div>
+                  <Label>{walkIn.check_in_now ? 'Assign Room *' : 'Assign Room (optional)'}</Label>
+                  {walkInPhysicalRooms.length === 0 ? (
+                    <p className="text-sm text-destructive py-1">No assignable rooms available for this type</p>
+                  ) : (
+                    <Select value={walkIn.room_id} onValueChange={v => setWalkIn(p => ({ ...p, room_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
+                      <SelectContent>
+                        {walkInPhysicalRooms.map(r => (
+                          <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {r.operational_status}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </>
             )}
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={walkIn.total_price} onChange={e => setWalkIn(p => ({ ...p, total_price: parseFloat(e.target.value) || 0 }))} /></div>
@@ -592,17 +622,26 @@ const AdminDashboard = () => {
           <p className="text-sm text-muted-foreground">
             No room assigned to <strong>{roomPickerRes?.guest_name}</strong>. Please select a room before checking in.
           </p>
-          <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
-            <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
-            <SelectContent>
-              {rooms.filter(r =>
-                r.room_type_id === roomPickerRes?.room_type_id &&
-                (r.operational_status === 'available' || r.operational_status === 'reserved')
-              ).map(r => (
-                <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(() => {
+            const assignableRooms = rooms.filter(r =>
+              r.room_type_id === roomPickerRes?.room_type_id &&
+              !['occupied', 'maintenance', 'out_of_service'].includes(r.operational_status)
+            );
+            return assignableRooms.length === 0 ? (
+              <p className="text-sm text-destructive py-2">No assignable rooms available for this type</p>
+            ) : (
+              <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
+                <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
+                <SelectContent>
+                  {assignableRooms.map(r => (
+                    <SelectItem key={r.id} value={r.id}>
+                      Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {r.operational_status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          })()}
           <Button onClick={handleRoomPickerConfirm} disabled={!pickedRoomId} className="w-full gap-1.5">
             <LogIn size={14} /> Assign & Check In
           </Button>

@@ -834,6 +834,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_reservation_if_available: {
+        Args: {
+          p_booking_source?: string
+          p_check_in?: string
+          p_check_out?: string
+          p_guest_email?: string
+          p_guest_name?: string
+          p_guest_phone?: string
+          p_guests_count?: number
+          p_hotel_id: string
+          p_notes?: string
+          p_reservation_id: string
+          p_room_id?: string
+          p_room_type_id: string
+          p_special_requests?: string
+          p_total_price?: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "staff"

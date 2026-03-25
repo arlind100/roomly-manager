@@ -326,7 +326,14 @@ const AdminReservations = () => {
       p_room_id: roomId,
     });
     setCreating(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      const msg = error.message || '';
+      if (msg.includes('exceeds room capacity')) toast.error('Guest count exceeds room capacity for this room type');
+      else if (msg.includes('No availability')) toast.error('No rooms available for the selected dates');
+      else if (msg.includes('blocked')) toast.error('Some dates in the selected range are blocked');
+      else toast.error(msg);
+      return;
+    }
     toast.success('Reservation created');
     setShowCreate(false); setForm(emptyForm); fetchData();
   };
@@ -345,20 +352,34 @@ const AdminReservations = () => {
   };
 
   const handleEditSave = async () => {
-    if (!selectedRes) return;
+    if (!selectedRes || !hotel?.id) return;
     setSaving(true);
     const roomId = editForm.room_id && editForm.room_id !== 'none' ? editForm.room_id : null;
-    const { error } = await supabase.from('reservations').update({
-      guest_name: editForm.guest_name, guest_email: editForm.guest_email, guest_phone: editForm.guest_phone,
-      room_type_id: editForm.room_type_id || null, room_id: roomId,
-      check_in: editForm.check_in, check_out: editForm.check_out,
-      check_in_time: editForm.check_in_time || null, check_out_time: editForm.check_out_time || null,
-      guests_count: editForm.guests_count, total_price: editForm.total_price,
-      special_requests: editForm.special_requests, notes: editForm.notes,
-      booking_source: editForm.booking_source, updated_at: new Date().toISOString(),
-    }).eq('id', selectedRes.id);
+    const { error } = await (supabase.rpc as any)('update_reservation_if_available', {
+      p_reservation_id: selectedRes.id,
+      p_hotel_id: hotel.id,
+      p_room_type_id: editForm.room_type_id || null,
+      p_room_id: roomId,
+      p_check_in: editForm.check_in || null,
+      p_check_out: editForm.check_out || null,
+      p_guest_name: editForm.guest_name || null,
+      p_guest_email: editForm.guest_email || null,
+      p_guest_phone: editForm.guest_phone || null,
+      p_guests_count: editForm.guests_count,
+      p_total_price: editForm.total_price || null,
+      p_booking_source: editForm.booking_source || null,
+      p_special_requests: editForm.special_requests || null,
+      p_notes: editForm.notes || null,
+    });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      const msg = error.message || '';
+      if (msg.includes('booking conflict')) toast.error('This change would create a booking conflict');
+      else if (msg.includes('exceeds room capacity')) toast.error('Guest count exceeds room capacity');
+      else if (msg.includes('blocked')) toast.error('Some dates are blocked for this room type');
+      else toast.error(msg);
+      return;
+    }
     toast.success(t('admin.saveChanges'));
     setShowEdit(false); setSelectedRes(null); fetchData();
   };
@@ -605,17 +626,26 @@ const AdminReservations = () => {
           <p className="text-sm text-muted-foreground">
             No room assigned to <strong>{roomPickerRes?.guest_name}</strong>. Please select a room before checking in.
           </p>
-          <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
-            <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
-            <SelectContent>
-              {rooms.filter(r =>
-                r.room_type_id === roomPickerRes?.room_type_id &&
-                (r.operational_status === 'available' || r.operational_status === 'reserved')
-              ).map(r => (
-                <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(() => {
+            const assignableRooms = rooms.filter(r =>
+              r.room_type_id === roomPickerRes?.room_type_id &&
+              !['occupied', 'maintenance', 'out_of_service'].includes(r.operational_status)
+            );
+            return assignableRooms.length === 0 ? (
+              <p className="text-sm text-destructive py-2">No assignable rooms available for this type</p>
+            ) : (
+              <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
+                <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
+                <SelectContent>
+                  {assignableRooms.map(r => (
+                    <SelectItem key={r.id} value={r.id}>
+                      Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {r.operational_status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          })()}
           <Button onClick={handleRoomPickerConfirm} disabled={!pickedRoomId} className="w-full gap-1.5">
             <LogIn size={14} /> Assign & Check In
           </Button>
