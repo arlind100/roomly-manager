@@ -87,6 +87,13 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const feedId = body.feed_id; // Optional: sync specific feed
 
+    // If a specific feed_id is provided, require authentication
+    if (feedId && !isAuthenticated) {
+      return new Response(JSON.stringify({ error: "Authentication required for manual sync" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Fetch feeds to sync
     let feedQuery = supabase
       .from("ical_feeds")
