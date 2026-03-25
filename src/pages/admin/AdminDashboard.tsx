@@ -198,7 +198,6 @@ const AdminDashboard = () => {
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreating(true);
     const checkOut = format(addDays(new Date(), walkIn.nights), 'yyyy-MM-dd');
-    const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const { error } = await (supabase.rpc as any)('create_reservation_if_available', {
       p_hotel_id: hotel.id,
       p_room_type_id: walkIn.room_type_id,
