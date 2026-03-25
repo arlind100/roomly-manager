@@ -567,17 +567,27 @@ const AdminDashboard = () => {
               </Select>
             </div>
             {walkIn.room_type_id && (
-              <div>
-                <Label>Assign Room *</Label>
-                <Select value={walkIn.room_id} onValueChange={v => setWalkIn(p => ({ ...p, room_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
-                  <SelectContent>
-                    {walkInPhysicalRooms.map(r => (
-                      <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <>
+                <div className="flex items-center justify-between py-1">
+                  <Label className="text-sm">Check-in immediately</Label>
+                  <Switch checked={walkIn.check_in_now} onCheckedChange={v => setWalkIn(p => ({ ...p, check_in_now: v, room_id: v ? p.room_id : '' }))} />
+                </div>
+                <div>
+                  <Label>{walkIn.check_in_now ? 'Assign Room *' : 'Assign Room (optional)'}</Label>
+                  {walkInPhysicalRooms.length === 0 ? (
+                    <p className="text-sm text-destructive py-1">No assignable rooms available for this type</p>
+                  ) : (
+                    <Select value={walkIn.room_id} onValueChange={v => setWalkIn(p => ({ ...p, room_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
+                      <SelectContent>
+                        {walkInPhysicalRooms.map(r => (
+                          <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {r.operational_status}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </>
             )}
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={walkIn.total_price} onChange={e => setWalkIn(p => ({ ...p, total_price: parseFloat(e.target.value) || 0 }))} /></div>
