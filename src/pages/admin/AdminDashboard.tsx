@@ -219,7 +219,7 @@ const AdminDashboard = () => {
   };
 
   const initiateCheckIn = (id: string) => {
-    const res = reservations.find(r => r.id === id);
+    const res = allLoadedRes.find(r => r.id === id);
     if (res && !res.room_id) {
       setRoomPickerRes(res);
       setPickedRoomId('');
