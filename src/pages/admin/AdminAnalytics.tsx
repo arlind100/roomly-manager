@@ -48,7 +48,7 @@ const AdminAnalytics = () => {
   const [customFrom, setCustomFrom] = useState<Date | undefined>();
   const [customTo, setCustomTo] = useState<Date | undefined>();
   const [reservations, setReservations] = useState<any[]>([]);
-  const [roomTypes, setRoomTypes] = useState<any[]>([]);
+  const [summaryStats, setSummaryStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [reportPage, setReportPage] = useState(0);
   const REPORT_PAGE_SIZE = 15;
