@@ -163,15 +163,7 @@ const AdminReservations = () => {
     setLoading(false);
   };
 
-  const checkAvailability = async (roomTypeId: string, checkIn: string, checkOut: string, excludeId?: string) => {
-    let query = supabase.from('reservations').select('*', { count: 'exact', head: true })
-      .eq('room_type_id', roomTypeId).neq('status', 'cancelled')
-      .lt('check_in', checkOut).gt('check_out', checkIn);
-    if (excludeId) query = query.neq('id', excludeId);
-    const { count } = await query;
-    const rt = roomTypes.find(r => r.id === roomTypeId);
-    return (count || 0) < (rt?.available_units || 1);
-  };
+  // Availability is now checked atomically in the DB function - no frontend check needed
 
   const confirmAndUpdateStatus = (id: string, status: string) => {
     const res = reservations.find(r => r.id === id);
@@ -282,10 +274,17 @@ const AdminReservations = () => {
     if (status === 'completed' && res) {
       const nightsCount = Math.max(1, Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)));
       try {
-        const { data: invoice, error: invError } = await supabase.from('invoices').insert({
-          hotel_id: hotel!.id, reservation_id: res.id, amount: res.total_price || 0, status: 'sent', issued_at: now,
-        }).select().single();
-        if (!invError) toast.success('Invoice ' + (invoice?.invoice_number || '') + ' generated');
+        // Check if invoice already exists for this reservation (prevent duplicates)
+        const { data: existingInv } = await supabase.from('invoices').select('id, invoice_number').eq('reservation_id', res.id).neq('status', 'cancelled').limit(1);
+        let invoice: any = existingInv?.[0];
+        if (!invoice) {
+          const { data: newInv, error: invError } = await supabase.from('invoices').insert({
+            hotel_id: hotel!.id, reservation_id: res.id, amount: res.total_price || 0, status: 'sent', issued_at: now,
+          }).select().single();
+          if (!invError) { invoice = newInv; toast.success('Invoice ' + (newInv?.invoice_number || '') + ' generated'); }
+        } else {
+          toast.info('Invoice ' + invoice.invoice_number + ' already exists');
+        }
 
         if (res.guest_email) {
           await supabase.functions.invoke('send-checkout-email', {
@@ -311,19 +310,25 @@ const AdminReservations = () => {
   const handleCreate = async () => {
     if (!form.guest_name || !form.check_in || !form.check_out) { toast.error('Please fill required fields'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
-    if (form.room_type_id) {
-      setCreating(true);
-      const avail = await checkAvailability(form.room_type_id, form.check_in, form.check_out);
-      if (!avail) { toast.error('Room not available'); setCreating(false); return; }
-    }
     setCreating(true);
     const roomId = form.room_id && form.room_id !== 'none' ? form.room_id : null;
-    const { error } = await supabase.from('reservations').insert({
-      hotel_id: hotel.id, ...form, room_type_id: form.room_type_id || null,
-      room_id: roomId,
-      status: 'confirmed',
-      check_in_time: form.check_in_time || null, check_out_time: form.check_out_time || null,
-      booking_source: form.booking_source || 'direct',
+    const { error } = await (supabase.rpc as any)('create_reservation_if_available', {
+      p_hotel_id: hotel.id,
+      p_guest_name: form.guest_name,
+      p_guest_email: form.guest_email || null,
+      p_guest_phone: form.guest_phone || null,
+      p_room_type_id: form.room_type_id || null,
+      p_room_id: roomId,
+      p_check_in: form.check_in,
+      p_check_out: form.check_out,
+      p_check_in_time: form.check_in_time || null,
+      p_check_out_time: form.check_out_time || null,
+      p_guests_count: form.guests_count,
+      p_total_price: form.total_price || null,
+      p_special_requests: form.special_requests || null,
+      p_notes: form.notes || null,
+      p_booking_source: form.booking_source || 'direct',
+      p_status: 'confirmed',
     });
     setCreating(false);
     if (error) { toast.error(error.message); return; }
@@ -346,11 +351,6 @@ const AdminReservations = () => {
 
   const handleEditSave = async () => {
     if (!selectedRes) return;
-    if (editForm.room_type_id && (editForm.room_type_id !== selectedRes.room_type_id || editForm.check_in !== selectedRes.check_in || editForm.check_out !== selectedRes.check_out)) {
-      setSaving(true);
-      const avail = await checkAvailability(editForm.room_type_id, editForm.check_in, editForm.check_out, selectedRes.id);
-      if (!avail) { toast.error('Room not available'); setSaving(false); return; }
-    }
     setSaving(true);
     const roomId = editForm.room_id && editForm.room_id !== 'none' ? editForm.room_id : null;
     const { error } = await supabase.from('reservations').update({
