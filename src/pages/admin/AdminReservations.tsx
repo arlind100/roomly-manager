@@ -163,15 +163,7 @@ const AdminReservations = () => {
     setLoading(false);
   };
 
-  const checkAvailability = async (roomTypeId: string, checkIn: string, checkOut: string, excludeId?: string) => {
-    let query = supabase.from('reservations').select('*', { count: 'exact', head: true })
-      .eq('room_type_id', roomTypeId).neq('status', 'cancelled')
-      .lt('check_in', checkOut).gt('check_out', checkIn);
-    if (excludeId) query = query.neq('id', excludeId);
-    const { count } = await query;
-    const rt = roomTypes.find(r => r.id === roomTypeId);
-    return (count || 0) < (rt?.available_units || 1);
-  };
+  // Availability is now checked atomically in the DB function - no frontend check needed
 
   const confirmAndUpdateStatus = (id: string, status: string) => {
     const res = reservations.find(r => r.id === id);
