@@ -417,6 +417,36 @@ export type Database = {
         }
         Relationships: []
       }
+      reservation_audit_log: {
+        Row: {
+          action: string
+          changes: Json | null
+          created_at: string
+          hotel_id: string
+          id: string
+          reservation_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changes?: Json | null
+          created_at?: string
+          hotel_id: string
+          id?: string
+          reservation_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changes?: Json | null
+          created_at?: string
+          hotel_id?: string
+          id?: string
+          reservation_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       reservations: {
         Row: {
           booking_source: string | null
@@ -788,6 +818,14 @@ export type Database = {
           p_total_price?: number
         }
         Returns: string
+      }
+      get_analytics_summary: {
+        Args: { p_from: string; p_hotel_id: string; p_to: string }
+        Returns: Json
+      }
+      get_dashboard_stats: {
+        Args: { p_hotel_id: string; p_today: string }
+        Returns: Json
       }
       has_role: {
         Args: {
