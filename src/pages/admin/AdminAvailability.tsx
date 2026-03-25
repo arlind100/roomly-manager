@@ -45,7 +45,7 @@ const AdminAvailability = () => {
   };
 
   const handleBlock = async (date: Date) => {
-    if (!selectedRoom) return;
+    if (!selectedRoom || !hotel?.id) return;
     setBlocking(true);
     const dateStr = format(date, 'yyyy-MM-dd');
     const existing = blocks.find(b => b.room_type_id === selectedRoom && b.date === dateStr);
@@ -53,8 +53,7 @@ const AdminAvailability = () => {
       await supabase.from('availability_blocks').delete().eq('id', existing.id);
       toast.success('Date unblocked');
     } else {
-      const hotel = (await supabase.from('hotels').select('id').limit(1).single()).data;
-      await supabase.from('availability_blocks').insert({ hotel_id: hotel?.id, room_type_id: selectedRoom, date: dateStr, reason: 'blocked' });
+      await supabase.from('availability_blocks').insert({ hotel_id: hotel.id, room_type_id: selectedRoom, date: dateStr, reason: 'blocked' });
       toast.success('Date blocked');
     }
     setBlocking(false);
