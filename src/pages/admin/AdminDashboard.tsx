@@ -263,7 +263,7 @@ const AdminDashboard = () => {
     setCheckingOutId(id);
     setConfirmCheckOut(null);
     const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    const res = reservations.find(r => r.id === id);
+    const res = allLoadedRes.find(r => r.id === id);
     const { error } = await supabase.from('reservations').update({ status: 'completed', check_out_time: timeNow, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) { toast.error(error.message); setCheckingOutId(null); return; }
 
