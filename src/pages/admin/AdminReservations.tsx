@@ -326,7 +326,14 @@ const AdminReservations = () => {
       p_room_id: roomId,
     });
     setCreating(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      const msg = error.message || '';
+      if (msg.includes('exceeds room capacity')) toast.error('Guest count exceeds room capacity for this room type');
+      else if (msg.includes('No availability')) toast.error('No rooms available for the selected dates');
+      else if (msg.includes('blocked')) toast.error('Some dates in the selected range are blocked');
+      else toast.error(msg);
+      return;
+    }
     toast.success('Reservation created');
     setShowCreate(false); setForm(emptyForm); fetchData();
   };
