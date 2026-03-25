@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${hotel_name} <onboarding@resend.dev>`,
+        from: `${hotel_name} <${Deno.env.get('SENDER_EMAIL') || 'onboarding@resend.dev'}>`,
         to: [to_email],
         subject: `Invoice ${invoice_number} — ${hotel_name}`,
         html: `
