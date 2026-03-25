@@ -305,7 +305,7 @@ const AdminReservations = () => {
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreating(true);
     const roomId = form.room_id && form.room_id !== 'none' ? form.room_id : null;
-    const { error } = await supabase.rpc('create_reservation_if_available', {
+    const { error } = await (supabase.rpc as any)('create_reservation_if_available', {
       p_hotel_id: hotel.id,
       p_guest_name: form.guest_name,
       p_guest_email: form.guest_email || null,
