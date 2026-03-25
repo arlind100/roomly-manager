@@ -313,7 +313,7 @@ const AdminDashboard = () => {
           </h3>
           <div className="space-y-2">
             {conflictReservations.slice(0, 5).map(r => {
-              const conflictWith = r.conflict_with_reservation_id ? reservations.find(x => x.id === r.conflict_with_reservation_id) : null;
+              const conflictWith = r.conflict_with_reservation_id ? allLoadedRes.find(x => x.id === r.conflict_with_reservation_id) : null;
               return (
                 <div key={r.id} className="bg-card rounded-[0.625rem] border border-red-200/60 dark:border-red-800/40 p-3 shadow-sm">
                   <div className="flex items-start justify-between gap-2">
