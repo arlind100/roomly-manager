@@ -61,8 +61,11 @@ const AdminDashboard = () => {
   const cur = hotel?.currency || 'USD';
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  const [reservations, setReservations] = useState<any[]>([]);
-  const [roomTypes, setRoomTypes] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [todayArrivals, setTodayArrivals] = useState<any[]>([]);
+  const [todayDepartures, setTodayDepartures] = useState<any[]>([]);
+  const [currentGuests, setCurrentGuests] = useState<any[]>([]);
+  const [reservations, setReservations] = useState<any[]>([]); // only for walk-in overlap check + search
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
