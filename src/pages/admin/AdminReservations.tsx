@@ -282,9 +282,8 @@ const AdminReservations = () => {
     if (status === 'completed' && res) {
       const nightsCount = Math.max(1, Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)));
       try {
-        const h = (await supabase.from('hotels').select('id').limit(1).single()).data;
         const { data: invoice, error: invError } = await supabase.from('invoices').insert({
-          hotel_id: h?.id || res.hotel_id, reservation_id: res.id, amount: res.total_price || 0, status: 'sent', issued_at: now,
+          hotel_id: hotel!.id, reservation_id: res.id, amount: res.total_price || 0, status: 'sent', issued_at: now,
         }).select().single();
         if (!invError) toast.success('Invoice ' + (invoice?.invoice_number || '') + ' generated');
 
