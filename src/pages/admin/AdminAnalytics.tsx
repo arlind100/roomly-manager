@@ -23,7 +23,7 @@ import {
   PieChart as PieChartIcon, Activity, Target, Award,
 } from 'lucide-react';
 import {
-  format, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay,
+  format, subDays, addDays, startOfMonth, endOfMonth, startOfDay, endOfDay,
   eachDayOfInterval, differenceInDays, parseISO, isWithinInterval,
 } from 'date-fns';
 import {
@@ -48,7 +48,7 @@ const AdminAnalytics = () => {
   const [customFrom, setCustomFrom] = useState<Date | undefined>();
   const [customTo, setCustomTo] = useState<Date | undefined>();
   const [reservations, setReservations] = useState<any[]>([]);
-  const [roomTypes, setRoomTypes] = useState<any[]>([]);
+  const [summaryStats, setSummaryStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [reportPage, setReportPage] = useState(0);
   const REPORT_PAGE_SIZE = 15;
@@ -67,29 +67,32 @@ const AdminAnalytics = () => {
     }
   }, [preset, customFrom, customTo]);
 
-  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id, dateRange]);
+
+  const [roomTypes, setRoomTypes] = useState<any[]>([]);
 
   const fetchData = async () => {
     if (!hotel?.id) return;
-    // Analytics needs all reservations for aggregation - paginate through all
-    let allReservations: any[] = [];
-    let page = 0;
-    const pageSize = 1000;
-    let hasMore = true;
-    while (hasMore) {
-      const { data } = await supabase.from('reservations')
-        .select('*, room_types(name, available_units, base_price)')
+    setLoading(true);
+    const fromStr = format(dateRange.from, 'yyyy-MM-dd');
+    const toStr = format(dateRange.to, 'yyyy-MM-dd');
+    
+    const [statsResult, resResult, rtResult] = await Promise.all([
+      (supabase.rpc as any)('get_analytics_summary', { p_hotel_id: hotel.id, p_from: fromStr, p_to: toStr }),
+      // Only fetch reservations overlapping the date range for charts
+      supabase.from('reservations')
+        .select('id, guest_name, reservation_code, check_in, check_out, status, total_price, booking_source, room_type_id, room_types(name, available_units, base_price)')
         .eq('hotel_id', hotel.id)
-        .order('created_at', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-      const batch = data || [];
-      allReservations = [...allReservations, ...batch];
-      hasMore = batch.length === pageSize;
-      page++;
-    }
-    const { data: rtData } = await supabase.from('room_types').select('*').eq('hotel_id', hotel.id);
-    setReservations(allReservations);
-    setRoomTypes(rtData || []);
+        .lt('check_in', format(addDays(dateRange.to, 1), 'yyyy-MM-dd'))
+        .gt('check_out', fromStr)
+        .order('check_in', { ascending: false })
+        .limit(1000),
+      supabase.from('room_types').select('*').eq('hotel_id', hotel.id),
+    ]);
+    
+    setSummaryStats(statsResult.data || null);
+    setReservations(resResult.data || []);
+    setRoomTypes(rtResult.data || []);
     setLoading(false);
   };
 
@@ -104,22 +107,15 @@ const AdminAnalytics = () => {
   const totalUnits = useMemo(() => roomTypes.reduce((s, rt) => s + (rt.available_units || 0), 0), [roomTypes]);
   const daysInRange = Math.max(1, differenceInDays(dateRange.to, dateRange.from) + 1);
 
-  // ===== OVERVIEW METRICS =====
-  const totalReservations = filtered.length;
-  const confirmedRes = filtered.filter(r => r.status === 'confirmed').length;
-  const cancelledRes = filtered.filter(r => r.status === 'cancelled').length;
-  const totalRevenue = nonCancelled.reduce((s, r) => s + (Number(r.total_price) || 0), 0);
-  const avgBookingValue = nonCancelled.length > 0 ? totalRevenue / nonCancelled.length : 0;
-  const occupiedRoomDays = nonCancelled.reduce((s, r) => {
-    const ci = r.check_in; const co = r.check_out;
-    const fromStr = format(dateRange.from, 'yyyy-MM-dd');
-    const toStr = format(dateRange.to, 'yyyy-MM-dd');
-    const overlapStart = ci > fromStr ? ci : fromStr;
-    const overlapEnd = co < toStr ? co : toStr;
-    return s + Math.max(0, differenceInDays(parseISO(overlapEnd), parseISO(overlapStart)));
-  }, 0);
-  const totalRoomDays = totalUnits * daysInRange;
-  const occupancyRate = totalRoomDays > 0 ? Math.round((occupiedRoomDays / totalRoomDays) * 100) : 0;
+  // ===== OVERVIEW METRICS (from server-side RPC) =====
+  const totalReservations = summaryStats?.total_reservations ?? filtered.length;
+  const confirmedRes = summaryStats?.confirmed ?? filtered.filter(r => r.status === 'confirmed').length;
+  const cancelledRes = summaryStats?.cancelled ?? filtered.filter(r => r.status === 'cancelled').length;
+  const totalRevenue = Number(summaryStats?.total_revenue ?? 0);
+  const avgBookingValue = Number(summaryStats?.avg_booking_value ?? 0);
+  const occupiedRoomDays = Number(summaryStats?.occupied_room_days ?? 0);
+  const totalRoomDays = Number(summaryStats?.total_room_days ?? (totalUnits * daysInRange));
+  const occupancyRate = Number(summaryStats?.occupancy_rate ?? 0);
 
   // ===== CHARTS DATA =====
   const revenueChartData = useMemo(() => {
@@ -164,8 +160,8 @@ const AdminAnalytics = () => {
   }, [nonCancelled]);
 
   // ===== PERFORMANCE METRICS =====
-  const adr = occupiedRoomDays > 0 ? totalRevenue / occupiedRoomDays : 0;
-  const revpar = totalRoomDays > 0 ? totalRevenue / totalRoomDays : 0;
+  const adr = Number(summaryStats?.adr ?? 0);
+  const revpar = Number(summaryStats?.revpar ?? 0);
   const avgLengthOfStay = nonCancelled.length > 0
     ? nonCancelled.reduce((s, r) => s + Math.max(1, differenceInDays(parseISO(r.check_out), parseISO(r.check_in))), 0) / nonCancelled.length
     : 0;

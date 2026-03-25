@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${hotel_name || 'Hotel'} <onboarding@resend.dev>`,
+        from: `${hotel_name || 'Hotel'} <${Deno.env.get('SENDER_EMAIL') || 'onboarding@resend.dev'}>`,
         to: [to_email],
         subject: `Reservation Confirmed — ${reservation_code}`,
         html,

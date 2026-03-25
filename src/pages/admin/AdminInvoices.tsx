@@ -19,6 +19,9 @@ const AdminInvoices = () => {
   const { hotel } = useHotel();
   const cur = hotel?.currency || 'USD';
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 25;
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -26,15 +29,18 @@ const AdminInvoices = () => {
   const [form, setForm] = useState({ reservation_id: '', amount: 0, status: 'draft' });
   const [creatingInv, setCreatingInv] = useState(false);
 
-  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id, page]);
 
   const fetchData = async () => {
     if (!hotel?.id) return;
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
     const [invRes, resRes] = await Promise.all([
-      supabase.from('invoices').select('*, reservations(guest_name, guest_email, guest_phone, reservation_code, check_in, check_out, guests_count, room_type_id, room_id, room_types(name), rooms(room_number))').eq('hotel_id', hotel.id).order('created_at', { ascending: false }),
-      supabase.from('reservations').select('id, guest_name, reservation_code, total_price').eq('hotel_id', hotel.id).order('created_at', { ascending: false }),
+      supabase.from('invoices').select('*, reservations(guest_name, guest_email, guest_phone, reservation_code, check_in, check_out, guests_count, room_type_id, room_id, room_types(name), rooms(room_number))', { count: 'exact' }).eq('hotel_id', hotel.id).order('created_at', { ascending: false }).range(from, to),
+      supabase.from('reservations').select('id, guest_name, reservation_code, total_price').eq('hotel_id', hotel.id).order('created_at', { ascending: false }).limit(500),
     ]);
     setInvoices(invRes.data || []);
+    setTotalCount(invRes.count || 0);
     setReservations(resRes.data || []);
     setLoading(false);
   };
@@ -128,7 +134,7 @@ const AdminInvoices = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{invoices.length} {t('admin.invoices').toLowerCase()}</p>
+      <p className="text-sm text-muted-foreground">{totalCount} {t('admin.invoices').toLowerCase()}</p>
         <Button onClick={() => setShowCreate(true)}><Plus size={16} className="mr-1" /> {t('admin.createInvoice')}</Button>
       </div>
 
@@ -161,7 +167,16 @@ const AdminInvoices = () => {
                       </Button>
                       {inv.status === 'draft' && <Button variant="ghost" size="sm" className="text-xs" onClick={() => updateStatus(inv.id, 'sent')}>{t('admin.markSent')}</Button>}
                       {inv.status === 'sent' && <Button variant="ghost" size="sm" className="text-xs text-green-600" onClick={() => updateStatus(inv.id, 'paid')}>{t('admin.markPaid')}</Button>}
-                    </div>
+        </div>
+        {totalCount > PAGE_SIZE && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30">
+            <span className="text-xs text-muted-foreground">Page {page + 1} of {Math.ceil(totalCount / PAGE_SIZE)}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</Button>
+              <Button variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= totalCount} onClick={() => setPage(p => p + 1)}>Next</Button>
+            </div>
+          </div>
+        )}
                   </td>
                 </tr>
               ))}</tbody>
