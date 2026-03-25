@@ -102,9 +102,9 @@ const AdminRoomTypes = () => {
 
   const handleSave = async () => {
     if (!form.name || !form.base_price) { toast.error('Name and price required'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setSaving(true);
-    const h = (await supabase.from('hotels').select('id').limit(1).maybeSingle()).data;
-    const payload = { hotel_id: h?.id, name: form.name, description: form.description || null, max_guests: form.max_guests, base_price: form.base_price, weekend_price: form.weekend_price || null, available_units: form.available_units, amenities: form.amenities ? form.amenities.split(',').map(s => s.trim()).filter(Boolean) : [], room_size: form.room_size || null, image_url: form.image_url || null, show_on_website: form.show_on_website };
+    const payload = { hotel_id: hotel.id, name: form.name, description: form.description || null, max_guests: form.max_guests, base_price: form.base_price, weekend_price: form.weekend_price || null, available_units: form.available_units, amenities: form.amenities ? form.amenities.split(',').map(s => s.trim()).filter(Boolean) : [], room_size: form.room_size || null, image_url: form.image_url || null, show_on_website: form.show_on_website };
     const { error } = editing ? await supabase.from('room_types').update(payload).eq('id', editing) : await supabase.from('room_types').insert(payload);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
