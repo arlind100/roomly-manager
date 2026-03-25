@@ -19,6 +19,9 @@ const AdminInvoices = () => {
   const { hotel } = useHotel();
   const cur = hotel?.currency || 'USD';
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 25;
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
