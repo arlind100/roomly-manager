@@ -173,11 +173,11 @@ const AdminDashboard = () => {
     return roomTypes.filter(rt => (occupiedByType[rt.id] || 0) < (rt.available_units || 1));
   }, [roomTypes, currentGuests]);
 
-  // Physical rooms available for walk-in room picker
+  // Physical rooms available for walk-in room picker (include dirty/cleaning)
   const walkInPhysicalRooms = useMemo(() => {
     return rooms.filter(r =>
       r.room_type_id === walkIn.room_type_id &&
-      (r.operational_status === 'available' || r.operational_status === 'reserved')
+      !['occupied', 'maintenance', 'out_of_service'].includes(r.operational_status)
     );
   }, [rooms, walkIn.room_type_id]);
 
