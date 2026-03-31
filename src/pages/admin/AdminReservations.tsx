@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
@@ -16,11 +16,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle, Upload, LogIn, LogOut as LogOutIcon, Globe, List, CalendarRange } from 'lucide-react';
+import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle, Upload, LogIn, LogOut as LogOutIcon, Globe, List, CalendarRange, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { ImportReservationsModal } from '@/components/admin/ImportReservationsModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 const BOOKING_SOURCES = [
   { value: 'website', label: 'Website' },
@@ -131,9 +132,7 @@ const AdminReservations = () => {
   const [roomPickerRes, setRoomPickerRes] = useState<any>(null);
   const [pickedRoomId, setPickedRoomId] = useState('');
 
-  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id, currentPage, search, statusFilter, sourceFilter]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!hotel?.id) return;
     setLoading(true);
     const from = currentPage * ITEMS_PER_PAGE;
@@ -161,7 +160,15 @@ const AdminReservations = () => {
     setRoomTypes(rtResult.data || []);
     setRooms(roomResult.data || []);
     setLoading(false);
-  };
+  }, [hotel?.id, currentPage, search, statusFilter, sourceFilter]);
+
+  useEffect(() => { if (hotel?.id) fetchData(); }, [fetchData]);
+
+  useRealtimeSubscription({
+    hotelId: hotel?.id,
+    tables: ['reservations', 'rooms'],
+    onUpdate: fetchData,
+  });
 
   // Availability is now checked atomically in the DB function - no frontend check needed
 
@@ -534,6 +541,11 @@ const AdminReservations = () => {
                               <LogOutIcon size={14} /> {t('admin.checkOutAction')}
                             </Button>
                           )}
+                          {r.status === 'cancelled' && (
+                            <Button variant="ghost" size="sm" className="h-8 text-xs text-blue-600 gap-1" onClick={() => confirmAndUpdateStatus(r.id, 'pending')}>
+                              <RefreshCw size={14} /> Reactivate
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -602,6 +614,9 @@ const AdminReservations = () => {
                 {selectedRes.status === 'checked_in' && (
                   <Button size="sm" variant="outline" className="gap-1" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'completed')}><LogOutIcon size={14} /> {t('admin.checkOutAction')}</Button>
                 )}
+                {selectedRes.status === 'cancelled' && (
+                  <Button size="sm" variant="outline" className="gap-1 text-blue-600" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'pending')}><RefreshCw size={14} /> Reactivate</Button>
+                )}
               </div>
             </div>
           )}
@@ -644,11 +659,16 @@ const AdminReservations = () => {
               <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
                 <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
                 <SelectContent>
-                  {assignableRooms.map(r => (
-                    <SelectItem key={r.id} value={r.id}>
-                      Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {r.operational_status}
-                    </SelectItem>
-                  ))}
+                  {assignableRooms.map(r => {
+                    const statusLabel = r.operational_status === 'available' ? '✅ Ready'
+                      : r.operational_status === 'dirty' ? '🟡 Dirty'
+                      : r.operational_status === 'cleaning' ? '🔵 Cleaning' : r.operational_status;
+                    return (
+                      <SelectItem key={r.id} value={r.id}>
+                        Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {statusLabel}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             );

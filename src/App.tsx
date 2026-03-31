@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/hooks/useLanguage";
+import { ErrorBoundary } from "@/components/admin/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 
 // Admin
@@ -43,41 +44,43 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Redirect root to admin dashboard */}
-              <Route path="/" element={<Navigate to="/admin" replace />} />
+          <ErrorBoundary fallbackTitle="The application encountered an error">
+            <BrowserRouter>
+              <Routes>
+                {/* Redirect root to admin dashboard */}
+                <Route path="/" element={<Navigate to="/admin" replace />} />
 
-              {/* Admin */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="reservations" element={<AdminReservations />} />
-                <Route path="room-types" element={<AdminRoomTypes />} />
-                <Route path="rooms" element={<AdminRooms />} />
-                <Route path="availability" element={<AdminAvailability />} />
-                <Route path="pricing" element={<AdminPricing />} />
-                <Route path="staff" element={<AdminStaff />} />
-                <Route path="invoices" element={<AdminInvoices />} />
-                <Route path="analytics-reports" element={<AdminAnalytics />} />
-                <Route path="settings" element={<AdminSettings />} />
-              </Route>
+                {/* Admin */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                  <Route index element={<ErrorBoundary fallbackTitle="Dashboard error"><AdminDashboard /></ErrorBoundary>} />
+                  <Route path="reservations" element={<ErrorBoundary fallbackTitle="Reservations error"><AdminReservations /></ErrorBoundary>} />
+                  <Route path="room-types" element={<ErrorBoundary fallbackTitle="Room types error"><AdminRoomTypes /></ErrorBoundary>} />
+                  <Route path="rooms" element={<ErrorBoundary fallbackTitle="Rooms error"><AdminRooms /></ErrorBoundary>} />
+                  <Route path="availability" element={<ErrorBoundary fallbackTitle="Availability error"><AdminAvailability /></ErrorBoundary>} />
+                  <Route path="pricing" element={<ErrorBoundary fallbackTitle="Pricing error"><AdminPricing /></ErrorBoundary>} />
+                  <Route path="staff" element={<ErrorBoundary fallbackTitle="Staff error"><AdminStaff /></ErrorBoundary>} />
+                  <Route path="invoices" element={<ErrorBoundary fallbackTitle="Invoices error"><AdminInvoices /></ErrorBoundary>} />
+                  <Route path="analytics-reports" element={<ErrorBoundary fallbackTitle="Analytics error"><AdminAnalytics /></ErrorBoundary>} />
+                  <Route path="settings" element={<ErrorBoundary fallbackTitle="Settings error"><AdminSettings /></ErrorBoundary>} />
+                </Route>
 
-              {/* Superadmin */}
-              <Route path="/superadmin/login" element={<SuperadminLogin />} />
-              <Route path="/superadmin" element={<SuperadminRoute><SuperadminLayout /></SuperadminRoute>}>
-                <Route index element={<SuperadminDashboard />} />
-                <Route path="hotels" element={<SuperadminHotels />} />
-                <Route path="hotels/new" element={<CreateHotel />} />
-                <Route path="hotels/:hotelId" element={<HotelDetail />} />
-                <Route path="billing" element={<SuperadminBilling />} />
-                <Route path="audit" element={<SuperadminAudit />} />
-                <Route path="settings" element={<SuperadminSettings />} />
-              </Route>
+                {/* Superadmin */}
+                <Route path="/superadmin/login" element={<SuperadminLogin />} />
+                <Route path="/superadmin" element={<SuperadminRoute><SuperadminLayout /></SuperadminRoute>}>
+                  <Route index element={<SuperadminDashboard />} />
+                  <Route path="hotels" element={<SuperadminHotels />} />
+                  <Route path="hotels/new" element={<CreateHotel />} />
+                  <Route path="hotels/:hotelId" element={<HotelDetail />} />
+                  <Route path="billing" element={<SuperadminBilling />} />
+                  <Route path="audit" element={<SuperadminAudit />} />
+                  <Route path="settings" element={<SuperadminSettings />} />
+                </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </ErrorBoundary>
         </TooltipProvider>
       </LanguageProvider>
     </AuthProvider>

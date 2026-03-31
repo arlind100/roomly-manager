@@ -1,6 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
 import { displayPrice } from '@/lib/currency';
@@ -89,9 +91,9 @@ const AdminDashboard = () => {
     payment_received: false, check_in_now: true,
   });
 
-  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
+  useSessionTimeout();
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!hotel?.id) return;
     const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
     const [statsResult, arrivalsResult, departuresResult, guestsResult, rtResult, roomResult] = await Promise.all([
@@ -119,7 +121,15 @@ const AdminDashboard = () => {
     setRoomTypes(rtResult.data || []);
     setRooms(roomResult.data || []);
     setLoading(false);
-  };
+  }, [hotel?.id, today]);
+
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id, fetchData]);
+
+  useRealtimeSubscription({
+    hotelId: hotel?.id,
+    tables: ['reservations', 'rooms'],
+    onUpdate: fetchData,
+  });
 
   // Room status board from room_types + current guests count
   const roomStatusBoard = useMemo(() => {
@@ -222,7 +232,22 @@ const AdminDashboard = () => {
     // If check_in_now, update reservation status using returned ID
     if (walkIn.check_in_now && walkIn.room_id && reservationId) {
       const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      await supabase.from('reservations').update({ status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', reservationId);
+      await supabase.from('reservations').update({
+        status: 'checked_in',
+        check_in_time: timeNow,
+        notes: walkIn.notes || null,
+        payment_method: walkIn.payment_method || null,
+        payment_status: walkIn.payment_received ? 'paid' : 'unpaid',
+        updated_at: new Date().toISOString(),
+      }).eq('id', reservationId);
+    } else if (reservationId) {
+      // Even if not checking in now, save notes/payment info
+      await supabase.from('reservations').update({
+        notes: walkIn.notes || null,
+        payment_method: walkIn.payment_method || null,
+        payment_status: walkIn.payment_received ? 'paid' : 'unpaid',
+        updated_at: new Date().toISOString(),
+      }).eq('id', reservationId);
     }
     setCreating(false);
     toast.success(walkIn.check_in_now ? 'Guest checked in successfully' : 'Walk-in reservation created');
@@ -579,9 +604,14 @@ const AdminDashboard = () => {
                     <Select value={walkIn.room_id} onValueChange={v => setWalkIn(p => ({ ...p, room_id: v }))}>
                       <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
                       <SelectContent>
-                        {walkInPhysicalRooms.map(r => (
-                          <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {r.operational_status}</SelectItem>
-                        ))}
+                        {walkInPhysicalRooms.map(r => {
+                          const statusLabel = r.operational_status === 'available' ? '✅ Ready'
+                            : r.operational_status === 'dirty' ? '🟡 Dirty'
+                            : r.operational_status === 'cleaning' ? '🔵 Cleaning' : r.operational_status;
+                          return (
+                            <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {statusLabel}</SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   )}
@@ -632,11 +662,16 @@ const AdminDashboard = () => {
               <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
                 <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
                 <SelectContent>
-                  {assignableRooms.map(r => (
-                    <SelectItem key={r.id} value={r.id}>
-                      Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {r.operational_status}
-                    </SelectItem>
-                  ))}
+                  {assignableRooms.map(r => {
+                    const statusLabel = r.operational_status === 'available' ? '✅ Ready'
+                      : r.operational_status === 'dirty' ? '🟡 Dirty'
+                      : r.operational_status === 'cleaning' ? '🔵 Cleaning' : r.operational_status;
+                    return (
+                      <SelectItem key={r.id} value={r.id}>
+                        Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {statusLabel}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             );
