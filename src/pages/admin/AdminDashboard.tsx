@@ -232,7 +232,22 @@ const AdminDashboard = () => {
     // If check_in_now, update reservation status using returned ID
     if (walkIn.check_in_now && walkIn.room_id && reservationId) {
       const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-      await supabase.from('reservations').update({ status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', reservationId);
+      await supabase.from('reservations').update({
+        status: 'checked_in',
+        check_in_time: timeNow,
+        notes: walkIn.notes || null,
+        payment_method: walkIn.payment_method || null,
+        payment_status: walkIn.payment_received ? 'paid' : 'unpaid',
+        updated_at: new Date().toISOString(),
+      }).eq('id', reservationId);
+    } else if (reservationId) {
+      // Even if not checking in now, save notes/payment info
+      await supabase.from('reservations').update({
+        notes: walkIn.notes || null,
+        payment_method: walkIn.payment_method || null,
+        payment_status: walkIn.payment_received ? 'paid' : 'unpaid',
+        updated_at: new Date().toISOString(),
+      }).eq('id', reservationId);
     }
     setCreating(false);
     toast.success(walkIn.check_in_now ? 'Guest checked in successfully' : 'Walk-in reservation created');

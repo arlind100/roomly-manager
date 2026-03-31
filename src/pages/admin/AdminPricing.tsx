@@ -80,6 +80,25 @@ const AdminPricing = () => {
   };
 
   const toggleOverride = async (id: string, current: boolean) => {
+    // If activating, check for overlapping active overrides
+    if (!current) {
+      const override = overrides.find(o => o.id === id);
+      if (override) {
+        const { data: overlapping } = await supabase.from('pricing_overrides')
+          .select('id')
+          .eq('hotel_id', hotel?.id)
+          .eq('room_type_id', override.room_type_id)
+          .eq('is_active', true)
+          .neq('id', id)
+          .lte('start_date', override.end_date)
+          .gte('end_date', override.start_date)
+          .limit(1);
+        if (overlapping && overlapping.length > 0) {
+          toast.error('Cannot activate — another override already covers this date range');
+          return;
+        }
+      }
+    }
     setTogglingId(id);
     await supabase.from('pricing_overrides').update({ is_active: !current }).eq('id', id);
     setTogglingId(null);
