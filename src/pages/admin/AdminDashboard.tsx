@@ -92,16 +92,8 @@ const AdminDashboard = () => {
   });
 
   useSessionTimeout();
-  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
 
-  // Realtime: auto-refresh when reservations or rooms change
-  useRealtimeSubscription({
-    hotelId: hotel?.id,
-    tables: ['reservations', 'rooms'],
-    onUpdate: fetchData,
-  });
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!hotel?.id) return;
     const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
     const [statsResult, arrivalsResult, departuresResult, guestsResult, rtResult, roomResult] = await Promise.all([
