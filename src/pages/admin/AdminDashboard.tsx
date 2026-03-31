@@ -91,7 +91,15 @@ const AdminDashboard = () => {
     payment_received: false, check_in_now: true,
   });
 
+  useSessionTimeout();
   useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
+
+  // Realtime: auto-refresh when reservations or rooms change
+  useRealtimeSubscription({
+    hotelId: hotel?.id,
+    tables: ['reservations', 'rooms'],
+    onUpdate: fetchData,
+  });
 
   const fetchData = async () => {
     if (!hotel?.id) return;
