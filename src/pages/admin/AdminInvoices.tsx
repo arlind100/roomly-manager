@@ -175,21 +175,21 @@ const AdminInvoices = () => {
                       </Button>
                       {inv.status === 'draft' && <Button variant="ghost" size="sm" className="text-xs" onClick={() => updateStatus(inv.id, 'sent')}>{t('admin.markSent')}</Button>}
                       {inv.status === 'sent' && <Button variant="ghost" size="sm" className="text-xs text-green-600" onClick={() => updateStatus(inv.id, 'paid')}>{t('admin.markPaid')}</Button>}
-        </div>
-        {totalCount > PAGE_SIZE && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30">
-            <span className="text-xs text-muted-foreground">Page {page + 1} of {Math.ceil(totalCount / PAGE_SIZE)}</span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</Button>
-              <Button variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= totalCount} onClick={() => setPage(p => p + 1)}>Next</Button>
-            </div>
-          </div>
-        )}
+                    </div>
                   </td>
                 </tr>
               ))}</tbody>
             </table>
           </div>
+          {totalCount > PAGE_SIZE && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30">
+              <span className="text-xs text-muted-foreground">Page {page + 1} of {Math.ceil(totalCount / PAGE_SIZE)}</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</Button>
+                <Button variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= totalCount} onClick={() => setPage(p => p + 1)}>Next</Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -113,6 +113,17 @@ const AdminRooms = () => {
 
   const handleDelete = async (id: string) => {
     setDeleting(true);
+    // Check for active reservations linked to this room
+    const { data: activeRes } = await supabase.from('reservations')
+      .select('id')
+      .eq('room_id', id)
+      .in('status', ['pending', 'confirmed', 'checked_in'])
+      .limit(1);
+    if (activeRes && activeRes.length > 0) {
+      toast.error('Cannot delete room with active reservations');
+      setDeleting(false);
+      return;
+    }
     const { error } = await supabase.from('rooms').delete().eq('id', id);
     setDeleting(false);
     if (error) { toast.error(error.message); return; }

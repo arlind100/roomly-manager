@@ -48,6 +48,20 @@ const AdminPricing = () => {
     if (!form.room_type_id || !form.start_date || !form.end_date || !form.price) { toast.error('Fill all required fields'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setAddingSaving(true);
+    // Check for overlapping active overrides
+    const { data: overlapping } = await supabase.from('pricing_overrides')
+      .select('id')
+      .eq('hotel_id', hotel.id)
+      .eq('room_type_id', form.room_type_id)
+      .eq('is_active', true)
+      .lte('start_date', form.end_date)
+      .gte('end_date', form.start_date)
+      .limit(1);
+    if (overlapping && overlapping.length > 0) {
+      toast.error('A pricing override already exists for this date range');
+      setAddingSaving(false);
+      return;
+    }
     const { error } = await supabase.from('pricing_overrides').insert({ hotel_id: hotel.id, ...form });
     setAddingSaving(false);
     if (error) { toast.error(error.message); return; }

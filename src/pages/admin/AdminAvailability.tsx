@@ -67,6 +67,18 @@ const AdminAvailability = () => {
     if (!form.room_type_id || !form.date) { toast.error('Select room and date'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setAddingBlock(true);
+    // Check for duplicate block
+    const { data: existing } = await supabase.from('availability_blocks')
+      .select('id')
+      .eq('hotel_id', hotel.id)
+      .eq('room_type_id', form.room_type_id)
+      .eq('date', form.date)
+      .limit(1);
+    if (existing && existing.length > 0) {
+      toast.error('This date is already blocked for this room type');
+      setAddingBlock(false);
+      return;
+    }
     const { error } = await supabase.from('availability_blocks').insert({ hotel_id: hotel.id, room_type_id: form.room_type_id, date: form.date, reason: form.reason });
     setAddingBlock(false);
     if (error) { toast.error(error.message); return; }
