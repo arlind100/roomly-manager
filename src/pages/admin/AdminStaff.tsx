@@ -45,6 +45,7 @@ const AdminStaff = () => {
     if (!form.name || !form.role) { toast.error('Name and role required'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setSaving(true);
+    setSaving(true);
     const { error } = editing
       ? await supabase.from('staff').update({ ...form, updated_at: new Date().toISOString() }).eq('id', editing)
       : await supabase.from('staff').insert({ hotel_id: hotel.id, ...form });

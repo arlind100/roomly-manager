@@ -192,12 +192,13 @@ const AdminDashboard = () => {
   };
 
   const handleWalkInSubmit = async () => {
-    if (!walkIn.guest_name || !walkIn.room_type_id) { toast.error('Guest name and room type are required'); return; }
+    if (!walkIn.guest_name.trim()) { toast.error('Guest name is required'); return; }
+    if (!walkIn.room_type_id) { toast.error('Room type is required'); return; }
     if (walkIn.check_in_now && !walkIn.room_id) { toast.error('Please assign a room for immediate check-in'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreating(true);
     const checkOut = format(addDays(new Date(), walkIn.nights), 'yyyy-MM-dd');
-    const { error } = await (supabase.rpc as any)('create_reservation_if_available', {
+    const { data: reservationId, error } = await (supabase.rpc as any)('create_reservation_if_available', {
       p_hotel_id: hotel.id,
       p_room_type_id: walkIn.room_type_id,
       p_check_in: today,
@@ -218,18 +219,10 @@ const AdminDashboard = () => {
       setCreating(false);
       return;
     }
-    // If check_in_now, update reservation status to checked_in
-    if (walkIn.check_in_now && walkIn.room_id) {
-      // The RPC already sets status to 'confirmed' and room to 'occupied'
-      // We need to update to checked_in
-      const { data: newRes } = await supabase.from('reservations')
-        .select('id').eq('hotel_id', hotel.id).eq('guest_name', walkIn.guest_name)
-        .eq('check_in', today).eq('booking_source', 'walk-in')
-        .order('created_at', { ascending: false }).limit(1);
-      if (newRes?.[0]) {
-        const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        await supabase.from('reservations').update({ status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', newRes[0].id);
-      }
+    // If check_in_now, update reservation status using returned ID
+    if (walkIn.check_in_now && walkIn.room_id && reservationId) {
+      const timeNow = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      await supabase.from('reservations').update({ status: 'checked_in', check_in_time: timeNow, updated_at: new Date().toISOString() }).eq('id', reservationId);
     }
     setCreating(false);
     toast.success(walkIn.check_in_now ? 'Guest checked in successfully' : 'Walk-in reservation created');

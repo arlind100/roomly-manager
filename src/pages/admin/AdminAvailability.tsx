@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CalendarRange, Plus, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 import { useHotel } from '@/hooks/useHotel';
 
@@ -32,10 +32,13 @@ const AdminAvailability = () => {
 
   const fetchData = async () => {
     if (!hotel?.id) return;
+    // Only fetch reservations within a 3-month window for performance
+    const rangeStart = format(new Date(), 'yyyy-MM-dd');
+    const rangeEnd = format(addDays(new Date(), 90), 'yyyy-MM-dd');
     const [rtRes, blockRes, resRes] = await Promise.all([
       supabase.from('room_types').select('*').eq('hotel_id', hotel.id),
-      supabase.from('availability_blocks').select('*, room_types(name)').eq('hotel_id', hotel.id).order('date'),
-      supabase.from('reservations').select('*').eq('hotel_id', hotel.id).neq('status', 'cancelled'),
+      supabase.from('availability_blocks').select('*, room_types(name)').eq('hotel_id', hotel.id).gte('date', rangeStart).order('date'),
+      supabase.from('reservations').select('*').eq('hotel_id', hotel.id).neq('status', 'cancelled').lte('check_in', rangeEnd).gte('check_out', rangeStart),
     ]);
     setRoomTypes(rtRes.data || []);
     setBlocks(blockRes.data || []);
@@ -64,6 +67,18 @@ const AdminAvailability = () => {
     if (!form.room_type_id || !form.date) { toast.error('Select room and date'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setAddingBlock(true);
+    // Check for duplicate block
+    const { data: existing } = await supabase.from('availability_blocks')
+      .select('id')
+      .eq('hotel_id', hotel.id)
+      .eq('room_type_id', form.room_type_id)
+      .eq('date', form.date)
+      .limit(1);
+    if (existing && existing.length > 0) {
+      toast.error('This date is already blocked for this room type');
+      setAddingBlock(false);
+      return;
+    }
     const { error } = await supabase.from('availability_blocks').insert({ hotel_id: hotel.id, room_type_id: form.room_type_id, date: form.date, reason: form.reason });
     setAddingBlock(false);
     if (error) { toast.error(error.message); return; }
