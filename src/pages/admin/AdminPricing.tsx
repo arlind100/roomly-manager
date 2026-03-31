@@ -214,8 +214,8 @@ const AdminPricing = () => {
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>{t('admin.startDate')}</Label><Input type="date" value={form.start_date} onChange={e => setForm(f => ({...f, start_date: e.target.value}))} /></div>
-              <div><Label>{t('admin.endDate')}</Label><Input type="date" value={form.end_date} onChange={e => setForm(f => ({...f, end_date: e.target.value}))} /></div>
+              <div><Label>{t('admin.startDate')}</Label><DatePickerInput value={form.start_date} onChange={v => setForm(f => ({...f, start_date: v}))} placeholder="Start date" /></div>
+              <div><Label>{t('admin.endDate')}</Label><DatePickerInput value={form.end_date} onChange={v => setForm(f => ({...f, end_date: v}))} placeholder="End date" /></div>
             </div>
             <div><Label>{t('admin.overridePrice')}</Label><Input type="number" min={0} value={form.price} onChange={e => setForm(f => ({...f, price: parseFloat(e.target.value) || 0}))} /></div>
             <div><Label>{t('admin.labelOptional')}</Label><Input value={form.label} onChange={e => setForm(f => ({...f, label: e.target.value}))} placeholder="Peak season, holiday, etc." /></div>
