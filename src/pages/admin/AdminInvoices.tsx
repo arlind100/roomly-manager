@@ -214,6 +214,22 @@ const AdminInvoices = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Resend Confirmation */}
+      <AlertDialog open={!!confirmResend} onOpenChange={v => { if (!v) setConfirmResend(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resend Invoice?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Invoice <strong>{confirmResend?.invoice_number}</strong> has already been sent. Are you sure you want to send it again?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { handleSendEmail(confirmResend); setConfirmResend(null); }}>Send Again</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
