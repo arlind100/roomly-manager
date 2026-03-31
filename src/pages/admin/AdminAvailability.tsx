@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CalendarRange, Plus, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 import { useHotel } from '@/hooks/useHotel';
 
