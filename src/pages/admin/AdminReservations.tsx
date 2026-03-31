@@ -286,33 +286,35 @@ const AdminReservations = () => {
     }
 
     if (status === 'completed' && res) {
-      const nightsCount = Math.max(1, Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)));
       try {
-        // Check if invoice already exists for this reservation (prevent duplicates)
-        const { data: existingInv } = await supabase.from('invoices').select('id, invoice_number').eq('reservation_id', res.id).neq('status', 'cancelled').limit(1);
-        let invoice: any = existingInv?.[0];
-        if (!invoice) {
-          const { data: newInv, error: invError } = await supabase.from('invoices').insert({
-            hotel_id: hotel!.id, reservation_id: res.id, amount: res.total_price || 0, status: 'sent', issued_at: now,
-          }).select().single();
-          if (!invError) { invoice = newInv; toast.success('Invoice ' + (newInv?.invoice_number || '') + ' generated'); }
-        } else {
-          toast.info('Invoice ' + invoice.invoice_number + ' already exists');
-        }
-
-        if (res.guest_email) {
-          await supabase.functions.invoke('send-checkout-email', {
-            body: {
-              to_email: res.guest_email, guest_name: res.guest_name,
-              reservation_code: res.reservation_code, check_in: res.check_in, check_out: res.check_out,
-              room_type_name: res.room_types?.name || '', guests_count: res.guests_count,
-              total_price: res.total_price, currency: cur, check_out_time: timeNow,
-              nights_count: nightsCount, invoice_number: invoice?.invoice_number || '',
-              hotel_name: hotel?.name || 'Hotel', hotel_email: hotel?.email || '',
-              hotel_phone: hotel?.phone || '', hotel_address: hotel?.address || '',
-            },
-          });
-          toast.success('Checkout email sent');
+        // Auto-generate invoice via RPC
+        const { data: invResult, error: invError } = await (supabase.rpc as any)('create_invoice_on_checkout', { p_reservation_id: res.id });
+        if (invError) {
+          console.error('Invoice creation error:', invError);
+          toast.error('Checked out but invoice creation failed: ' + invError.message);
+        } else if (invResult) {
+          const inv = invResult;
+          if (inv.already_existed) {
+            toast.info(`Invoice ${inv.invoice_number} already exists`);
+          } else {
+            toast.success(`Invoice ${inv.invoice_number} generated`);
+          }
+          // Conditional email: only auto-send for card/online, skip cash
+          if (res.guest_email && res.payment_method && ['card', 'online'].includes(res.payment_method)) {
+            const nightsCount = Math.max(1, Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)));
+            await supabase.functions.invoke('send-checkout-email', {
+              body: {
+                to_email: res.guest_email, guest_name: res.guest_name,
+                reservation_code: res.reservation_code, check_in: res.check_in, check_out: res.check_out,
+                room_type_name: res.room_types?.name || '', guests_count: res.guests_count,
+                total_price: res.total_price, currency: cur, check_out_time: timeNow,
+                nights_count: nightsCount, invoice_number: inv.invoice_number || '',
+                hotel_name: hotel?.name || 'Hotel', hotel_email: hotel?.email || '',
+                hotel_phone: hotel?.phone || '', hotel_address: hotel?.address || '',
+              },
+            });
+            toast.success('Invoice email sent automatically');
+          }
         }
       } catch (e) { console.error('Checkout error:', e); }
     }
