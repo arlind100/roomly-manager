@@ -384,7 +384,7 @@ const AdminDashboard = () => {
 
       {/* ===== CONFLICT WARNINGS ===== */}
       {conflictReservations.length > 0 && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200/60 dark:border-red-800/40 rounded-[0.625rem] p-4 space-y-3 shadow-card">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200/60 dark:border-red-800/40 rounded-lg p-4 space-y-3 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 text-destructive">
             <AlertTriangle size={16} /> Reservation Conflicts ({conflictReservations.length})
           </h3>
@@ -392,7 +392,7 @@ const AdminDashboard = () => {
             {conflictReservations.slice(0, 5).map(r => {
               const conflictWith = r.conflict_with_reservation_id ? allLoadedRes.find(x => x.id === r.conflict_with_reservation_id) : null;
               return (
-                <div key={r.id} className="bg-card rounded-[0.625rem] border border-red-200/60 dark:border-red-800/40 p-3 shadow-sm">
+                <div key={r.id} className="bg-card rounded-lg border border-red-200/60 dark:border-red-800/40 p-3 shadow-sm">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">{r.guest_name}
@@ -428,7 +428,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* ===== QUICK ACTIONS ===== */}
-      <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
+      <div className="bg-card rounded-lg border border-border/60 p-5 shadow-card">
         <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Users size={14} /> {t('admin.quickActions')}</h3>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-md">
@@ -471,7 +471,7 @@ const AdminDashboard = () => {
       {/* ===== TODAY ACTIVITY + HOUSEKEEPING ===== */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Arrivals */}
-        <div className="bg-card rounded-[0.625rem] border border-border/60 p-4 shadow-card">
+        <div className="bg-card rounded-lg border border-border/60 p-4 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
             <LogIn size={14} className="text-green-600 dark:text-green-400" /> {t('admin.upcomingArrivals')}
             <span className="ml-auto text-[10px] bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">{todayArrivals.length}</span>
@@ -496,7 +496,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Departures */}
-        <div className="bg-card rounded-[0.625rem] border border-border/60 p-4 shadow-card">
+        <div className="bg-card rounded-lg border border-border/60 p-4 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
             <LogOutIcon size={14} className="text-amber-600 dark:text-amber-400" /> {t('admin.upcomingDepartures')}
             <span className="ml-auto text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">{todayDepartures.length}</span>
@@ -521,7 +521,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Current Guests */}
-        <div className="bg-card rounded-[0.625rem] border border-border/60 p-4 shadow-card">
+        <div className="bg-card rounded-lg border border-border/60 p-4 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
             <Users size={14} className="text-primary" /> Current Guests
             <span className="ml-auto text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{currentGuests.length}</span>
@@ -546,7 +546,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Housekeeping Board */}
-        <div className="bg-card rounded-[0.625rem] border border-border/60 p-4 shadow-card">
+        <div className="bg-card rounded-lg border border-border/60 p-4 shadow-card">
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
             <Sparkles size={14} className="text-blue-600 dark:text-blue-400" /> Housekeeping
             <span className="ml-auto text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
@@ -571,28 +571,42 @@ const AdminDashboard = () => {
       </div>
 
       {/* ===== ROOM STATUS OVERVIEW ===== */}
-      <div className="bg-card rounded-[0.625rem] border border-border/60 p-5 shadow-card">
+      <div className="bg-card rounded-lg border border-border/60 p-5 shadow-card">
         <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><BedDouble size={14} /> {t('admin.roomStatusBoard')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {roomStatusBoard.map(rt => (
+          {roomStatusBoard.map(rt => {
+            const statusStyles: Record<string, string> = {
+              available: 'border-l-green-500',
+              occupied: 'border-l-red-500',
+              reserved: 'border-l-yellow-500',
+              cleaning: 'border-l-blue-500',
+              maintenance: 'border-l-muted-foreground',
+            };
+            return (
             <button
               key={rt.id}
               onClick={() => navigate('/admin/rooms')}
-              className={cn('rounded-[0.625rem] border p-4 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 text-left', statusColor[rt.status])}
+              className={cn('bg-card rounded-lg border border-border/60 border-l-[3px] p-4 transition-all duration-200 hover:shadow-card-hover text-left shadow-card', statusStyles[rt.status] || '')}
             >
               <div className="flex items-center gap-3 mb-2">
-                <img src={getRoomImage(rt)} alt={rt.name} className="w-12 h-12 rounded-lg object-cover" />
+                <img src={getRoomImage(rt)} alt={rt.name} className="w-10 h-10 rounded-lg object-cover" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold truncate">{rt.name}</p>
-                  <span className="text-[10px] font-medium uppercase tracking-wider">{t(`admin.room_${rt.status}`)}</span>
+                  <span className={cn('text-[10px] font-medium uppercase tracking-wider',
+                    rt.status === 'available' ? 'text-green-600 dark:text-green-400' :
+                    rt.status === 'occupied' ? 'text-red-600 dark:text-red-400' :
+                    rt.status === 'reserved' ? 'text-yellow-600 dark:text-yellow-400' :
+                    'text-muted-foreground'
+                  )}>{t(`admin.room_${rt.status}`)}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-xs opacity-80">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span>{rt.freeUnits}/{rt.available_units} {t('admin.free')}</span>
                 <span>{rt.occupiedCount} {t('admin.occupied')}</span>
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 

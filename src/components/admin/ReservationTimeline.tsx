@@ -112,7 +112,7 @@ export function ReservationTimeline({ rooms, roomTypes, reservations, currency, 
       </div>
 
       {/* Timeline Grid */}
-      <div ref={containerRef} className="relative bg-card rounded-[0.625rem] border border-border/60 shadow-card overflow-auto">
+      <div ref={containerRef} className="relative bg-card rounded-lg border border-border/60 shadow-card overflow-auto">
         <div style={{ minWidth: LABEL_WIDTH + COL_WIDTH * daysToShow }}>
           {/* Header row */}
           <div className="flex sticky top-0 z-10 bg-card border-b border-border/60">

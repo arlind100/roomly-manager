@@ -7,7 +7,7 @@
 @layer base {
   /* ======= DEFAULT THEME: Admin Light ======= */
   :root {
-    --background: 30 15% 96%;
+    --background: 220 20% 97%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -26,15 +26,15 @@
     --border: 220 13% 91%;
     --input: 220 13% 91%;
     --ring: 234 85% 55%;
-    --radius: 0.625rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 100%;
+    --sidebar-background: 220 20% 94%;
     --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 234 85% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 14% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-border: 220 13% 88%;
     --sidebar-ring: 234 85% 55%;
 
     --font-display: 'Inter', system-ui, sans-serif;
@@ -44,7 +44,7 @@
 
 /* ======= ADMIN LIGHT THEME (scoped to wrapper) ======= */
 .admin-light {
-  --background: 30 15% 96%;
+  --background: 220 20% 97%;
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
@@ -64,20 +64,20 @@
   --input: 220 13% 91%;
   --ring: 234 85% 55%;
 
-  --sidebar-background: 0 0% 100%;
+  --sidebar-background: 220 20% 94%;
   --sidebar-foreground: 222 47% 11%;
   --sidebar-primary: 234 85% 55%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 234 85% 55% / 0.08;
   --sidebar-accent-foreground: 222 47% 11%;
-  --sidebar-border: 220 13% 91%;
+  --sidebar-border: 220 13% 88%;
   --sidebar-ring: 234 85% 55%;
 
   --font-display: 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
 
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.12);
-  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.16);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
@@ -86,40 +86,40 @@
 
 /* ======= ADMIN DARK THEME (scoped to wrapper) ======= */
 .admin-dark {
-  --background: 222 25% 12%;
+  --background: 222 47% 8%;
   --foreground: 210 40% 96%;
-  --card: 222 22% 16%;
+  --card: 222 35% 12%;
   --card-foreground: 210 40% 96%;
-  --popover: 222 22% 16%;
+  --popover: 222 35% 12%;
   --popover-foreground: 210 40% 96%;
   --primary: 234 85% 65%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 18% 22%;
+  --secondary: 220 18% 18%;
   --secondary-foreground: 210 40% 96%;
-  --muted: 220 18% 22%;
+  --muted: 220 18% 18%;
   --muted-foreground: 215 15% 58%;
-  --accent: 220 18% 22%;
+  --accent: 220 18% 18%;
   --accent-foreground: 210 40% 96%;
   --destructive: 0 63% 45%;
   --destructive-foreground: 0 0% 98%;
-  --border: 220 15% 24%;
-  --input: 220 15% 24%;
+  --border: 220 15% 20%;
+  --input: 220 15% 20%;
   --ring: 234 85% 65%;
 
-  --sidebar-background: 222 22% 14%;
+  --sidebar-background: 222 35% 10%;
   --sidebar-foreground: 210 40% 96%;
   --sidebar-primary: 234 85% 65%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 18% 22%;
+  --sidebar-accent: 220 18% 18%;
   --sidebar-accent-foreground: 210 40% 96%;
-  --sidebar-border: 220 15% 24%;
+  --sidebar-border: 220 15% 18%;
   --sidebar-ring: 234 85% 65%;
 
   --font-display: 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
 
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.32);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.4);
 
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
@@ -146,12 +146,12 @@
 @layer components {
   /* Floating card with layered depth */
   .card-elevated {
-    @apply bg-card rounded-[0.625rem] border border-border/60 shadow-card transition-colors duration-300;
+    @apply bg-card rounded-lg border border-border/60 shadow-card transition-colors duration-200;
   }
 
   /* Icon container */
   .icon-glass {
-    @apply rounded-xl p-2.5 shadow-sm;
+    @apply rounded-lg p-2.5 shadow-sm;
     background: hsl(var(--primary) / 0.08);
   }
 
@@ -163,10 +163,7 @@
 
   /* Status badge with shadow */
   .badge-status {
-    @apply text-xs font-medium px-2.5 py-1 rounded-full shadow-sm transition-shadow duration-200;
-  }
-  .badge-status:hover {
-    @apply shadow-md;
+    @apply text-xs font-medium px-2.5 py-1 rounded-full transition-colors duration-200;
   }
 
   /* Spinner */
@@ -176,10 +173,21 @@
 
   /* Hover scale for interactive cards */
   .hover-lift {
-    @apply transition-all duration-300;
+    @apply transition-all duration-200;
   }
   .hover-lift:hover {
-    @apply -translate-y-0.5 shadow-card-hover;
+    @apply shadow-card-hover;
+  }
+
+  /* Table zebra rows */
+  .table-zebra tbody tr:nth-child(odd) {
+    background-color: hsl(var(--muted) / 0.3);
+  }
+  .table-zebra tbody tr:nth-child(even) {
+    background-color: hsl(var(--card));
+  }
+  .table-zebra tbody tr:hover {
+    background-color: hsl(var(--muted) / 0.6) !important;
   }
 }
 

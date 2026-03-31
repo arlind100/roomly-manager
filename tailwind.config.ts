@@ -79,10 +79,9 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
-        'card': 'var(--shadow-card, 0 2px 8px rgba(0, 0, 0, 0.12))',
-        'card-hover': 'var(--shadow-card-hover, 0 4px 12px rgba(0, 0, 0, 0.16))',
-        'elevated': 'var(--shadow-card, 0 2px 8px rgba(0, 0, 0, 0.12))',
-        'glow-primary': '0 0 20px -5px hsl(234, 85%, 55%, 0.25)',
+        'card': 'var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.06))',
+        'card-hover': 'var(--shadow-card-hover, 0 2px 8px rgba(0, 0, 0, 0.1))',
+        'elevated': 'var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.06))',
       },
       keyframes: {
         "accordion-down": {

@@ -99,7 +99,7 @@ export function HousekeepingBoard({ rooms, roomTypes, todayCheckouts, cleaningDu
         const isUpdating = updating === room.id;
 
         return (
-          <div key={room.id} className={cn('rounded-[0.625rem] border p-3 transition-all duration-200 hover:shadow-sm', colorClass)}>
+          <div key={room.id} className={cn('rounded-lg border p-3 transition-all duration-200 hover:shadow-sm', colorClass)}>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="w-8 h-8 rounded-lg bg-background/80 flex items-center justify-center shadow-sm">

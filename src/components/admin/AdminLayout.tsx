@@ -4,6 +4,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import DashboardAssistant from '@/components/admin/assistant/DashboardAssistant';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useHotel } from '@/hooks/useHotel';
 import { useAdminTheme } from '@/hooks/useAdminTheme';
 import { cn } from '@/lib/utils';
 import {
@@ -20,6 +21,7 @@ export default function AdminLayout() {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
+  const { hotel } = useHotel();
   const { theme, toggle } = useAdminTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -48,12 +50,15 @@ export default function AdminLayout() {
 
   const SidebarContent = () => (
     <>
-      <div className="p-6 border-b border-border/60">
+      <div className="p-5 border-b border-sidebar-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-[hsl(280,70%,55%)] flex items-center justify-center shadow-sm">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <LayoutDashboard size={15} className="text-primary-foreground" />
           </div>
-          <span className="text-base font-semibold text-foreground">{t('admin.adminPanel')}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground truncate">{hotel?.name || t('admin.adminPanel')}</p>
+            {hotel?.name && <p className="text-[10px] text-muted-foreground truncate">Admin Panel</p>}
+          </div>
         </div>
       </div>
 
@@ -63,10 +68,10 @@ export default function AdminLayout() {
             key={item.path}
             onClick={() => { navigate(item.path); setSidebarOpen(false); }}
             className={cn(
-              'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200',
+              'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150',
               isActive(item.path, item.exact)
-                ? 'bg-gradient-to-r from-muted to-muted/50 text-primary font-medium shadow-sm'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:-translate-y-px'
+                ? 'bg-primary/10 text-primary font-medium border-l-[3px] border-primary ml-[-1px]'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
             )}
           >
             <item.icon size={18} />
@@ -75,16 +80,16 @@ export default function AdminLayout() {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-border/60 space-y-0.5">
-        <button onClick={() => { setAssistantOpen(true); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200">
+      <div className="p-3 border-t border-sidebar-border space-y-0.5">
+        <button onClick={() => { setAssistantOpen(true); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150">
           <BotMessageSquare size={18} />
           Assistant
         </button>
-        <button onClick={toggle} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200">
+        <button onClick={toggle} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150">
           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           {theme === 'light' ? t('admin.dark') : t('admin.light')}
         </button>
-        <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200">
+        <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all duration-150">
           <LogOut size={18} />
           {t('admin.signOut')}
         </button>
@@ -104,17 +109,17 @@ export default function AdminLayout() {
   return (
     <div className={`min-h-screen flex admin-${theme}`}>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-60 flex-col border-r border-border/60 bg-card fixed inset-y-0 left-0 z-30 shadow-card">
+      <aside className="hidden lg:flex w-60 flex-col border-r border-sidebar-border bg-[hsl(var(--sidebar-background))] fixed inset-y-0 left-0 z-30">
         <SidebarContent />
       </aside>
 
       {/* Mobile Sidebar */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-foreground/20" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute left-0 inset-y-0 w-64 bg-card flex flex-col shadow-elevated border-r border-border/60">
+          <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <aside className="absolute left-0 inset-y-0 w-64 bg-[hsl(var(--sidebar-background))] flex flex-col border-r border-sidebar-border">
             <div className="absolute right-3 top-3">
-              <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground transition-colors"><X size={18} /></button>
+              <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors"><X size={18} /></button>
             </div>
             <SidebarContent />
           </aside>
@@ -125,7 +130,7 @@ export default function AdminLayout() {
       <div className="flex-1 lg:ml-60 flex flex-col min-h-screen">
         <header className="h-14 border-b border-border/60 bg-card sticky top-0 z-20 flex items-center justify-between px-4 lg:px-6 shadow-card">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors">
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
               <Menu size={20} />
             </button>
             <h1 className="text-base font-semibold">{currentPage?.label || t('admin.dashboard')}</h1>
@@ -133,8 +138,8 @@ export default function AdminLayout() {
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-muted transition-all duration-200">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-sm">
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-muted transition-all duration-150">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
                     <span className="text-primary text-xs font-semibold">{user?.email?.[0]?.toUpperCase() || 'A'}</span>
                   </div>
                   <span className="hidden md:block text-sm">{user?.email?.split('@')[0]}</span>

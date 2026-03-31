@@ -159,7 +159,7 @@ const AdminRooms = () => {
               key={key}
               onClick={() => setStatusFilter(statusFilter === key ? 'all' : key)}
               className={cn(
-                'rounded-[0.625rem] border p-3 text-center transition-all duration-200 hover:shadow-card',
+                'rounded-lg border p-3 text-center transition-all duration-200 hover:shadow-card',
                 statusFilter === key ? 'ring-2 ring-primary shadow-card' : '',
                 config.color
               )}
@@ -207,17 +207,20 @@ const AdminRooms = () => {
             const config = STATUS_CONFIG[room.operational_status] || STATUS_CONFIG.available;
             const Icon = config.icon;
             return (
-              <div key={room.id} className={cn('rounded-[0.625rem] border p-4 shadow-card transition-colors duration-200', config.color)}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-background/80 flex items-center justify-center shadow-sm">
-                      <Icon size={14} />
+              <div key={room.id} className="bg-card rounded-lg border border-border/60 p-4 shadow-card transition-colors duration-200 hover:shadow-card-hover">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-muted/60 flex items-center justify-center">
+                      <Icon size={16} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold">Room {room.room_number}</p>
+                      <p className="text-sm font-semibold text-foreground">Room {room.room_number}</p>
                       {room.floor && <p className="text-[10px] text-muted-foreground">Floor {room.floor}</p>}
                     </div>
                   </div>
+                  <Badge variant="outline" className={cn('text-[10px] px-2 py-0.5 font-medium', config.color)}>
+                    {config.label}
+                  </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">{room.room_types?.name || '—'}</p>
 
@@ -248,7 +251,7 @@ const AdminRooms = () => {
                   )}
                 </div>
 
-                <div className="flex gap-1">
+                <div className="flex gap-1.5 border-t border-border/40 pt-3">
                   <Button variant="outline" size="sm" className="flex-1 text-[10px] h-7" onClick={() => { setEditing(room.id); setForm({ room_number: room.room_number, floor: room.floor || '', room_type_id: room.room_type_id, notes: room.notes || '' }); setShowForm(true); }}>
                     <Pencil size={10} className="mr-1" /> Edit
                   </Button>
