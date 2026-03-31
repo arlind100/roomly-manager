@@ -88,8 +88,8 @@ const FormFields = ({ f, setF, roomTypes, rooms, t }: FormFieldsProps) => {
           </Select>
         </div>
         <div><Label>{t('admin.guests')}</Label><Input type="number" min={1} value={f.guests_count} onChange={e => setF(p => ({...p, guests_count: parseInt(e.target.value) || 1}))} /></div>
-        <div><Label>{t('admin.checkIn')} *</Label><Input type="date" value={f.check_in} onChange={e => setF(p => ({...p, check_in: e.target.value}))} /></div>
-        <div><Label>{t('admin.checkOut')} *</Label><Input type="date" value={f.check_out} onChange={e => setF(p => ({...p, check_out: e.target.value}))} /></div>
+        <div><Label>{t('admin.checkIn')} *</Label><DatePickerInput value={f.check_in} onChange={v => setF(p => ({...p, check_in: v}))} placeholder="Check-in date" /></div>
+        <div><Label>{t('admin.checkOut')} *</Label><DatePickerInput value={f.check_out} onChange={v => setF(p => ({...p, check_out: v}))} placeholder="Check-out date" /></div>
         <div><Label>Check-in Time</Label><Input type="time" value={f.check_in_time} onChange={e => setF(p => ({...p, check_in_time: e.target.value}))} /></div>
         <div><Label>Check-out Time</Label><Input type="time" value={f.check_out_time} onChange={e => setF(p => ({...p, check_out_time: e.target.value}))} /></div>
         <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={f.total_price} onChange={e => setF(p => ({...p, total_price: parseFloat(e.target.value) || 0}))} /></div>
