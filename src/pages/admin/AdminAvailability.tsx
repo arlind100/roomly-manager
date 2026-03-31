@@ -32,10 +32,13 @@ const AdminAvailability = () => {
 
   const fetchData = async () => {
     if (!hotel?.id) return;
+    // Only fetch reservations within a 3-month window for performance
+    const rangeStart = format(new Date(), 'yyyy-MM-dd');
+    const rangeEnd = format(addDays(new Date(), 90), 'yyyy-MM-dd');
     const [rtRes, blockRes, resRes] = await Promise.all([
       supabase.from('room_types').select('*').eq('hotel_id', hotel.id),
-      supabase.from('availability_blocks').select('*, room_types(name)').eq('hotel_id', hotel.id).order('date'),
-      supabase.from('reservations').select('*').eq('hotel_id', hotel.id).neq('status', 'cancelled'),
+      supabase.from('availability_blocks').select('*, room_types(name)').eq('hotel_id', hotel.id).gte('date', rangeStart).order('date'),
+      supabase.from('reservations').select('*').eq('hotel_id', hotel.id).neq('status', 'cancelled').lte('check_in', rangeEnd).gte('check_out', rangeStart),
     ]);
     setRoomTypes(rtRes.data || []);
     setBlocks(blockRes.data || []);
