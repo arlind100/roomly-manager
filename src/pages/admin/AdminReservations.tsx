@@ -691,7 +691,7 @@ const AdminReservations = () => {
       </Tabs>
 
       {/* Detail Dialog */}
-      <Dialog open={!!selectedRes && !showEdit} onOpenChange={(open) => { if (!open) { setSelectedRes(null); setResInvoice(null); } else if (selectedRes) { fetchInvoiceForRes(selectedRes.id); } }}>
+      <Dialog open={!!selectedRes && !showEdit} onOpenChange={(open) => { if (!open) { setSelectedRes(null); setResInvoice(null); } }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.reservationDetails')}</DialogTitle></DialogHeader>
           {selectedRes && (
