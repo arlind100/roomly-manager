@@ -143,19 +143,19 @@ const AdminInvoices = () => {
       {invoices.length === 0 ? (
         <EmptyState icon={FileText} title={t('admin.noInvoices')} description={t('admin.noInvoicesDesc')} />
       ) : (
-        <div className="bg-card rounded-[0.625rem] border border-border/60 overflow-hidden shadow-card">
+        <div className="bg-card rounded-lg border border-border/60 overflow-hidden shadow-card">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-border bg-muted/50">
-                <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.invoiceNumber')}</th>
-                <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.guest')}</th>
-                <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium hidden md:table-cell">{t('admin.reservation')}</th>
-                <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.amount')}</th>
-                <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.status')}</th>
-                <th className="text-right py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.actions')}</th>
+            <table className="w-full text-sm table-zebra">
+              <thead><tr className="border-b border-border bg-muted/60">
+                <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.invoiceNumber')}</th>
+                <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.guest')}</th>
+                <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider hidden md:table-cell">{t('admin.reservation')}</th>
+                <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.amount')}</th>
+                <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.status')}</th>
+                <th className="text-right py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.actions')}</th>
               </tr></thead>
               <tbody>{invoices.map(inv => (
-                <tr key={inv.id} className="border-b border-border/50 hover:bg-muted/30">
+                <tr key={inv.id} className="border-b border-border/30 transition-colors">
                   <td className="py-3 px-4 font-mono text-xs">{inv.invoice_number}</td>
                   <td className="py-3 px-4">{inv.reservations?.guest_name || '—'}</td>
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground font-mono text-xs">{inv.reservations?.reservation_code || '—'}</td>

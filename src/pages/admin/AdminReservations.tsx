@@ -596,21 +596,21 @@ const AdminReservations = () => {
           {reservations.length === 0 ? (
             <EmptyState icon={CalendarDays} title={t('admin.noReservations')} description={t('admin.noReservationsDesc')} />
           ) : (
-            <div className="bg-card rounded-[0.625rem] border border-border/60 overflow-hidden shadow-card">
+            <div className="bg-card rounded-lg border border-border/60 overflow-hidden shadow-card">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead><tr className="border-b border-border bg-muted/50">
-                    <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.code')}</th>
-                    <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.guest')}</th>
-                    <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium hidden md:table-cell">{t('admin.room')}</th>
-                    <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium hidden lg:table-cell">{t('admin.checkIn')}</th>
-                    <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium hidden lg:table-cell">{t('admin.checkOut')}</th>
-                    <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium hidden xl:table-cell">Source</th>
-                    <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.status')}</th>
-                    <th className="text-right py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.actions')}</th>
+                <table className="w-full text-sm table-zebra">
+                  <thead><tr className="border-b border-border bg-muted/60">
+                    <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.code')}</th>
+                    <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.guest')}</th>
+                    <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider hidden md:table-cell">{t('admin.room')}</th>
+                    <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider hidden lg:table-cell">{t('admin.checkIn')}</th>
+                    <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider hidden lg:table-cell">{t('admin.checkOut')}</th>
+                    <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider hidden xl:table-cell">Source</th>
+                    <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.status')}</th>
+                    <th className="text-right py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.actions')}</th>
                   </tr></thead>
                   <tbody>{reservations.map(r => (
-                    <tr key={r.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <tr key={r.id} className="border-b border-border/30 transition-colors">
                       <td className="py-3 px-4 font-mono text-xs">
                         {r.reservation_code}
                         {r.is_external && <Badge variant="outline" className="ml-1.5 text-[10px] px-1.5 py-0 gap-0.5"><Globe size={9} /> External</Badge>}

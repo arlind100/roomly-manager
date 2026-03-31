@@ -170,18 +170,18 @@ const AdminPricing = () => {
         {overrides.length === 0 ? (
           <div className="bg-card rounded-[0.625rem] border border-border/60 p-8 shadow-card text-center text-sm text-muted-foreground">{t('admin.noOverrides')}</div>
         ) : (
-          <div className="bg-card rounded-[0.625rem] border border-border/60 overflow-hidden shadow-card">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-border bg-muted/50">
-                <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.room')}</th>
-                <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.period')}</th>
-                <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.totalPrice')}</th>
-                <th className="text-left py-3 px-4 text-xs text-muted-foreground font-medium hidden md:table-cell">{t('admin.label')}</th>
-                <th className="text-center py-3 px-4 text-xs text-muted-foreground font-medium">{t('admin.active')}</th>
-                <th className="text-right py-3 px-4 text-xs text-muted-foreground font-medium"></th>
+          <div className="bg-card rounded-lg border border-border/60 overflow-hidden shadow-card">
+            <table className="w-full text-sm table-zebra">
+              <thead><tr className="border-b border-border bg-muted/60">
+                <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.room')}</th>
+                <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.period')}</th>
+                <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.totalPrice')}</th>
+                <th className="text-left py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider hidden md:table-cell">{t('admin.label')}</th>
+                <th className="text-center py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.active')}</th>
+                <th className="text-right py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider"></th>
               </tr></thead>
               <tbody>{overrides.map(o => (
-                <tr key={o.id} className={`border-b border-border/50 ${!o.is_active ? 'opacity-50' : ''}`}>
+                <tr key={o.id} className={`border-b border-border/30 ${!o.is_active ? 'opacity-50' : ''}`}>
                   <td className="py-3 px-4">{o.room_types?.name}</td>
                   <td className="py-3 px-4 text-muted-foreground">
                     {format(new Date(o.start_date + 'T00:00:00'), 'MMM dd, yyyy')} → {format(new Date(o.end_date + 'T00:00:00'), 'MMM dd, yyyy')}
