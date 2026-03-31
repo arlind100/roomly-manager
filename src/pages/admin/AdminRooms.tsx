@@ -76,6 +76,7 @@ const AdminRooms = () => {
   const handleBulkAdd = async () => {
     if (!bulkForm.room_type_id || !bulkForm.count) { toast.error('Select room type and count'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
+    if (saving) return;
     setSaving(true);
     const roomsToInsert = Array.from({ length: bulkForm.count }, (_, i) => ({
       hotel_id: hotel.id,

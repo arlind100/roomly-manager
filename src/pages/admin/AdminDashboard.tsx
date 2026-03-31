@@ -192,7 +192,8 @@ const AdminDashboard = () => {
   };
 
   const handleWalkInSubmit = async () => {
-    if (!walkIn.guest_name || !walkIn.room_type_id) { toast.error('Guest name and room type are required'); return; }
+    if (!walkIn.guest_name.trim()) { toast.error('Guest name is required'); return; }
+    if (!walkIn.room_type_id) { toast.error('Room type is required'); return; }
     if (walkIn.check_in_now && !walkIn.room_id) { toast.error('Please assign a room for immediate check-in'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreating(true);
