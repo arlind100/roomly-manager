@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { ImportReservationsModal } from '@/components/admin/ImportReservationsModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 const BOOKING_SOURCES = [
   { value: 'website', label: 'Website' },
