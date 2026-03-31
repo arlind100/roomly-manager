@@ -803,6 +803,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_invoice_on_checkout: {
+        Args: { p_reservation_id: string }
+        Returns: Json
+      }
       create_reservation_if_available: {
         Args: {
           p_booking_source?: string

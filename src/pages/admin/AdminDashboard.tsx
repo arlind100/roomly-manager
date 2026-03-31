@@ -326,7 +326,40 @@ const AdminDashboard = () => {
       }
     }
 
-    toast.success('Guest checked out');
+    // Auto-generate invoice via RPC
+    try {
+      const { data: invResult, error: invError } = await (supabase.rpc as any)('create_invoice_on_checkout', { p_reservation_id: id });
+      if (invError) {
+        console.error('Invoice creation error:', invError);
+        toast.error('Checked out but invoice creation failed: ' + invError.message);
+      } else if (invResult) {
+        const inv = invResult;
+        if (inv.already_existed) {
+          toast.info(`Invoice ${inv.invoice_number} already exists`);
+        } else {
+          toast.success(`Reservation checked out & invoice ${inv.invoice_number} generated`);
+        }
+        // Conditional email: only auto-send for card/online payments
+        if (res?.guest_email && res?.payment_method && ['card', 'online'].includes(res.payment_method)) {
+          const nightsCount = Math.max(1, Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)));
+          try {
+            await supabase.functions.invoke('send-checkout-email', {
+              body: {
+                to_email: res.guest_email, guest_name: res.guest_name,
+                reservation_code: res.reservation_code, check_in: res.check_in, check_out: res.check_out,
+                room_type_name: res.room_types?.name || '', guests_count: res.guests_count,
+                total_price: res.total_price, currency: cur, check_out_time: timeNow,
+                nights_count: nightsCount, invoice_number: inv.invoice_number || '',
+                hotel_name: hotel?.name || 'Hotel', hotel_email: hotel?.email || '',
+                hotel_phone: hotel?.phone || '', hotel_address: hotel?.address || '',
+              },
+            });
+            toast.success('Invoice email sent automatically');
+          } catch (e) { console.error('Email send error:', e); }
+        }
+      }
+    } catch (e) { console.error('Invoice RPC error:', e); }
+
     setCheckingOutId(null);
     fetchData();
   };

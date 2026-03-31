@@ -16,12 +16,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle, Upload, LogIn, LogOut as LogOutIcon, Globe, List, CalendarRange, RefreshCw } from 'lucide-react';
+import { CalendarDays, Search, Plus, Check, X, Eye, Pencil, AlertTriangle, Upload, LogIn, LogOut as LogOutIcon, Globe, List, CalendarRange, RefreshCw, FileText, Download, Send, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { ImportReservationsModal } from '@/components/admin/ImportReservationsModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { generateInvoicePdf } from '@/lib/generateInvoicePdf';
 
 const BOOKING_SOURCES = [
   { value: 'website', label: 'Website' },
@@ -131,6 +132,105 @@ const AdminReservations = () => {
   // Room picker for check-in
   const [roomPickerRes, setRoomPickerRes] = useState<any>(null);
   const [pickedRoomId, setPickedRoomId] = useState('');
+  const [resInvoice, setResInvoice] = useState<any>(null);
+  const [sendingInvoice, setSendingInvoice] = useState(false);
+  const [loadingInvoice, setLoadingInvoice] = useState(false);
+
+  // Fetch invoice for a reservation
+  const fetchInvoiceForRes = useCallback(async (resId: string) => {
+    if (!hotel?.id) return;
+    setLoadingInvoice(true);
+    const { data } = await supabase.from('invoices')
+      .select('*')
+      .eq('reservation_id', resId)
+      .eq('hotel_id', hotel.id)
+      .neq('status', 'cancelled')
+      .limit(1);
+    setResInvoice(data?.[0] || null);
+    setLoadingInvoice(false);
+  }, [hotel?.id]);
+
+  const handleDownloadInvoice = (inv: any, res: any) => {
+    const doc = generateInvoicePdf({
+      invoiceNumber: inv.invoice_number,
+      issuedAt: inv.issued_at || inv.created_at,
+      dueAt: inv.due_at || '',
+      hotelName: hotel?.name || 'Hotel',
+      hotelAddress: hotel?.address || '',
+      hotelEmail: hotel?.email || '',
+      hotelPhone: hotel?.phone || '',
+      hotelLogoUrl: hotel?.logo_url || '',
+      guestName: res.guest_name,
+      guestEmail: res.guest_email || '',
+      guestPhone: res.guest_phone || '',
+      reservationCode: res.reservation_code || '',
+      checkIn: res.check_in,
+      checkOut: res.check_out,
+      roomName: res.room_types?.name || '',
+      roomNumber: '',
+      guestsCount: res.guests_count || 1,
+      amount: Number(inv.amount),
+      currency: cur,
+      taxPercentage: hotel?.tax_percentage || 0,
+      status: inv.status,
+      cancellationPolicy: hotel?.cancellation_policy || '',
+    });
+    doc.save(`${inv.invoice_number}.pdf`);
+    toast.success('Invoice downloaded');
+  };
+
+  const handleSendInvoiceEmail = async (inv: any, res: any) => {
+    if (!res.guest_email) { toast.error('No guest email found'); return; }
+    setSendingInvoice(true);
+    try {
+      const doc = generateInvoicePdf({
+        invoiceNumber: inv.invoice_number,
+        issuedAt: inv.issued_at || inv.created_at,
+        hotelName: hotel?.name || 'Hotel',
+        hotelAddress: hotel?.address || '',
+        hotelEmail: hotel?.email || '',
+        hotelPhone: hotel?.phone || '',
+        guestName: res.guest_name,
+        guestEmail: res.guest_email || '',
+        reservationCode: res.reservation_code || '',
+        checkIn: res.check_in,
+        checkOut: res.check_out,
+        roomName: res.room_types?.name || '',
+        guestsCount: res.guests_count || 1,
+        amount: Number(inv.amount),
+        currency: cur,
+        taxPercentage: hotel?.tax_percentage || 0,
+        status: inv.status,
+      });
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
+      const { error } = await supabase.functions.invoke('send-invoice-email', {
+        body: {
+          to_email: res.guest_email,
+          guest_name: res.guest_name,
+          invoice_number: inv.invoice_number,
+          amount: Number(inv.amount),
+          currency: cur,
+          hotel_name: hotel?.name || 'Hotel',
+          pdf_base64: pdfBase64,
+        },
+      });
+      if (error) throw error;
+      toast.success('Invoice email sent');
+      if (inv.status === 'draft' || inv.status === 'unpaid') {
+        await supabase.from('invoices').update({ status: 'sent' }).eq('id', inv.id);
+        setResInvoice((prev: any) => prev ? { ...prev, status: 'sent' } : prev);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to send invoice email');
+    }
+    setSendingInvoice(false);
+  };
+
+  const updateInvoiceStatus = async (invId: string, status: string) => {
+    await supabase.from('invoices').update({ status }).eq('id', invId);
+    setResInvoice((prev: any) => prev ? { ...prev, status } : prev);
+    toast.success(`Invoice marked as ${status}`);
+  };
 
   const fetchData = useCallback(async () => {
     if (!hotel?.id) return;
@@ -163,6 +263,15 @@ const AdminReservations = () => {
   }, [hotel?.id, currentPage, search, statusFilter, sourceFilter]);
 
   useEffect(() => { if (hotel?.id) fetchData(); }, [fetchData]);
+
+  // Load invoice when viewing a completed reservation
+  useEffect(() => {
+    if (selectedRes?.status === 'completed' && selectedRes?.id) {
+      fetchInvoiceForRes(selectedRes.id);
+    } else {
+      setResInvoice(null);
+    }
+  }, [selectedRes?.id, selectedRes?.status, fetchInvoiceForRes]);
 
   useRealtimeSubscription({
     hotelId: hotel?.id,
@@ -286,33 +395,35 @@ const AdminReservations = () => {
     }
 
     if (status === 'completed' && res) {
-      const nightsCount = Math.max(1, Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)));
       try {
-        // Check if invoice already exists for this reservation (prevent duplicates)
-        const { data: existingInv } = await supabase.from('invoices').select('id, invoice_number').eq('reservation_id', res.id).neq('status', 'cancelled').limit(1);
-        let invoice: any = existingInv?.[0];
-        if (!invoice) {
-          const { data: newInv, error: invError } = await supabase.from('invoices').insert({
-            hotel_id: hotel!.id, reservation_id: res.id, amount: res.total_price || 0, status: 'sent', issued_at: now,
-          }).select().single();
-          if (!invError) { invoice = newInv; toast.success('Invoice ' + (newInv?.invoice_number || '') + ' generated'); }
-        } else {
-          toast.info('Invoice ' + invoice.invoice_number + ' already exists');
-        }
-
-        if (res.guest_email) {
-          await supabase.functions.invoke('send-checkout-email', {
-            body: {
-              to_email: res.guest_email, guest_name: res.guest_name,
-              reservation_code: res.reservation_code, check_in: res.check_in, check_out: res.check_out,
-              room_type_name: res.room_types?.name || '', guests_count: res.guests_count,
-              total_price: res.total_price, currency: cur, check_out_time: timeNow,
-              nights_count: nightsCount, invoice_number: invoice?.invoice_number || '',
-              hotel_name: hotel?.name || 'Hotel', hotel_email: hotel?.email || '',
-              hotel_phone: hotel?.phone || '', hotel_address: hotel?.address || '',
-            },
-          });
-          toast.success('Checkout email sent');
+        // Auto-generate invoice via RPC
+        const { data: invResult, error: invError } = await (supabase.rpc as any)('create_invoice_on_checkout', { p_reservation_id: res.id });
+        if (invError) {
+          console.error('Invoice creation error:', invError);
+          toast.error('Checked out but invoice creation failed: ' + invError.message);
+        } else if (invResult) {
+          const inv = invResult;
+          if (inv.already_existed) {
+            toast.info(`Invoice ${inv.invoice_number} already exists`);
+          } else {
+            toast.success(`Invoice ${inv.invoice_number} generated`);
+          }
+          // Conditional email: only auto-send for card/online, skip cash
+          if (res.guest_email && res.payment_method && ['card', 'online'].includes(res.payment_method)) {
+            const nightsCount = Math.max(1, Math.ceil((new Date(res.check_out).getTime() - new Date(res.check_in).getTime()) / (1000 * 60 * 60 * 24)));
+            await supabase.functions.invoke('send-checkout-email', {
+              body: {
+                to_email: res.guest_email, guest_name: res.guest_name,
+                reservation_code: res.reservation_code, check_in: res.check_in, check_out: res.check_out,
+                room_type_name: res.room_types?.name || '', guests_count: res.guests_count,
+                total_price: res.total_price, currency: cur, check_out_time: timeNow,
+                nights_count: nightsCount, invoice_number: inv.invoice_number || '',
+                hotel_name: hotel?.name || 'Hotel', hotel_email: hotel?.email || '',
+                hotel_phone: hotel?.phone || '', hotel_address: hotel?.address || '',
+              },
+            });
+            toast.success('Invoice email sent automatically');
+          }
         }
       } catch (e) { console.error('Checkout error:', e); }
     }
@@ -580,8 +691,8 @@ const AdminReservations = () => {
       </Tabs>
 
       {/* Detail Dialog */}
-      <Dialog open={!!selectedRes && !showEdit} onOpenChange={() => setSelectedRes(null)}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={!!selectedRes && !showEdit} onOpenChange={(open) => { if (!open) { setSelectedRes(null); setResInvoice(null); } }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.reservationDetails')}</DialogTitle></DialogHeader>
           {selectedRes && (
             <div className="space-y-4 text-sm">
@@ -601,6 +712,47 @@ const AdminReservations = () => {
               </div>
               {selectedRes.special_requests && <div><span className="text-muted-foreground block text-xs mb-1">{t('admin.specialRequests')}</span><p className="text-muted-foreground italic">"{selectedRes.special_requests}"</p></div>}
               {selectedRes.notes && <div><span className="text-muted-foreground block text-xs mb-1">{t('admin.notes')}</span><p>{selectedRes.notes}</p></div>}
+
+              {/* Invoice Section */}
+              {selectedRes.status === 'completed' && (
+                <div className="border-t border-border pt-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <FileText size={12} /> Invoice
+                  </h4>
+                  {loadingInvoice ? (
+                    <div className="flex items-center gap-2 py-2"><Loader2 size={14} className="animate-spin" /> <span className="text-xs text-muted-foreground">Loading invoice...</span></div>
+                  ) : resInvoice ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs">{resInvoice.invoice_number}</span>
+                        <StatusBadge status={resInvoice.status} />
+                        <span className="text-xs font-semibold">{displayPrice(Number(resInvoice.amount), cur)}</span>
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap">
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => handleDownloadInvoice(resInvoice, selectedRes)}>
+                          <Download size={12} /> Download PDF
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={sendingInvoice} onClick={() => handleSendInvoiceEmail(resInvoice, selectedRes)}>
+                          {sendingInvoice ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Send Email
+                        </Button>
+                        {resInvoice.status !== 'paid' && (
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-green-600" onClick={() => updateInvoiceStatus(resInvoice.id, 'paid')}>
+                            <Check size={12} /> Mark Paid
+                          </Button>
+                        )}
+                        {resInvoice.status === 'paid' && (
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => updateInvoiceStatus(resInvoice.id, 'unpaid')}>
+                            Mark Unpaid
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground py-1">No invoice generated yet</p>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={() => openEdit(selectedRes)}><Pencil size={14} className="mr-1" /> {t('admin.edit')}</Button>
                 {selectedRes.status === 'pending' && <>

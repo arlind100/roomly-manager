@@ -174,7 +174,8 @@ const AdminInvoices = () => {
                         {sendingId === inv.id ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Send size={14} />}
                       </Button>
                       {inv.status === 'draft' && <Button variant="ghost" size="sm" className="text-xs" onClick={() => updateStatus(inv.id, 'sent')}>{t('admin.markSent')}</Button>}
-                      {inv.status === 'sent' && <Button variant="ghost" size="sm" className="text-xs text-green-600" onClick={() => updateStatus(inv.id, 'paid')}>{t('admin.markPaid')}</Button>}
+                      {(inv.status === 'sent' || inv.status === 'unpaid') && <Button variant="ghost" size="sm" className="text-xs text-green-600" onClick={() => updateStatus(inv.id, 'paid')}>{t('admin.markPaid')}</Button>}
+                      {inv.status === 'paid' && <Button variant="ghost" size="sm" className="text-xs" onClick={() => updateStatus(inv.id, 'unpaid')}>Mark Unpaid</Button>}
                     </div>
                   </td>
                 </tr>
