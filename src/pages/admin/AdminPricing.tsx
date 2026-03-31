@@ -168,7 +168,7 @@ const AdminPricing = () => {
           <Button variant="outline" onClick={() => setShowAdd(true)}><Plus size={16} className="mr-1" /> {t('admin.addOverride')}</Button>
         </div>
         {overrides.length === 0 ? (
-          <div className="bg-card rounded-[0.625rem] border border-border/60 p-8 shadow-card text-center text-sm text-muted-foreground">{t('admin.noOverrides')}</div>
+          <div className="bg-card rounded-lg border border-border/60 p-8 shadow-card text-center text-sm text-muted-foreground">{t('admin.noOverrides')}</div>
         ) : (
           <div className="bg-card rounded-lg border border-border/60 overflow-hidden shadow-card">
             <table className="w-full text-sm table-zebra">

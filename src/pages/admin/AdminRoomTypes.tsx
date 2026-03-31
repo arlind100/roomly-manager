@@ -148,7 +148,7 @@ const AdminRoomTypes = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {roomTypes.map(rt => (
-            <div key={rt.id} className="bg-card rounded-[0.625rem] border border-border/60 overflow-hidden shadow-card">
+            <div key={rt.id} className="bg-card rounded-lg border border-border/60 overflow-hidden shadow-card">
               <div className="h-40 bg-muted relative">
                 {(rt.image_url || getRoomFallbackImage(rt.name) !== roomStandard) ? (
                   <img src={rt.image_url || getRoomFallbackImage(rt.name)} alt={rt.name} className="w-full h-full object-cover" />

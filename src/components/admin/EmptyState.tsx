@@ -9,7 +9,7 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="bg-card rounded-[0.625rem] border border-border/60 p-12 text-center shadow-card">
+    <div className="bg-card rounded-lg border border-border/60 p-12 text-center shadow-card">
       <div className="w-14 h-14 rounded-xl bg-primary/8 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
         <Icon size={24} className="text-muted-foreground" />
       </div>
