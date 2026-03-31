@@ -132,16 +132,7 @@ const AdminReservations = () => {
   const [roomPickerRes, setRoomPickerRes] = useState<any>(null);
   const [pickedRoomId, setPickedRoomId] = useState('');
 
-  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id, currentPage, search, statusFilter, sourceFilter]);
-
-  // Realtime: auto-refresh when reservations change
-  useRealtimeSubscription({
-    hotelId: hotel?.id,
-    tables: ['reservations', 'rooms'],
-    onUpdate: fetchData,
-  });
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!hotel?.id) return;
     setLoading(true);
     const from = currentPage * ITEMS_PER_PAGE;
