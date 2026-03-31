@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DatePickerInput } from '@/components/ui/date-picker-input';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -198,7 +199,7 @@ const AdminAvailability = () => {
                 <SelectContent>{roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>{t('admin.date')}</Label><Input type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} /></div>
+            <div><Label>{t('admin.date')}</Label><DatePickerInput value={form.date} onChange={v => setForm(f => ({...f, date: v}))} placeholder="Block date" /></div>
             <div><Label>{t('admin.reason')}</Label><Input value={form.reason} onChange={e => setForm(f => ({...f, reason: e.target.value}))} placeholder="Maintenance, holiday, etc." /></div>
             <Button onClick={handleAddBlock} disabled={addingBlock} className="w-full gap-1.5">
               {addingBlock && <Loader2 size={14} className="animate-spin" />}
