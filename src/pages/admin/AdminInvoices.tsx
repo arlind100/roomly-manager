@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { FileText, Plus, Download, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -26,6 +27,7 @@ const AdminInvoices = () => {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [confirmResend, setConfirmResend] = useState<any>(null);
   const [form, setForm] = useState({ reservation_id: '', amount: 0, status: 'draft' });
   const [creatingInv, setCreatingInv] = useState(false);
 
@@ -162,7 +164,13 @@ const AdminInvoices = () => {
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(inv)} title={t('admin.download')}><Download size={14} /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled={sendingId === inv.id} onClick={() => handleSendEmail(inv)} title={t('admin.sendEmail')}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled={sendingId === inv.id} onClick={() => {
+                        if (inv.status === 'sent' || inv.status === 'paid') {
+                          setConfirmResend(inv);
+                        } else {
+                          handleSendEmail(inv);
+                        }
+                      }} title={t('admin.sendEmail')}>
                         {sendingId === inv.id ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Send size={14} />}
                       </Button>
                       {inv.status === 'draft' && <Button variant="ghost" size="sm" className="text-xs" onClick={() => updateStatus(inv.id, 'sent')}>{t('admin.markSent')}</Button>}
@@ -206,6 +214,22 @@ const AdminInvoices = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Resend Confirmation */}
+      <AlertDialog open={!!confirmResend} onOpenChange={v => { if (!v) setConfirmResend(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resend Invoice?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Invoice <strong>{confirmResend?.invoice_number}</strong> has already been sent. Are you sure you want to send it again?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { handleSendEmail(confirmResend); setConfirmResend(null); }}>Send Again</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
