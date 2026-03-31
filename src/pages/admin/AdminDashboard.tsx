@@ -240,7 +240,13 @@ const AdminDashboard = () => {
 
   const initiateCheckIn = (id: string) => {
     const res = allLoadedRes.find(r => r.id === id);
-    if (res && !res.room_id) {
+    if (!res) return;
+    // Block early check-in
+    if (today < res.check_in) {
+      toast.error(`Cannot check in before scheduled date (${format(new Date(res.check_in + 'T00:00:00'), 'MMM dd, yyyy')})`);
+      return;
+    }
+    if (!res.room_id) {
       setRoomPickerRes(res);
       setPickedRoomId('');
       return;

@@ -167,8 +167,15 @@ const AdminReservations = () => {
 
   const confirmAndUpdateStatus = (id: string, status: string) => {
     const res = reservations.find(r => r.id === id);
+    if (!res) return;
+    // Block early check-in
+    const today = format(new Date(), 'yyyy-MM-dd');
+    if (status === 'checked_in' && today < res.check_in) {
+      toast.error(`Cannot check in before scheduled date (${format(new Date(res.check_in + 'T00:00:00'), 'MMM dd, yyyy')})`);
+      return;
+    }
     // For check-in: if no room_id, show room picker instead
-    if (status === 'checked_in' && res && !res.room_id) {
+    if (status === 'checked_in' && !res.room_id) {
       setRoomPickerRes(res);
       setPickedRoomId('');
       return;
