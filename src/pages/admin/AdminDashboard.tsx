@@ -121,7 +121,15 @@ const AdminDashboard = () => {
     setRoomTypes(rtResult.data || []);
     setRooms(roomResult.data || []);
     setLoading(false);
-  };
+  }, [hotel?.id, today]);
+
+  useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id, fetchData]);
+
+  useRealtimeSubscription({
+    hotelId: hotel?.id,
+    tables: ['reservations', 'rooms'],
+    onUpdate: fetchData,
+  });
 
   // Room status board from room_types + current guests count
   const roomStatusBoard = useMemo(() => {

@@ -160,7 +160,15 @@ const AdminReservations = () => {
     setRoomTypes(rtResult.data || []);
     setRooms(roomResult.data || []);
     setLoading(false);
-  };
+  }, [hotel?.id, currentPage, search, statusFilter, sourceFilter]);
+
+  useEffect(() => { if (hotel?.id) fetchData(); }, [fetchData]);
+
+  useRealtimeSubscription({
+    hotelId: hotel?.id,
+    tables: ['reservations', 'rooms'],
+    onUpdate: fetchData,
+  });
 
   // Availability is now checked atomically in the DB function - no frontend check needed
 
