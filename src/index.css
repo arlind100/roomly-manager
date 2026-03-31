@@ -181,13 +181,13 @@
 
   /* Table zebra rows */
   .table-zebra tbody tr:nth-child(odd) {
-    background-color: hsl(var(--muted) / 0.3);
+    background-color: hsl(var(--muted) / 0.55);
   }
   .table-zebra tbody tr:nth-child(even) {
     background-color: hsl(var(--card));
   }
   .table-zebra tbody tr:hover {
-    background-color: hsl(var(--muted) / 0.6) !important;
+    background-color: hsl(var(--muted) / 0.85) !important;
   }
 }
 
