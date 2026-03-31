@@ -264,6 +264,15 @@ const AdminReservations = () => {
 
   useEffect(() => { if (hotel?.id) fetchData(); }, [fetchData]);
 
+  // Load invoice when viewing a completed reservation
+  useEffect(() => {
+    if (selectedRes?.status === 'completed' && selectedRes?.id) {
+      fetchInvoiceForRes(selectedRes.id);
+    } else {
+      setResInvoice(null);
+    }
+  }, [selectedRes?.id, selectedRes?.status, fetchInvoiceForRes]);
+
   useRealtimeSubscription({
     hotelId: hotel?.id,
     tables: ['reservations', 'rooms'],
