@@ -541,6 +541,11 @@ const AdminReservations = () => {
                               <LogOutIcon size={14} /> {t('admin.checkOutAction')}
                             </Button>
                           )}
+                          {r.status === 'cancelled' && (
+                            <Button variant="ghost" size="sm" className="h-8 text-xs text-blue-600 gap-1" onClick={() => confirmAndUpdateStatus(r.id, 'pending')}>
+                              <RefreshCw size={14} /> Reactivate
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
