@@ -682,8 +682,8 @@ const AdminReservations = () => {
       </Tabs>
 
       {/* Detail Dialog */}
-      <Dialog open={!!selectedRes && !showEdit} onOpenChange={() => setSelectedRes(null)}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={!!selectedRes && !showEdit} onOpenChange={(open) => { if (!open) { setSelectedRes(null); setResInvoice(null); } else if (selectedRes) { fetchInvoiceForRes(selectedRes.id); } }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.reservationDetails')}</DialogTitle></DialogHeader>
           {selectedRes && (
             <div className="space-y-4 text-sm">
@@ -703,6 +703,47 @@ const AdminReservations = () => {
               </div>
               {selectedRes.special_requests && <div><span className="text-muted-foreground block text-xs mb-1">{t('admin.specialRequests')}</span><p className="text-muted-foreground italic">"{selectedRes.special_requests}"</p></div>}
               {selectedRes.notes && <div><span className="text-muted-foreground block text-xs mb-1">{t('admin.notes')}</span><p>{selectedRes.notes}</p></div>}
+
+              {/* Invoice Section */}
+              {selectedRes.status === 'completed' && (
+                <div className="border-t border-border pt-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <FileText size={12} /> Invoice
+                  </h4>
+                  {loadingInvoice ? (
+                    <div className="flex items-center gap-2 py-2"><Loader2 size={14} className="animate-spin" /> <span className="text-xs text-muted-foreground">Loading invoice...</span></div>
+                  ) : resInvoice ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs">{resInvoice.invoice_number}</span>
+                        <StatusBadge status={resInvoice.status} />
+                        <span className="text-xs font-semibold">{displayPrice(Number(resInvoice.amount), cur)}</span>
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap">
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => handleDownloadInvoice(resInvoice, selectedRes)}>
+                          <Download size={12} /> Download PDF
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={sendingInvoice} onClick={() => handleSendInvoiceEmail(resInvoice, selectedRes)}>
+                          {sendingInvoice ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Send Email
+                        </Button>
+                        {resInvoice.status !== 'paid' && (
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-green-600" onClick={() => updateInvoiceStatus(resInvoice.id, 'paid')}>
+                            <Check size={12} /> Mark Paid
+                          </Button>
+                        )}
+                        {resInvoice.status === 'paid' && (
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => updateInvoiceStatus(resInvoice.id, 'unpaid')}>
+                            Mark Unpaid
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground py-1">No invoice generated yet</p>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={() => openEdit(selectedRes)}><Pencil size={14} className="mr-1" /> {t('admin.edit')}</Button>
                 {selectedRes.status === 'pending' && <>
