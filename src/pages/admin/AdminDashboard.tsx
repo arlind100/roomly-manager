@@ -575,30 +575,28 @@ const AdminDashboard = () => {
         <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><BedDouble size={14} /> {t('admin.roomStatusBoard')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {roomStatusBoard.map(rt => {
-            const statusStyles: Record<string, string> = {
-              available: 'border-l-green-500',
-              occupied: 'border-l-red-500',
-              reserved: 'border-l-yellow-500',
-              cleaning: 'border-l-blue-500',
-              maintenance: 'border-l-muted-foreground',
+            const statusBg: Record<string, string> = {
+              available: 'bg-green-50 border-l-green-500 dark:bg-green-950/30',
+              occupied: 'bg-red-50 border-l-red-500 dark:bg-red-950/30',
+              reserved: 'bg-yellow-50 border-l-yellow-500 dark:bg-yellow-950/30',
+              cleaning: 'bg-blue-50 border-l-blue-500 dark:bg-blue-950/30',
+              maintenance: 'bg-muted/50 border-l-muted-foreground',
             };
             return (
             <button
               key={rt.id}
               onClick={() => navigate('/admin/rooms')}
-              className={cn('bg-card rounded-lg border border-border/60 border-l-[3px] p-4 transition-all duration-200 hover:shadow-card-hover text-left shadow-card', statusStyles[rt.status] || '')}
+              className={cn('rounded-lg border border-border/60 border-l-[3px] p-4 transition-all duration-200 hover:shadow-card-hover text-left shadow-card', statusBg[rt.status] || 'bg-card')}
             >
-              <div className="flex items-center gap-3 mb-2">
-                <img src={getRoomImage(rt)} alt={rt.name} className="w-10 h-10 rounded-lg object-cover" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold truncate">{rt.name}</p>
-                  <span className={cn('text-[10px] font-medium uppercase tracking-wider',
-                    rt.status === 'available' ? 'text-green-600 dark:text-green-400' :
-                    rt.status === 'occupied' ? 'text-red-600 dark:text-red-400' :
-                    rt.status === 'reserved' ? 'text-yellow-600 dark:text-yellow-400' :
-                    'text-muted-foreground'
-                  )}>{t(`admin.room_${rt.status}`)}</span>
-                </div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold truncate">{rt.name}</p>
+                <span className={cn('text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full',
+                  rt.status === 'available' ? 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40' :
+                  rt.status === 'occupied' ? 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/40' :
+                  rt.status === 'reserved' ? 'text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-900/40' :
+                  rt.status === 'cleaning' ? 'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/40' :
+                  'text-muted-foreground bg-muted'
+                )}>{t(`admin.room_${rt.status}`)}</span>
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span>{rt.freeUnits}/{rt.available_units} {t('admin.free')}</span>
