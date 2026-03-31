@@ -659,11 +659,16 @@ const AdminReservations = () => {
               <Select value={pickedRoomId} onValueChange={setPickedRoomId}>
                 <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
                 <SelectContent>
-                  {assignableRooms.map(r => (
-                    <SelectItem key={r.id} value={r.id}>
-                      Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {r.operational_status}
-                    </SelectItem>
-                  ))}
+                  {assignableRooms.map(r => {
+                    const statusLabel = r.operational_status === 'available' ? '✅ Ready'
+                      : r.operational_status === 'dirty' ? '🟡 Dirty'
+                      : r.operational_status === 'cleaning' ? '🔵 Cleaning' : r.operational_status;
+                    return (
+                      <SelectItem key={r.id} value={r.id}>
+                        Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {statusLabel}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             );
