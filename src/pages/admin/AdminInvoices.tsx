@@ -164,7 +164,13 @@ const AdminInvoices = () => {
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(inv)} title={t('admin.download')}><Download size={14} /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled={sendingId === inv.id} onClick={() => handleSendEmail(inv)} title={t('admin.sendEmail')}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled={sendingId === inv.id} onClick={() => {
+                        if (inv.status === 'sent' || inv.status === 'paid') {
+                          setConfirmResend(inv);
+                        } else {
+                          handleSendEmail(inv);
+                        }
+                      }} title={t('admin.sendEmail')}>
                         {sendingId === inv.id ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Send size={14} />}
                       </Button>
                       {inv.status === 'draft' && <Button variant="ghost" size="sm" className="text-xs" onClick={() => updateStatus(inv.id, 'sent')}>{t('admin.markSent')}</Button>}
