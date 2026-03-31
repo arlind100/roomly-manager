@@ -614,6 +614,9 @@ const AdminReservations = () => {
                 {selectedRes.status === 'checked_in' && (
                   <Button size="sm" variant="outline" className="gap-1" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'completed')}><LogOutIcon size={14} /> {t('admin.checkOutAction')}</Button>
                 )}
+                {selectedRes.status === 'cancelled' && (
+                  <Button size="sm" variant="outline" className="gap-1 text-blue-600" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'pending')}><RefreshCw size={14} /> Reactivate</Button>
+                )}
               </div>
             </div>
           )}
