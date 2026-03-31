@@ -574,25 +574,39 @@ const AdminDashboard = () => {
       <div className="bg-card rounded-lg border border-border/60 p-5 shadow-card">
         <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><BedDouble size={14} /> {t('admin.roomStatusBoard')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {roomStatusBoard.map(rt => (
+          {roomStatusBoard.map(rt => {
+            const statusStyles: Record<string, string> = {
+              available: 'border-l-green-500',
+              occupied: 'border-l-red-500',
+              reserved: 'border-l-yellow-500',
+              cleaning: 'border-l-blue-500',
+              maintenance: 'border-l-muted-foreground',
+            };
+            return (
             <button
               key={rt.id}
               onClick={() => navigate('/admin/rooms')}
-              className={cn('rounded-lg border p-4 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 text-left', statusColor[rt.status])}
+              className={cn('bg-card rounded-lg border border-border/60 border-l-[3px] p-4 transition-all duration-200 hover:shadow-card-hover text-left shadow-card', statusStyles[rt.status] || '')}
             >
               <div className="flex items-center gap-3 mb-2">
-                <img src={getRoomImage(rt)} alt={rt.name} className="w-12 h-12 rounded-lg object-cover" />
+                <img src={getRoomImage(rt)} alt={rt.name} className="w-10 h-10 rounded-lg object-cover" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold truncate">{rt.name}</p>
-                  <span className="text-[10px] font-medium uppercase tracking-wider">{t(`admin.room_${rt.status}`)}</span>
+                  <span className={cn('text-[10px] font-medium uppercase tracking-wider',
+                    rt.status === 'available' ? 'text-green-600 dark:text-green-400' :
+                    rt.status === 'occupied' ? 'text-red-600 dark:text-red-400' :
+                    rt.status === 'reserved' ? 'text-yellow-600 dark:text-yellow-400' :
+                    'text-muted-foreground'
+                  )}>{t(`admin.room_${rt.status}`)}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-xs opacity-80">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span>{rt.freeUnits}/{rt.available_units} {t('admin.free')}</span>
                 <span>{rt.occupiedCount} {t('admin.occupied')}</span>
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 
