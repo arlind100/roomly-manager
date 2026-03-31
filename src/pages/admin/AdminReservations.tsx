@@ -132,6 +132,105 @@ const AdminReservations = () => {
   // Room picker for check-in
   const [roomPickerRes, setRoomPickerRes] = useState<any>(null);
   const [pickedRoomId, setPickedRoomId] = useState('');
+  const [resInvoice, setResInvoice] = useState<any>(null);
+  const [sendingInvoice, setSendingInvoice] = useState(false);
+  const [loadingInvoice, setLoadingInvoice] = useState(false);
+
+  // Fetch invoice for a reservation
+  const fetchInvoiceForRes = useCallback(async (resId: string) => {
+    if (!hotel?.id) return;
+    setLoadingInvoice(true);
+    const { data } = await supabase.from('invoices')
+      .select('*')
+      .eq('reservation_id', resId)
+      .eq('hotel_id', hotel.id)
+      .neq('status', 'cancelled')
+      .limit(1);
+    setResInvoice(data?.[0] || null);
+    setLoadingInvoice(false);
+  }, [hotel?.id]);
+
+  const handleDownloadInvoice = (inv: any, res: any) => {
+    const doc = generateInvoicePdf({
+      invoiceNumber: inv.invoice_number,
+      issuedAt: inv.issued_at || inv.created_at,
+      dueAt: inv.due_at || '',
+      hotelName: hotel?.name || 'Hotel',
+      hotelAddress: hotel?.address || '',
+      hotelEmail: hotel?.email || '',
+      hotelPhone: hotel?.phone || '',
+      hotelLogoUrl: hotel?.logo_url || '',
+      guestName: res.guest_name,
+      guestEmail: res.guest_email || '',
+      guestPhone: res.guest_phone || '',
+      reservationCode: res.reservation_code || '',
+      checkIn: res.check_in,
+      checkOut: res.check_out,
+      roomName: res.room_types?.name || '',
+      roomNumber: '',
+      guestsCount: res.guests_count || 1,
+      amount: Number(inv.amount),
+      currency: cur,
+      taxPercentage: hotel?.tax_percentage || 0,
+      status: inv.status,
+      cancellationPolicy: hotel?.cancellation_policy || '',
+    });
+    doc.save(`${inv.invoice_number}.pdf`);
+    toast.success('Invoice downloaded');
+  };
+
+  const handleSendInvoiceEmail = async (inv: any, res: any) => {
+    if (!res.guest_email) { toast.error('No guest email found'); return; }
+    setSendingInvoice(true);
+    try {
+      const doc = generateInvoicePdf({
+        invoiceNumber: inv.invoice_number,
+        issuedAt: inv.issued_at || inv.created_at,
+        hotelName: hotel?.name || 'Hotel',
+        hotelAddress: hotel?.address || '',
+        hotelEmail: hotel?.email || '',
+        hotelPhone: hotel?.phone || '',
+        guestName: res.guest_name,
+        guestEmail: res.guest_email || '',
+        reservationCode: res.reservation_code || '',
+        checkIn: res.check_in,
+        checkOut: res.check_out,
+        roomName: res.room_types?.name || '',
+        guestsCount: res.guests_count || 1,
+        amount: Number(inv.amount),
+        currency: cur,
+        taxPercentage: hotel?.tax_percentage || 0,
+        status: inv.status,
+      });
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
+      const { error } = await supabase.functions.invoke('send-invoice-email', {
+        body: {
+          to_email: res.guest_email,
+          guest_name: res.guest_name,
+          invoice_number: inv.invoice_number,
+          amount: Number(inv.amount),
+          currency: cur,
+          hotel_name: hotel?.name || 'Hotel',
+          pdf_base64: pdfBase64,
+        },
+      });
+      if (error) throw error;
+      toast.success('Invoice email sent');
+      if (inv.status === 'draft' || inv.status === 'unpaid') {
+        await supabase.from('invoices').update({ status: 'sent' }).eq('id', inv.id);
+        setResInvoice((prev: any) => prev ? { ...prev, status: 'sent' } : prev);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to send invoice email');
+    }
+    setSendingInvoice(false);
+  };
+
+  const updateInvoiceStatus = async (invId: string, status: string) => {
+    await supabase.from('invoices').update({ status }).eq('id', invId);
+    setResInvoice((prev: any) => prev ? { ...prev, status } : prev);
+    toast.success(`Invoice marked as ${status}`);
+  };
 
   const fetchData = useCallback(async () => {
     if (!hotel?.id) return;
