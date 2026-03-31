@@ -64,13 +64,13 @@
   --input: 220 13% 91%;
   --ring: 234 85% 55%;
 
-  --sidebar-background: 220 20% 94%;
+  --sidebar-background: 224 22% 90%;
   --sidebar-foreground: 222 47% 11%;
   --sidebar-primary: 234 85% 55%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 234 85% 55% / 0.08;
+  --sidebar-accent: 234 85% 55% / 0.12;
   --sidebar-accent-foreground: 222 47% 11%;
-  --sidebar-border: 220 13% 88%;
+  --sidebar-border: 220 13% 85%;
   --sidebar-ring: 234 85% 55%;
 
   --font-display: 'Inter', system-ui, sans-serif;
