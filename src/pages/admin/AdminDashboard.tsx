@@ -604,9 +604,14 @@ const AdminDashboard = () => {
                     <Select value={walkIn.room_id} onValueChange={v => setWalkIn(p => ({ ...p, room_id: v }))}>
                       <SelectTrigger><SelectValue placeholder="Select a room" /></SelectTrigger>
                       <SelectContent>
-                        {walkInPhysicalRooms.map(r => (
-                          <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {r.operational_status}</SelectItem>
-                        ))}
+                        {walkInPhysicalRooms.map(r => {
+                          const statusLabel = r.operational_status === 'available' ? '✅ Ready'
+                            : r.operational_status === 'dirty' ? '🟡 Dirty'
+                            : r.operational_status === 'cleaning' ? '🔵 Cleaning' : r.operational_status;
+                          return (
+                            <SelectItem key={r.id} value={r.id}>Room {r.room_number} {r.floor ? `(Floor ${r.floor})` : ''} — {statusLabel}</SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   )}
