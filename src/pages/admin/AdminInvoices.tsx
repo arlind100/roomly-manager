@@ -27,6 +27,7 @@ const AdminInvoices = () => {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [confirmResend, setConfirmResend] = useState<any>(null);
   const [form, setForm] = useState({ reservation_id: '', amount: 0, status: 'draft' });
   const [creatingInv, setCreatingInv] = useState(false);
 
