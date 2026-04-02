@@ -4,7 +4,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import DashboardAssistant from '@/components/admin/assistant/DashboardAssistant';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
-import { useHotel } from '@/hooks/useHotel';
+import { useHotel, HotelProvider } from '@/hooks/useHotel';
 import { useAdminTheme } from '@/hooks/useAdminTheme';
 import { cn } from '@/lib/utils';
 import {
@@ -16,7 +16,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export default function AdminLayout() {
+function AdminLayoutInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const { user, signOut } = useAuth();
@@ -159,5 +159,13 @@ export default function AdminLayout() {
       </div>
       <DashboardAssistant open={assistantOpen} onOpenChange={setAssistantOpen} />
     </div>
+  );
+}
+
+export default function AdminLayout() {
+  return (
+    <HotelProvider>
+      <AdminLayoutInner />
+    </HotelProvider>
   );
 }
