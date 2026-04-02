@@ -16,7 +16,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export default function AdminLayout() {
+function AdminLayoutInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const { user, signOut } = useAuth();
@@ -159,5 +159,13 @@ export default function AdminLayout() {
       </div>
       <DashboardAssistant open={assistantOpen} onOpenChange={setAssistantOpen} />
     </div>
+  );
+}
+
+export default function AdminLayout() {
+  return (
+    <HotelProvider>
+      <AdminLayoutInner />
+    </HotelProvider>
   );
 }
