@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import arluneLogo from '@/assets/arlune-logo.png';
+
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import DashboardAssistant from '@/components/admin/assistant/DashboardAssistant';
 import { useAuth } from '@/hooks/useAuth';
@@ -93,15 +93,6 @@ function AdminLayoutInner() {
           <LogOut size={18} />
           {t('admin.signOut')}
         </button>
-        <a 
-          href="https://arlune.site" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="flex items-center justify-center gap-2 px-3 py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <span>Powered by</span>
-          <img src={arluneLogo} alt="Arlune" className="h-4" />
-        </a>
       </div>
     </>
   );
