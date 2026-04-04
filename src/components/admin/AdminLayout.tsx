@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel, HotelProvider } from '@/hooks/useHotel';
 import { useAdminTheme } from '@/hooks/useAdminTheme';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, CalendarDays, BedDouble, CalendarRange, DollarSign,
@@ -25,6 +26,7 @@ function AdminLayoutInner() {
   const { theme, toggle } = useAdminTheme();
   const location = useLocation();
   const navigate = useNavigate();
+  useSessionTimeout();
 
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: t('admin.dashboard'), exact: true },

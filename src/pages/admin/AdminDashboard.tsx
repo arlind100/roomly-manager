@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
-import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
 import { displayPrice } from '@/lib/currency';
@@ -91,7 +91,7 @@ const AdminDashboard = () => {
     payment_received: false, check_in_now: true,
   });
 
-  useSessionTimeout();
+  
 
   const fetchData = useCallback(async () => {
     if (!hotel?.id) return;

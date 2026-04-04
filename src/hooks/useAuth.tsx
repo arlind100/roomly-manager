@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    localStorage.removeItem('roomly_login_at');
     await supabase.auth.signOut();
   };
 
