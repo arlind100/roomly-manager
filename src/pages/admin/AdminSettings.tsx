@@ -14,8 +14,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { toast } from 'sonner';
 import { languageNames, type Language } from '@/i18n/translations';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Sun, Moon, Plus, Trash2, RefreshCw, ChevronDown, Rss, Globe, Upload, X, ImageIcon, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
+import { Sun, Moon, Plus, Trash2, RefreshCw, ChevronDown, Rss, Globe, Upload, X, ImageIcon, Copy, Check, ExternalLink, Loader2, AlertTriangle, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const SUPABASE_URL = "https://qdxtmdyagsxtvtjaxqou.supabase.co";
 
@@ -44,6 +45,11 @@ type ICalFeed = {
   sync_enabled: boolean;
   priority_level: number;
   last_sync: string | null;
+  last_sync_status: string | null;
+  last_sync_errors: string[] | null;
+  last_sync_imported: number | null;
+  last_sync_updated: number | null;
+  last_sync_cancelled: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -67,14 +73,14 @@ const AdminSettings = () => {
   const [newFeed, setNewFeed] = useState({ name: '', ical_url: '', room_type_id: '' });
   const [addingFeed, setAddingFeed] = useState(false);
   const [syncingFeedId, setSyncingFeedId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [syncingAll, setSyncingAll] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const [deleteFeedId, setDeleteFeedId] = useState<string | null>(null);
   const [deletingFeed, setDeletingFeed] = useState(false);
 
   useEffect(() => { fetchAll(); fetchExchangeRates(); }, []);
 
   const fetchAll = async () => {
-    // Get user's hotel via user_roles
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
     const { data: roles } = await supabase.from('user_roles').select('hotel_id').eq('user_id', user.id).limit(1);
@@ -87,7 +93,7 @@ const AdminSettings = () => {
       supabase.from('room_types').select('id, name').eq('hotel_id', hotelId),
     ]);
     setHotel(hotelRes.data);
-    setFeeds((feedsRes.data as ICalFeed[]) || []);
+    setFeeds((feedsRes.data as unknown as ICalFeed[]) || []);
     setRoomTypes(rtRes.data || []);
     setLoading(false);
   };
@@ -113,44 +119,23 @@ const AdminSettings = () => {
 
   // Logo upload handlers
   const uploadLogo = useCallback(async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
-      return;
-    }
-    if (!hotel?.id) {
-      toast.error('Hotel not loaded');
-      return;
-    }
-
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be less than 5MB'); return; }
+    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setUploading(true);
     const ext = file.name.split('.').pop() || 'png';
     const fileName = `${crypto.randomUUID()}.${ext}`;
     const filePath = `${hotel.id}/logos/${fileName}`;
-
-    const { error } = await supabase.storage.from('room-images').upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: false,
-    });
-
+    const { error } = await supabase.storage.from('room-images').upload(filePath, file, { cacheControl: '3600', upsert: false });
     setUploading(false);
-
-    if (error) {
-      toast.error('Upload failed: ' + error.message);
-      return;
-    }
-
+    if (error) { toast.error('Upload failed: ' + error.message); return; }
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/room-images/${filePath}`;
     update('logo_url', publicUrl);
     toast.success('Logo uploaded');
   }, [hotel?.id]);
 
   const handleLogoDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
+    e.preventDefault(); setDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file) uploadLogo(file);
   }, [uploadLogo]);
@@ -201,15 +186,16 @@ const AdminSettings = () => {
   const handleSyncNow = async (feedId: string) => {
     setSyncingFeedId(feedId);
     try {
-      const { data, error } = await supabase.functions.invoke('sync-ical', {
-        body: { feed_id: feedId },
-      });
+      const { data, error } = await supabase.functions.invoke('sync-ical', { body: { feed_id: feedId } });
       if (error) { toast.error(error.message); return; }
       const result = data?.results?.[0];
       if (result) {
-        toast.success(`Synced: ${result.imported} imported, ${result.updated} updated, ${result.skipped} skipped${result.conflicts > 0 ? `, ${result.conflicts} conflicts` : ''}`);
+        const parts = [`${result.imported} imported`, `${result.updated} updated`, `${result.skipped} skipped`];
+        if (result.cancelled > 0) parts.push(`${result.cancelled} cancelled`);
+        if (result.conflicts > 0) parts.push(`${result.conflicts} conflicts`);
+        toast.success(`Synced: ${parts.join(', ')}`);
         if (result.errors?.length > 0) {
-          result.errors.forEach((e: string) => toast.error(e));
+          result.errors.slice(0, 3).forEach((e: string) => toast.error(e));
         }
       } else {
         toast.success('Sync completed');
@@ -222,8 +208,54 @@ const AdminSettings = () => {
     }
   };
 
+  const handleSyncAll = async () => {
+    setSyncingAll(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-ical', { body: {} });
+      if (error) { toast.error(error.message); return; }
+      const totalImported = data?.results?.reduce((sum: number, r: any) => sum + (r.imported || 0), 0) || 0;
+      const totalUpdated = data?.results?.reduce((sum: number, r: any) => sum + (r.updated || 0), 0) || 0;
+      const totalCancelled = data?.results?.reduce((sum: number, r: any) => sum + (r.cancelled || 0), 0) || 0;
+      const totalErrors = data?.results?.reduce((sum: number, r: any) => sum + (r.errors?.length || 0), 0) || 0;
+      toast.success(`All feeds synced: ${totalImported} imported, ${totalUpdated} updated, ${totalCancelled} cancelled${totalErrors > 0 ? `, ${totalErrors} errors` : ''}`);
+      fetchAll();
+    } catch (e) {
+      toast.error('Sync failed');
+    } finally {
+      setSyncingAll(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(id);
+    toast.success('URL copied to clipboard');
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const getSyncStatusBadge = (feed: ICalFeed) => {
+    if (!feed.last_sync) return <Badge variant="outline" className="text-[10px] gap-1"><Clock size={10} /> Never synced</Badge>;
+    const status = feed.last_sync_status;
+    if (status === 'success') return <Badge className="text-[10px] gap-1 bg-green-500/15 text-green-700 border-green-500/30 dark:text-green-400"><CheckCircle2 size={10} /> Success</Badge>;
+    if (status === 'partial') return <Badge className="text-[10px] gap-1 bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-400"><AlertTriangle size={10} /> Partial</Badge>;
+    if (status === 'error') return <Badge className="text-[10px] gap-1 bg-red-500/15 text-red-700 border-red-500/30 dark:text-red-400"><XCircle size={10} /> Error</Badge>;
+    return <Badge variant="outline" className="text-[10px] gap-1"><Clock size={10} /> Unknown</Badge>;
+  };
+
+  const getTimeSince = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   if (!hotel) return <div className="text-center text-muted-foreground py-12">No hotel configured.</div>;
+
+  const mainExportUrl = `${SUPABASE_URL}/functions/v1/ical-export/${hotel.ical_token}`;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -262,7 +294,7 @@ const AdminSettings = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2"><Label>{t('admin.hotelName')}</Label><Input value={hotel.name} onChange={e => update('name', e.target.value)} /></div>
           
-          {/* Logo Upload - Drag & Drop */}
+          {/* Logo Upload */}
           <div className="sm:col-span-2">
             <Label className="mb-2 block">{t('admin.logoUrl')}</Label>
             {hotel.logo_url ? (
@@ -272,10 +304,7 @@ const AdminSettings = () => {
                   <p className="text-sm font-medium truncate">Hotel Logo</p>
                   <p className="text-xs text-muted-foreground">Click remove to change</p>
                 </div>
-                <button
-                  onClick={removeLogo}
-                  className="w-8 h-8 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors shadow-sm"
-                >
+                <button onClick={removeLogo} className="w-8 h-8 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors shadow-sm">
                   <X size={14} />
                 </button>
               </div>
@@ -307,13 +336,7 @@ const AdminSettings = () => {
                     <p className="text-[10px] text-muted-foreground mt-1">PNG, JPG, SVG up to 5MB</p>
                   </>
                 )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleLogoFileSelect}
-                />
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoFileSelect} />
               </div>
             )}
           </div>
@@ -332,9 +355,7 @@ const AdminSettings = () => {
             <Label>{t('admin.currency')}</Label>
             <Select value={hotel.currency} onValueChange={v => update('currency', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {currencies.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-              </SelectContent>
+              <SelectContent>{currencies.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div><Label>{t('admin.checkInTime')}</Label><Input type="time" value={hotel.check_in_time || ''} onChange={e => update('check_in_time', e.target.value)} /></div>
@@ -361,33 +382,50 @@ const AdminSettings = () => {
       <section className="bg-card rounded-lg border border-border/60 p-6 space-y-4 shadow-card">
         <h2 className="text-sm font-semibold flex items-center gap-2"><ExternalLink size={14} /> Channel Sync (iCal Export)</h2>
         <p className="text-xs text-muted-foreground">
-          Share your availability with external booking platforms. Paste the URL below into your OTA extranet to automatically block dates booked through your direct booking portal.
+          Share your availability with external booking platforms. Use per-room-type URLs for accurate OTA sync.
         </p>
 
         {hotel.ical_token ? (
           <>
+            {/* Main feed URL */}
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Your iCal Feed URL</Label>
+              <Label className="text-xs text-muted-foreground mb-1 block">Master Feed (All Room Types)</Label>
               <div className="flex gap-2">
                 <div className="flex-1 bg-muted/30 border border-border/60 rounded-lg px-3 py-2 text-xs font-mono break-all select-all">
-                  {`${SUPABASE_URL}/functions/v1/ical-export/${hotel.ical_token}`}
+                  {mainExportUrl}
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="shrink-0 gap-1.5"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${SUPABASE_URL}/functions/v1/ical-export/${hotel.ical_token}`);
-                    setCopied(true);
-                    toast.success('URL copied to clipboard');
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                  {copied ? 'Copied' : 'Copy'}
+                <Button size="sm" variant="outline" className="shrink-0 gap-1.5"
+                  onClick={() => copyToClipboard(mainExportUrl, 'main')}>
+                  {copied === 'main' ? <Check size={14} /> : <Copy size={14} />}
+                  {copied === 'main' ? 'Copied' : 'Copy'}
                 </Button>
               </div>
             </div>
+
+            {/* Per-room-type URLs */}
+            {roomTypes.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">Per-Room-Type Feeds (Recommended for OTAs)</Label>
+                <div className="space-y-2">
+                  {roomTypes.map(rt => {
+                    const rtUrl = `${mainExportUrl}?room_type_id=${rt.id}`;
+                    return (
+                      <div key={rt.id} className="flex items-center gap-2 bg-muted/20 border border-border/40 rounded-lg px-3 py-2">
+                        <span className="text-xs font-medium min-w-[100px] shrink-0">{rt.name}</span>
+                        <div className="flex-1 text-[10px] font-mono text-muted-foreground truncate">{rtUrl}</div>
+                        <Button size="sm" variant="ghost" className="shrink-0 h-7 w-7 p-0"
+                          onClick={() => copyToClipboard(rtUrl, rt.id)}>
+                          {copied === rt.id ? <Check size={12} /> : <Copy size={12} />}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  💡 Use per-room-type URLs when each OTA listing corresponds to one room type. This prevents false unavailability.
+                </p>
+              </div>
+            )}
 
             <div className="bg-muted/20 border border-border/40 rounded-lg p-3">
               <p className="text-xs font-medium mb-2">Supported Platforms</p>
@@ -400,7 +438,7 @@ const AdminSettings = () => {
                 ))}
               </div>
               <p className="text-[10px] text-muted-foreground mt-2">
-                Paste this URL in your platform's extranet under Availability → Sync Calendar to automatically block dates booked through Roomly.
+                Feeds auto-refresh every 15 minutes. OTAs poll this URL to block dates booked through Roomly.
               </p>
             </div>
           </>
@@ -409,13 +447,27 @@ const AdminSettings = () => {
         )}
       </section>
 
-      {/* ===== iCal Synchronization ===== */}
+      {/* ===== iCal Synchronization (Import) ===== */}
       <section className="bg-card rounded-lg border border-border/60 p-6 space-y-4 shadow-card">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold flex items-center gap-2"><Rss size={14} /> iCal Synchronization</h2>
-          <Button size="sm" variant="outline" onClick={() => setShowAddFeed(true)} className="gap-1.5">
-            <Plus size={14} /> Add iCal Feed
-          </Button>
+          <div className="flex gap-2">
+            {feeds.length > 0 && (
+              <Button size="sm" variant="outline" onClick={handleSyncAll} disabled={syncingAll} className="gap-1.5">
+                <RefreshCw size={12} className={syncingAll ? 'animate-spin' : ''} />
+                {syncingAll ? 'Syncing...' : 'Sync All'}
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => setShowAddFeed(true)} className="gap-1.5">
+              <Plus size={14} /> Add Feed
+            </Button>
+          </div>
+        </div>
+
+        {/* Auto-sync indicator */}
+        <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-xs text-green-700 dark:text-green-400 font-medium">Auto-sync active — runs every 15 minutes</span>
         </div>
 
         {/* Conflict Policy */}
@@ -448,10 +500,21 @@ const AdminSettings = () => {
                   <div className="border border-border/60 rounded-lg shadow-sm">
                     <CollapsibleTrigger className="flex items-center justify-between w-full p-3 hover:bg-muted/30 transition-colors text-left rounded-lg">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className={`w-2 h-2 rounded-full ${feed.sync_enabled ? 'bg-green-500' : 'bg-muted-foreground'}`} />
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{feed.name}</p>
-                          <p className="text-xs text-muted-foreground">{roomType?.name || 'No room mapped'}</p>
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${feed.sync_enabled ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium truncate">{feed.name}</p>
+                            {getSyncStatusBadge(feed)}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{roomType?.name || 'No room mapped'}</span>
+                            {feed.last_sync && (
+                              <>
+                                <span>•</span>
+                                <span>Last sync: {getTimeSince(feed.last_sync)}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <ChevronDown size={14} className="text-muted-foreground shrink-0" />
@@ -462,6 +525,42 @@ const AdminSettings = () => {
                           <p className="text-xs text-muted-foreground">iCal URL</p>
                           <p className="text-xs font-mono break-all bg-muted/30 rounded-lg p-2 mt-1">{feed.ical_url}</p>
                         </div>
+
+                        {/* Sync Stats */}
+                        {feed.last_sync && (
+                          <div className="grid grid-cols-4 gap-2">
+                            <div className="bg-muted/20 rounded-lg p-2 text-center">
+                              <p className="text-lg font-bold text-foreground">{feed.last_sync_imported ?? 0}</p>
+                              <p className="text-[10px] text-muted-foreground">Imported</p>
+                            </div>
+                            <div className="bg-muted/20 rounded-lg p-2 text-center">
+                              <p className="text-lg font-bold text-foreground">{feed.last_sync_updated ?? 0}</p>
+                              <p className="text-[10px] text-muted-foreground">Updated</p>
+                            </div>
+                            <div className="bg-muted/20 rounded-lg p-2 text-center">
+                              <p className="text-lg font-bold text-foreground">{feed.last_sync_cancelled ?? 0}</p>
+                              <p className="text-[10px] text-muted-foreground">Cancelled</p>
+                            </div>
+                            <div className="bg-muted/20 rounded-lg p-2 text-center">
+                              <p className="text-lg font-bold text-foreground">{(feed.last_sync_errors?.length) ?? 0}</p>
+                              <p className="text-[10px] text-muted-foreground">Errors</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Errors */}
+                        {feed.last_sync_errors && feed.last_sync_errors.length > 0 && (
+                          <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-2">
+                            <p className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">Recent Errors</p>
+                            {feed.last_sync_errors.slice(0, 3).map((err, i) => (
+                              <p key={i} className="text-[10px] text-red-600 dark:text-red-300 truncate">{err}</p>
+                            ))}
+                            {feed.last_sync_errors.length > 3 && (
+                              <p className="text-[10px] text-red-500 mt-1">+ {feed.last_sync_errors.length - 3} more</p>
+                            )}
+                          </div>
+                        )}
+
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-xs text-muted-foreground">Last Sync</p>
@@ -469,29 +568,18 @@ const AdminSettings = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <Label className="text-xs">Enabled</Label>
-                            <Switch
-                              checked={feed.sync_enabled}
-                              onCheckedChange={(v) => handleToggleFeed(feed.id, v)}
-                            />
+                            <Switch checked={feed.sync_enabled} onCheckedChange={(v) => handleToggleFeed(feed.id, v)} />
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1.5 flex-1"
+                          <Button size="sm" variant="outline" className="gap-1.5 flex-1"
                             onClick={() => handleSyncNow(feed.id)}
-                            disabled={syncingFeedId === feed.id}
-                          >
+                            disabled={syncingFeedId === feed.id}>
                             <RefreshCw size={12} className={syncingFeedId === feed.id ? 'animate-spin' : ''} />
                             {syncingFeedId === feed.id ? 'Syncing...' : 'Sync Now'}
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-destructive border-destructive/30"
-                            onClick={() => setDeleteFeedId(feed.id)}
-                          >
+                          <Button size="sm" variant="outline" className="text-destructive border-destructive/30"
+                            onClick={() => setDeleteFeedId(feed.id)}>
                             <Trash2 size={12} />
                           </Button>
                         </div>
@@ -510,7 +598,7 @@ const AdminSettings = () => {
         {saving ? t('admin.saving') : t('admin.saveSettings')}
       </Button>
 
-      {/* Delete iCal Feed Confirmation */}
+      {/* Delete Feed Confirmation */}
       <AlertDialog open={!!deleteFeedId} onOpenChange={v => { if (!v) setDeleteFeedId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
