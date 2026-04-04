@@ -24,7 +24,11 @@ const AdminLogin = () => {
     setLoading(true);
     const { error } = await signIn(email, password);
     setLoading(false);
-    if (error) { toast.error(error.message); } else { toast.success('Welcome back!'); navigate('/admin'); }
+    if (error) { toast.error(error.message); } else {
+      localStorage.setItem('roomly_login_at', Date.now().toString());
+      toast.success('Welcome back!');
+      navigate('/admin');
+    }
   };
 
   return (
