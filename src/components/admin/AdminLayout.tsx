@@ -26,6 +26,7 @@ function AdminLayoutInner() {
   const { theme, toggle } = useAdminTheme();
   const location = useLocation();
   const navigate = useNavigate();
+  useSessionTimeout();
 
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: t('admin.dashboard'), exact: true },
