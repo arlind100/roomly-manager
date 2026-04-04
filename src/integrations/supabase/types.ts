@@ -197,6 +197,11 @@ export type Database = {
           ical_url: string
           id: string
           last_sync: string | null
+          last_sync_cancelled: number | null
+          last_sync_errors: string[] | null
+          last_sync_imported: number | null
+          last_sync_status: string | null
+          last_sync_updated: number | null
           name: string
           priority_level: number
           room_type_id: string | null
@@ -209,6 +214,11 @@ export type Database = {
           ical_url: string
           id?: string
           last_sync?: string | null
+          last_sync_cancelled?: number | null
+          last_sync_errors?: string[] | null
+          last_sync_imported?: number | null
+          last_sync_status?: string | null
+          last_sync_updated?: number | null
           name: string
           priority_level?: number
           room_type_id?: string | null
@@ -221,6 +231,11 @@ export type Database = {
           ical_url?: string
           id?: string
           last_sync?: string | null
+          last_sync_cancelled?: number | null
+          last_sync_errors?: string[] | null
+          last_sync_imported?: number | null
+          last_sync_status?: string | null
+          last_sync_updated?: number | null
           name?: string
           priority_level?: number
           room_type_id?: string | null

@@ -35,21 +35,17 @@ function parseICS(text: string): ICalEvent[] {
 }
 
 function extractField(block: string, field: string): string {
-  // Handle properties with parameters like DTSTART;VALUE=DATE:20260315
   const regex = new RegExp(`^${field}[;:](.*)$`, "mi");
   const match = block.match(regex);
   if (!match) return "";
   let value = match[1].trim();
-  // If there are parameters, get the value after the last colon
   if (value.includes(":")) {
     value = value.split(":").pop()!.trim();
   }
-  // Unfold continuation lines
   return value.replace(/\r?\n[ \t]/g, "");
 }
 
 function parseICalDate(dateStr: string): string {
-  // Handles YYYYMMDD and YYYYMMDDTHHmmssZ formats → YYYY-MM-DD
   const clean = dateStr.replace(/[^0-9T]/g, "");
   if (clean.length >= 8) {
     return `${clean.slice(0, 4)}-${clean.slice(4, 6)}-${clean.slice(6, 8)}`;
@@ -68,7 +64,7 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Validate auth if provided (manual sync), otherwise allow scheduled calls
+    // Validate auth if provided (manual sync)
     let isAuthenticated = false;
     if (authHeader?.startsWith("Bearer ")) {
       const userClient = createClient(supabaseUrl, anonKey, {
@@ -81,11 +77,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Use service role for DB operations
     const supabase = createClient(supabaseUrl, serviceKey);
-
     const body = await req.json().catch(() => ({}));
-    const feedId = body.feed_id; // Optional: sync specific feed
+    const feedId = body.feed_id;
 
     // If a specific feed_id is provided, require authentication
     if (feedId && !isAuthenticated) {
@@ -120,6 +114,7 @@ Deno.serve(async (req) => {
       updated: number;
       skipped: number;
       conflicts: number;
+      cancelled: number;
       errors: string[];
     }> = [];
 
@@ -131,25 +126,113 @@ Deno.serve(async (req) => {
         updated: 0,
         skipped: 0,
         conflicts: 0,
+        cancelled: 0,
         errors: [] as string[],
       };
 
+      let syncStatus = "success";
+
       try {
-        // Fetch the ICS file
-        const icsResponse = await fetch(feed.ical_url);
+        // Fetch the ICS file with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        
+        let icsResponse: Response;
+        try {
+          icsResponse = await fetch(feed.ical_url, { signal: controller.signal });
+        } catch (fetchErr) {
+          clearTimeout(timeoutId);
+          const msg = fetchErr instanceof DOMException && fetchErr.name === "AbortError"
+            ? "Feed URL timed out after 30 seconds"
+            : `Failed to fetch feed: ${String(fetchErr)}`;
+          feedResult.errors.push(msg);
+          syncStatus = "error";
+          await updateFeedSyncStatus(supabase, feed.id, syncStatus, feedResult);
+          results.push(feedResult);
+          continue;
+        }
+        clearTimeout(timeoutId);
+
         if (!icsResponse.ok) {
           feedResult.errors.push(
-            `Failed to fetch: ${icsResponse.status} ${icsResponse.statusText}`
+            `HTTP ${icsResponse.status}: ${icsResponse.statusText}`
           );
+          syncStatus = "error";
+          await updateFeedSyncStatus(supabase, feed.id, syncStatus, feedResult);
           results.push(feedResult);
           continue;
         }
 
+        const contentType = icsResponse.headers.get("content-type") || "";
         const icsText = await icsResponse.text();
-        const events = parseICS(icsText);
 
+        // Validate it's actually an iCal file
+        if (!icsText.includes("BEGIN:VCALENDAR")) {
+          feedResult.errors.push("Response is not a valid iCal file");
+          syncStatus = "error";
+          await updateFeedSyncStatus(supabase, feed.id, syncStatus, feedResult);
+          results.push(feedResult);
+          continue;
+        }
+
+        const events = parseICS(icsText);
+        const feedUids = new Set(events.map(e => e.uid));
+
+        // === CANCELLATION DETECTION ===
+        // Find reservations imported from this feed that are no longer in the iCal
+        const { data: existingFromFeed } = await supabase
+          .from("reservations")
+          .select("id, ical_uid, status")
+          .eq("hotel_id", feed.hotel_id)
+          .eq("external_platform", feed.name)
+          .eq("booking_source", "ical")
+          .in("status", ["confirmed", "checked_in"])
+          .not("ical_uid", "is", null);
+
+        if (existingFromFeed) {
+          for (const existing of existingFromFeed) {
+            if (existing.ical_uid && !feedUids.has(existing.ical_uid)) {
+              // This UID was removed from the feed — cancel it
+              const { error: cancelErr } = await supabase
+                .from("reservations")
+                .update({
+                  status: "cancelled",
+                  notes: `Auto-cancelled: removed from ${feed.name} iCal feed on ${new Date().toISOString().split("T")[0]}`,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", existing.id);
+
+              if (!cancelErr) {
+                feedResult.cancelled++;
+              } else {
+                feedResult.errors.push(`Cancel ${existing.ical_uid}: ${cancelErr.message}`);
+              }
+            }
+          }
+        }
+
+        // === IMPORT / UPDATE EVENTS ===
         for (const event of events) {
           try {
+            // Validate dates
+            const checkIn = new Date(event.dtstart);
+            const checkOut = new Date(event.dtend);
+            if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+              feedResult.errors.push(`Event ${event.uid}: Invalid dates`);
+              continue;
+            }
+            if (checkOut <= checkIn) {
+              feedResult.errors.push(`Event ${event.uid}: check_out must be after check_in`);
+              continue;
+            }
+            // Skip very old events (more than 1 year ago)
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+            if (checkOut < oneYearAgo) {
+              feedResult.skipped++;
+              continue;
+            }
+
             // Check if reservation with this ical_uid already exists
             const { data: existing } = await supabase
               .from("reservations")
@@ -159,6 +242,12 @@ Deno.serve(async (req) => {
               .maybeSingle();
 
             if (existing) {
+              // Skip if cancelled manually (don't resurrect)
+              if (existing.status === "cancelled") {
+                feedResult.skipped++;
+                continue;
+              }
+
               // Update if dates changed
               if (
                 existing.check_in !== event.dtstart ||
@@ -231,7 +320,7 @@ Deno.serve(async (req) => {
 
             // If conflict, also mark the existing reservation
             if (hasConflict && newRes) {
-              for (const existing of overlapping!) {
+              for (const ex of overlapping!) {
                 await supabase
                   .from("reservations")
                   .update({
@@ -239,7 +328,7 @@ Deno.serve(async (req) => {
                     conflict_with_reservation_id: newRes.id,
                     conflict_reason: "external_booking_overlap",
                   })
-                  .eq("id", existing.id);
+                  .eq("id", ex.id);
               }
               feedResult.conflicts++;
             }
@@ -250,16 +339,18 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Update last_sync
-        await supabase
-          .from("ical_feeds")
-          .update({
-            last_sync: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", feed.id);
+        if (feedResult.errors.length > 0 && (feedResult.imported > 0 || feedResult.updated > 0)) {
+          syncStatus = "partial";
+        } else if (feedResult.errors.length > 0) {
+          syncStatus = "error";
+        }
+
+        // Update feed sync status
+        await updateFeedSyncStatus(supabase, feed.id, syncStatus, feedResult);
       } catch (feedErr) {
         feedResult.errors.push(String(feedErr));
+        syncStatus = "error";
+        await updateFeedSyncStatus(supabase, feed.id, syncStatus, feedResult);
       }
 
       results.push(feedResult);
@@ -275,3 +366,23 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+async function updateFeedSyncStatus(
+  supabase: any,
+  feedId: string,
+  status: string,
+  result: { imported: number; updated: number; cancelled: number; errors: string[] }
+) {
+  await supabase
+    .from("ical_feeds")
+    .update({
+      last_sync: new Date().toISOString(),
+      last_sync_status: status,
+      last_sync_errors: result.errors.slice(0, 10), // Cap stored errors
+      last_sync_imported: result.imported,
+      last_sync_updated: result.updated,
+      last_sync_cancelled: result.cancelled,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", feedId);
+}
