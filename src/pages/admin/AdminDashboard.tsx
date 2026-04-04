@@ -91,7 +91,7 @@ const AdminDashboard = () => {
     payment_received: false, check_in_now: true,
   });
 
-  useSessionTimeout();
+  
 
   const fetchData = useCallback(async () => {
     if (!hotel?.id) return;
