@@ -22,6 +22,7 @@ import AdminStaff from "./pages/admin/AdminStaff";
 import AdminInvoices from "./pages/admin/AdminInvoices";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminLostFound from "./pages/admin/AdminLostFound";
 
 // Superadmin
 import SuperadminLogin from "./pages/superadmin/SuperadminLogin";
@@ -61,6 +62,7 @@ const App = () => (
                   <Route path="pricing" element={<ErrorBoundary fallbackTitle="Pricing error"><AdminPricing /></ErrorBoundary>} />
                   <Route path="staff" element={<ErrorBoundary fallbackTitle="Staff error"><AdminStaff /></ErrorBoundary>} />
                   <Route path="invoices" element={<ErrorBoundary fallbackTitle="Invoices error"><AdminInvoices /></ErrorBoundary>} />
+                  <Route path="lost-found" element={<ErrorBoundary fallbackTitle="Lost & Found error"><AdminLostFound /></ErrorBoundary>} />
                   <Route path="analytics-reports" element={<ErrorBoundary fallbackTitle="Analytics error"><AdminAnalytics /></ErrorBoundary>} />
                   <Route path="settings" element={<ErrorBoundary fallbackTitle="Settings error"><AdminSettings /></ErrorBoundary>} />
                 </Route>

@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, CalendarDays, BedDouble, CalendarRange, DollarSign,
   Users, FileText, Settings, LogOut, Menu, X, ChevronDown, Sun, Moon,
-  BarChart3, DoorOpen, BotMessageSquare,
+  BarChart3, DoorOpen, BotMessageSquare, PackageSearch,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -37,6 +37,7 @@ function AdminLayoutInner() {
     { path: '/admin/pricing', icon: DollarSign, label: t('admin.pricing') },
     { path: '/admin/staff', icon: Users, label: t('admin.staff') },
     { path: '/admin/invoices', icon: FileText, label: t('admin.invoices') },
+    { path: '/admin/lost-found', icon: PackageSearch, label: 'Lost & Found' },
     { path: '/admin/analytics-reports', icon: BarChart3, label: t('admin.analyticsReports') },
     { path: '/admin/settings', icon: Settings, label: t('admin.settings') },
   ];
