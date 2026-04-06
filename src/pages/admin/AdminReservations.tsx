@@ -302,10 +302,11 @@ const AdminReservations = () => {
       confirmed: 'Confirm this reservation',
       checked_in: 'Check in this guest',
       completed: 'Check out this guest',
+      no_show: 'Mark as no-show',
     };
     setConfirmAction({
       title: labels[status] || `Change status to ${status}`,
-      description: 'Are you sure? This action cannot be undone.',
+      description: status === 'no_show' ? 'Mark this guest as a no-show? The room will be freed up.' : 'Are you sure? This action cannot be undone.',
       onConfirm: () => { updateStatus(id, status); setConfirmAction(null); },
     });
   };
@@ -567,6 +568,7 @@ const AdminReservations = () => {
               <SelectItem value="pending">{t('admin.pending')}</SelectItem>
               <SelectItem value="confirmed">{t('admin.confirmed')}</SelectItem>
               <SelectItem value="checked_in">{t('admin.checkedIn')}</SelectItem>
+              <SelectItem value="no_show">No Show</SelectItem>
               <SelectItem value="cancelled">{t('admin.cancelled')}</SelectItem>
               <SelectItem value="completed">{t('admin.completed')}</SelectItem>
             </SelectContent>
@@ -644,9 +646,14 @@ const AdminReservations = () => {
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => confirmAndUpdateStatus(r.id, 'cancelled')}><X size={14} /></Button>
                           </>}
                           {r.status === 'confirmed' && (
-                            <Button variant="ghost" size="sm" className="h-8 text-xs text-blue-600 gap-1" onClick={() => confirmAndUpdateStatus(r.id, 'checked_in')}>
-                              <LogIn size={14} /> {t('admin.checkInAction')}
-                            </Button>
+                            <>
+                              <Button variant="ghost" size="sm" className="h-8 text-xs text-blue-600 gap-1" onClick={() => confirmAndUpdateStatus(r.id, 'checked_in')}>
+                                <LogIn size={14} /> {t('admin.checkInAction')}
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 text-xs text-purple-600 gap-1" onClick={() => confirmAndUpdateStatus(r.id, 'no_show')}>
+                                No Show
+                              </Button>
+                            </>
                           )}
                           {r.status === 'checked_in' && (
                             <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => confirmAndUpdateStatus(r.id, 'completed')}>
@@ -762,6 +769,7 @@ const AdminReservations = () => {
                 </>}
                 {selectedRes.status === 'confirmed' && <>
                   <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-1" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'checked_in')}><LogIn size={14} /> {t('admin.checkInAction')}</Button>
+                  <Button size="sm" variant="outline" className="text-purple-600 border-purple-300 gap-1" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'no_show')}>No Show</Button>
                   <Button size="sm" variant="outline" className="text-destructive border-destructive/30" onClick={() => confirmAndUpdateStatus(selectedRes.id, 'cancelled')}><X size={14} className="mr-1" /> {t('admin.cancel')}</Button>
                 </>}
                 {selectedRes.status === 'checked_in' && (
