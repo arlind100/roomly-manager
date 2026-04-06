@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { DatePickerInput } from '@/components/ui/date-picker-input';
+import { TimePickerInput } from '@/components/ui/time-picker-input';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
@@ -39,14 +40,14 @@ type ReservationForm = {
   guest_name: string; guest_email: string; guest_phone: string;
   room_type_id: string; room_id: string; check_in: string; check_out: string;
   check_in_time: string; check_out_time: string;
-  guests_count: number; total_price: number; special_requests: string; notes: string;
+  guests_count: number; num_children: number; total_price: number; special_requests: string; notes: string;
   booking_source: string;
 };
 
 const emptyForm: ReservationForm = {
   guest_name: '', guest_email: '', guest_phone: '', room_type_id: '', room_id: '',
   check_in: '', check_out: '', check_in_time: '', check_out_time: '',
-  guests_count: 1, total_price: 0, special_requests: '', notes: '',
+  guests_count: 1, num_children: 0, total_price: 0, special_requests: '', notes: '',
   booking_source: 'direct',
 };
 
@@ -56,9 +57,10 @@ interface FormFieldsProps {
   roomTypes: any[];
   rooms: any[];
   t: (key: string) => string;
+  childPricingEnabled?: boolean;
 }
 
-const FormFields = ({ f, setF, roomTypes, rooms, t }: FormFieldsProps) => {
+const FormFields = ({ f, setF, roomTypes, rooms, t, childPricingEnabled }: FormFieldsProps) => {
   const availableRooms = rooms.filter(r =>
     r.room_type_id === f.room_type_id &&
     (r.operational_status === 'available' || r.operational_status === 'reserved')
@@ -87,11 +89,14 @@ const FormFields = ({ f, setF, roomTypes, rooms, t }: FormFieldsProps) => {
             </SelectContent>
           </Select>
         </div>
-        <div><Label>{t('admin.guests')}</Label><Input type="number" min={1} value={f.guests_count} onChange={e => setF(p => ({...p, guests_count: parseInt(e.target.value) || 1}))} /></div>
+        <div><Label>Adults</Label><Input type="number" min={1} value={f.guests_count} onChange={e => setF(p => ({...p, guests_count: parseInt(e.target.value) || 1}))} /></div>
+        {childPricingEnabled && (
+          <div><Label>Children</Label><Input type="number" min={0} value={f.num_children} onChange={e => setF(p => ({...p, num_children: parseInt(e.target.value) || 0}))} /></div>
+        )}
         <div><Label>{t('admin.checkIn')} *</Label><DatePickerInput value={f.check_in} onChange={v => setF(p => ({...p, check_in: v}))} placeholder="Check-in date" /></div>
         <div><Label>{t('admin.checkOut')} *</Label><DatePickerInput value={f.check_out} onChange={v => setF(p => ({...p, check_out: v}))} placeholder="Check-out date" /></div>
-        <div><Label>Check-in Time</Label><Input type="time" value={f.check_in_time} onChange={e => setF(p => ({...p, check_in_time: e.target.value}))} /></div>
-        <div><Label>Check-out Time</Label><Input type="time" value={f.check_out_time} onChange={e => setF(p => ({...p, check_out_time: e.target.value}))} /></div>
+        <div><Label>Check-in Time</Label><TimePickerInput value={f.check_in_time} onChange={v => setF(p => ({...p, check_in_time: v}))} placeholder="Check-in time" /></div>
+        <div><Label>Check-out Time</Label><TimePickerInput value={f.check_out_time} onChange={v => setF(p => ({...p, check_out_time: v}))} placeholder="Check-out time" /></div>
         <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={f.total_price} onChange={e => setF(p => ({...p, total_price: parseFloat(e.target.value) || 0}))} /></div>
         <div><Label>Booking Source</Label>
           <Select value={f.booking_source} onValueChange={v => setF(p => ({...p, booking_source: v}))}>
