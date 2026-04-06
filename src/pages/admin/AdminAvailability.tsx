@@ -1,19 +1,22 @@
-import { useEffect, useState } from 'react';
-import { DatePickerInput } from '@/components/ui/date-picker-input';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useHotel } from '@/hooks/useHotel';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CalendarRange, Plus, Trash2, Loader2 } from 'lucide-react';
+import { DatePickerInput } from '@/components/ui/date-picker-input';
+import { CalendarRange, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addDays } from 'date-fns';
 
-import { useHotel } from '@/hooks/useHotel';
+import { OccupancyGrid } from '@/components/admin/availability/OccupancyGrid';
+import { DateDetailPanel } from '@/components/admin/availability/DateDetailPanel';
+import { RoomTypeCards } from '@/components/admin/availability/RoomTypeCards';
+import { BlockedDatesList } from '@/components/admin/availability/BlockedDatesList';
 
 const AdminAvailability = () => {
   const { t } = useLanguage();
@@ -24,67 +27,60 @@ const AdminAvailability = () => {
   const [selectedRoom, setSelectedRoom] = useState('');
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ room_type_id: '', date: '', reason: 'blocked' });
-  const [blocking, setBlocking] = useState(false);
+  const [form, setForm] = useState({ room_type_id: '', startDate: '', endDate: '', reason: 'blocked' });
   const [addingBlock, setAddingBlock] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(format(new Date(), 'yyyy-MM-dd'));
 
   useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!hotel?.id) return;
-    // Only fetch reservations within a 3-month window for performance
-    const rangeStart = format(new Date(), 'yyyy-MM-dd');
-    const rangeEnd = format(addDays(new Date(), 90), 'yyyy-MM-dd');
+    const rangeStart = format(addDays(new Date(), -30), 'yyyy-MM-dd');
+    const rangeEnd = format(addDays(new Date(), 120), 'yyyy-MM-dd');
     const [rtRes, blockRes, resRes] = await Promise.all([
       supabase.from('room_types').select('*').eq('hotel_id', hotel.id),
       supabase.from('availability_blocks').select('*, room_types(name)').eq('hotel_id', hotel.id).gte('date', rangeStart).order('date'),
-      supabase.from('reservations').select('*').eq('hotel_id', hotel.id).neq('status', 'cancelled').lte('check_in', rangeEnd).gte('check_out', rangeStart),
+      supabase.from('reservations').select('id, room_type_id, check_in, check_out, status, guest_name, booking_source').eq('hotel_id', hotel.id).neq('status', 'cancelled').lte('check_in', rangeEnd).gte('check_out', rangeStart),
     ]);
     setRoomTypes(rtRes.data || []);
     setBlocks(blockRes.data || []);
     setReservations(resRes.data || []);
     if (rtRes.data?.[0] && !selectedRoom) setSelectedRoom(rtRes.data[0].id);
     setLoading(false);
-  };
-
-  const handleBlock = async (date: Date) => {
-    if (!selectedRoom || !hotel?.id) return;
-    setBlocking(true);
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const existing = blocks.find(b => b.room_type_id === selectedRoom && b.date === dateStr);
-    if (existing) {
-      await supabase.from('availability_blocks').delete().eq('id', existing.id);
-      toast.success('Date unblocked');
-    } else {
-      await supabase.from('availability_blocks').insert({ hotel_id: hotel.id, room_type_id: selectedRoom, date: dateStr, reason: 'blocked' });
-      toast.success('Date blocked');
-    }
-    setBlocking(false);
-    fetchData();
-  };
+  }, [hotel?.id]);
 
   const handleAddBlock = async () => {
-    if (!form.room_type_id || !form.date) { toast.error('Select room and date'); return; }
-    if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
+    if (!form.room_type_id || !form.startDate) { toast.error('Select room and date'); return; }
+    if (!hotel?.id) return;
     setAddingBlock(true);
-    // Check for duplicate block
-    const { data: existing } = await supabase.from('availability_blocks')
-      .select('id')
-      .eq('hotel_id', hotel.id)
-      .eq('room_type_id', form.room_type_id)
-      .eq('date', form.date)
-      .limit(1);
-    if (existing && existing.length > 0) {
-      toast.error('This date is already blocked for this room type');
+
+    const endDate = form.endDate || form.startDate;
+    const dates: string[] = [];
+    let cur = new Date(form.startDate + 'T00:00:00');
+    const end = new Date(endDate + 'T00:00:00');
+    while (cur <= end) {
+      dates.push(format(cur, 'yyyy-MM-dd'));
+      cur = addDays(cur, 1);
+    }
+
+    // Filter out already blocked dates
+    const existing = new Set(blocks.filter(b => b.room_type_id === form.room_type_id).map(b => b.date));
+    const newDates = dates.filter(d => !existing.has(d));
+
+    if (newDates.length === 0) {
+      toast.error('All selected dates are already blocked');
       setAddingBlock(false);
       return;
     }
-    const { error } = await supabase.from('availability_blocks').insert({ hotel_id: hotel.id, room_type_id: form.room_type_id, date: form.date, reason: form.reason });
+
+    const rows = newDates.map(d => ({ hotel_id: hotel.id, room_type_id: form.room_type_id, date: d, reason: form.reason }));
+    const { error } = await supabase.from('availability_blocks').insert(rows);
     setAddingBlock(false);
     if (error) { toast.error(error.message); return; }
-    toast.success('Block added');
+    toast.success(`${newDates.length} date(s) blocked`);
     setShowAdd(false);
+    setForm({ room_type_id: '', startDate: '', endDate: '', reason: 'blocked' });
     fetchData();
   };
 
@@ -96,114 +92,107 @@ const AdminAvailability = () => {
     fetchData();
   };
 
-  // Calculate per-room availability for today
   const today = format(new Date(), 'yyyy-MM-dd');
   const roomAvailability = roomTypes.map(rt => {
     const booked = reservations.filter(r => r.room_type_id === rt.id && r.check_in <= today && r.check_out > today).length;
     const blocked = blocks.filter(b => b.room_type_id === rt.id && b.date === today).length;
     const free = Math.max(0, rt.available_units - booked - blocked);
-    return { ...rt, booked, blocked: blocked, free };
-  });
-
-  const roomBlocked = blocks.filter(b => b.room_type_id === selectedRoom).map(b => new Date(b.date));
-  const roomReserved = reservations.filter(r => r.room_type_id === selectedRoom).flatMap(r => {
-    const dates: Date[] = [];
-    const start = new Date(r.check_in); const end = new Date(r.check_out);
-    for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) dates.push(new Date(d));
-    return dates;
+    return { ...rt, booked, blocked, free };
   });
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="space-y-6">
-      {/* Room Availability Overview */}
+    <div className="space-y-5">
+      {/* Today's snapshot */}
       <div>
-        <h2 className="text-sm font-semibold mb-3">{t('admin.availOverview')}</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Today's Availability</h2>
         {roomTypes.length === 0 ? (
           <EmptyState icon={CalendarRange} title={t('admin.noRoomTypesAvail')} description={t('admin.noRoomTypesAvailDesc')} />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {roomAvailability.map(ra => (
-              <div key={ra.id} className={`bg-card rounded-lg border p-4 cursor-pointer transition-all ${selectedRoom === ra.id ? 'border-primary ring-1 ring-primary' : 'border-border hover:border-primary/50'}`} onClick={() => setSelectedRoom(ra.id)}>
-                <h4 className="font-medium text-sm mb-2">{ra.name}</h4>
-                <div className="flex items-center gap-3 text-xs">
-                  <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500" /><span>{ra.free} {t('admin.freeUnits')}</span></div>
-                  <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-500" /><span>{ra.booked} {t('admin.bookedUnits')}</span></div>
-                  <span className="text-muted-foreground">/ {ra.available_units}</span>
-                </div>
-                {/* Progress bar */}
-                <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${ra.available_units > 0 ? (ra.booked / ra.available_units) * 100 : 0}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
+          <RoomTypeCards roomAvailability={roomAvailability} selectedRoom={selectedRoom} onSelect={setSelectedRoom} />
         )}
       </div>
 
       {roomTypes.length > 0 && (
         <>
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+          {/* Actions */}
+          <div className="flex items-center justify-between">
             <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-              <SelectTrigger className="w-56"><SelectValue placeholder={t('admin.selectRoomType')} /></SelectTrigger>
+              <SelectTrigger className="w-52 h-8 text-xs">
+                <SelectValue placeholder="Select room type" />
+              </SelectTrigger>
               <SelectContent>{roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
             </Select>
-            <Button variant="outline" onClick={() => setShowAdd(true)}><Plus size={16} className="mr-1" /> {t('admin.blockDates')}</Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => setShowAdd(true)}>
+              <Plus size={14} /> Block Dates
+            </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card rounded-lg border border-border/60 p-6 shadow-card">
-              <p className="text-sm text-muted-foreground mb-4">{t('admin.clickToBlock')}</p>
-              <Calendar
-                mode="single"
-                onSelect={(date) => date && handleBlock(date)}
-                modifiers={{ reserved: roomReserved, blocked: roomBlocked }}
-                modifiersClassNames={{ reserved: 'bg-yellow-500/30 text-yellow-700 dark:text-yellow-300', blocked: 'bg-destructive/30 text-destructive line-through' }}
-                className="p-3"
+          {/* Main content: Grid + Detail */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-3">
+              <OccupancyGrid
+                roomTypes={roomTypes}
+                reservations={reservations}
+                blocks={blocks}
+                onDateClick={setSelectedDate}
+                selectedDate={selectedDate}
               />
-              <div className="flex gap-4 mt-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-yellow-500/30" /> {t('admin.reserved')}</div>
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-destructive/30" /> {t('admin.blocked')}</div>
-              </div>
             </div>
-
-            <div className="bg-card rounded-lg border border-border/60 p-6 shadow-card">
-              <h3 className="text-sm font-semibold mb-4">{t('admin.blockedDates')}</h3>
-              {blocks.filter(b => b.room_type_id === selectedRoom).length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t('admin.noBlockedDates')}</p>
+            <div className="lg:col-span-2 space-y-4">
+              {selectedDate ? (
+                <DateDetailPanel
+                  date={selectedDate}
+                  roomTypes={roomTypes}
+                  reservations={reservations}
+                  blocks={blocks}
+                />
               ) : (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                  {blocks.filter(b => b.room_type_id === selectedRoom).map(b => (
-                    <div key={b.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/50">
-                      <div><p className="text-sm">{format(new Date(b.date + 'T00:00:00'), 'MMM dd, yyyy')}</p><p className="text-xs text-muted-foreground">{b.reason}</p></div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" disabled={deletingId === b.id} onClick={() => deleteBlock(b.id)}>
-                        {deletingId === b.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                      </Button>
-                    </div>
-                  ))}
+                <div className="bg-card rounded-lg border border-border/60 p-6 shadow-card text-center text-sm text-muted-foreground">
+                  Click a date on the calendar to see details
                 </div>
               )}
+              <BlockedDatesList
+                blocks={blocks}
+                selectedRoom={selectedRoom}
+                deletingId={deletingId}
+                onDelete={deleteBlock}
+              />
             </div>
           </div>
         </>
       )}
 
+      {/* Block dates dialog — now supports range */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{t('admin.blockDate')}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Block Date Range</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div><Label>{t('admin.roomType')}</Label>
-              <Select value={form.room_type_id} onValueChange={v => setForm(f => ({...f, room_type_id: v}))}>
-                <SelectTrigger><SelectValue placeholder={t('admin.selectRoom')} /></SelectTrigger>
+            <div>
+              <Label>Room Type</Label>
+              <Select value={form.room_type_id} onValueChange={v => setForm(f => ({ ...f, room_type_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select room type" /></SelectTrigger>
                 <SelectContent>{roomTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>{t('admin.date')}</Label><DatePickerInput value={form.date} onChange={v => setForm(f => ({...f, date: v}))} placeholder="Block date" /></div>
-            <div><Label>{t('admin.reason')}</Label><Input value={form.reason} onChange={e => setForm(f => ({...f, reason: e.target.value}))} placeholder="Maintenance, holiday, etc." /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Start Date</Label>
+                <DatePickerInput value={form.startDate} onChange={v => setForm(f => ({ ...f, startDate: v }))} placeholder="From" />
+              </div>
+              <div>
+                <Label>End Date <span className="text-muted-foreground text-[10px]">(optional)</span></Label>
+                <DatePickerInput value={form.endDate} onChange={v => setForm(f => ({ ...f, endDate: v }))} placeholder="To" />
+              </div>
+            </div>
+            <div>
+              <Label>Reason</Label>
+              <Input value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} placeholder="Maintenance, holiday, etc." />
+            </div>
             <Button onClick={handleAddBlock} disabled={addingBlock} className="w-full gap-1.5">
               {addingBlock && <Loader2 size={14} className="animate-spin" />}
-              {addingBlock ? 'Blocking...' : t('admin.blockDate')}
+              {addingBlock ? 'Blocking...' : 'Block Dates'}
             </Button>
           </div>
         </DialogContent>
