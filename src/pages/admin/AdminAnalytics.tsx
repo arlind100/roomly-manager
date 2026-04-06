@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
+import { useHotel } from '@/hooks/useHotel';
 import { displayPrice } from '@/lib/currency';
 import { StatCard } from '@/components/admin/StatCard';
 import { StatusBadge } from '@/components/admin/StatusBadge';
@@ -20,7 +21,7 @@ import {
 import {
   BarChart3, TrendingUp, CalendarDays, DollarSign, BedDouble, Users,
   Hotel, Star, Clock, Download, FileSpreadsheet, CalendarIcon, ChevronDown,
-  PieChart as PieChartIcon, Activity, Target, Award,
+  PieChart as PieChartIcon, Activity, Target, Award, Moon,
 } from 'lucide-react';
 import {
   format, subDays, addDays, startOfMonth, endOfMonth, startOfDay, endOfDay,
@@ -300,6 +301,7 @@ const AdminAnalytics = () => {
           <TabsTrigger value="overview" className="gap-1.5"><BarChart3 size={14} /> Overview</TabsTrigger>
           <TabsTrigger value="reports" className="gap-1.5"><FileSpreadsheet size={14} /> Reports</TabsTrigger>
           <TabsTrigger value="performance" className="gap-1.5"><Activity size={14} /> Performance</TabsTrigger>
+          <TabsTrigger value="night-audit" className="gap-1.5"><Moon size={14} /> Night Audit</TabsTrigger>
         </TabsList>
 
         {/* ========== OVERVIEW TAB ========== */}
