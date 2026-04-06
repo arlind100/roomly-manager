@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.read-audit-log]
 verify_jwt = false
+
+[functions.generate-night-audit]
+verify_jwt = false
+
+[functions.send-noshow-email]
+verify_jwt = false
