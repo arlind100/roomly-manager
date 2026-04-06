@@ -113,6 +113,9 @@ export type Database = {
           cancellation_policy: string | null
           check_in_time: string | null
           check_out_time: string | null
+          child_price_type: string
+          child_price_value: number
+          child_pricing_enabled: boolean
           cleaning_duration_minutes: number
           conflict_policy: string
           created_at: string
@@ -125,6 +128,10 @@ export type Database = {
           logo_url: string | null
           monthly_price: number | null
           name: string
+          night_audit_email: string | null
+          night_audit_enabled: boolean
+          night_audit_time: string
+          no_show_cutoff_time: string
           phone: string | null
           subscription_paid_until: string | null
           subscription_plan: string | null
@@ -140,6 +147,9 @@ export type Database = {
           cancellation_policy?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
+          child_price_type?: string
+          child_price_value?: number
+          child_pricing_enabled?: boolean
           cleaning_duration_minutes?: number
           conflict_policy?: string
           created_at?: string
@@ -152,6 +162,10 @@ export type Database = {
           logo_url?: string | null
           monthly_price?: number | null
           name?: string
+          night_audit_email?: string | null
+          night_audit_enabled?: boolean
+          night_audit_time?: string
+          no_show_cutoff_time?: string
           phone?: string | null
           subscription_paid_until?: string | null
           subscription_plan?: string | null
@@ -167,6 +181,9 @@ export type Database = {
           cancellation_policy?: string | null
           check_in_time?: string | null
           check_out_time?: string | null
+          child_price_type?: string
+          child_price_value?: number
+          child_pricing_enabled?: boolean
           cleaning_duration_minutes?: number
           conflict_policy?: string
           created_at?: string
@@ -179,6 +196,10 @@ export type Database = {
           logo_url?: string | null
           monthly_price?: number | null
           name?: string
+          night_audit_email?: string | null
+          night_audit_enabled?: boolean
+          night_audit_time?: string
+          no_show_cutoff_time?: string
           phone?: string | null
           subscription_paid_until?: string | null
           subscription_plan?: string | null
@@ -306,6 +327,54 @@ export type Database = {
           },
         ]
       }
+      invoice_extras: {
+        Row: {
+          created_at: string
+          description: string
+          hotel_id: string
+          id: string
+          invoice_id: string
+          quantity: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          hotel_id: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+          total: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          hotel_id?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_extras_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_extras_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
@@ -353,6 +422,141 @@ export type Database = {
             columns: ["reservation_id"]
             isOneToOne: false
             referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lost_found_items: {
+        Row: {
+          claimed_by: string | null
+          claimed_date: string | null
+          created_at: string
+          found_by: string
+          found_date: string
+          hotel_id: string
+          id: string
+          item_description: string
+          notes: string | null
+          reservation_id: string | null
+          room_id: string | null
+          status: string
+          storage_location: string | null
+        }
+        Insert: {
+          claimed_by?: string | null
+          claimed_date?: string | null
+          created_at?: string
+          found_by: string
+          found_date?: string
+          hotel_id: string
+          id?: string
+          item_description: string
+          notes?: string | null
+          reservation_id?: string | null
+          room_id?: string | null
+          status?: string
+          storage_location?: string | null
+        }
+        Update: {
+          claimed_by?: string | null
+          claimed_date?: string | null
+          created_at?: string
+          found_by?: string
+          found_date?: string
+          hotel_id?: string
+          id?: string
+          item_description?: string
+          notes?: string | null
+          reservation_id?: string | null
+          room_id?: string | null
+          status?: string
+          storage_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lost_found_items_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lost_found_items_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lost_found_items_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      night_audit_logs: {
+        Row: {
+          arrivals_actual: number
+          arrivals_expected: number
+          audit_date: string
+          departures_actual: number
+          departures_expected: number
+          generated_at: string
+          hotel_id: string
+          id: string
+          no_shows: number
+          occupancy_rate: number
+          pdf_url: string | null
+          revenue_today: number
+          rooms_by_status: Json
+          sent_to_email: string | null
+          unpaid_invoices_count: number
+          unpaid_invoices_total: number
+        }
+        Insert: {
+          arrivals_actual?: number
+          arrivals_expected?: number
+          audit_date: string
+          departures_actual?: number
+          departures_expected?: number
+          generated_at?: string
+          hotel_id: string
+          id?: string
+          no_shows?: number
+          occupancy_rate?: number
+          pdf_url?: string | null
+          revenue_today?: number
+          rooms_by_status?: Json
+          sent_to_email?: string | null
+          unpaid_invoices_count?: number
+          unpaid_invoices_total?: number
+        }
+        Update: {
+          arrivals_actual?: number
+          arrivals_expected?: number
+          audit_date?: string
+          departures_actual?: number
+          departures_expected?: number
+          generated_at?: string
+          hotel_id?: string
+          id?: string
+          no_shows?: number
+          occupancy_rate?: number
+          pdf_url?: string | null
+          revenue_today?: number
+          rooms_by_status?: Json
+          sent_to_email?: string | null
+          unpaid_invoices_count?: number
+          unpaid_invoices_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "night_audit_logs_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
             referencedColumns: ["id"]
           },
         ]
@@ -469,6 +673,7 @@ export type Database = {
           check_in_time: string | null
           check_out: string
           check_out_time: string | null
+          child_total: number
           conflict_reason: string | null
           conflict_with_reservation_id: string | null
           created_at: string
@@ -486,6 +691,7 @@ export type Database = {
           is_conflict: boolean
           is_external: boolean
           notes: string | null
+          num_children: number
           payment_method: string | null
           payment_status: string | null
           reservation_code: string
@@ -502,6 +708,7 @@ export type Database = {
           check_in_time?: string | null
           check_out: string
           check_out_time?: string | null
+          child_total?: number
           conflict_reason?: string | null
           conflict_with_reservation_id?: string | null
           created_at?: string
@@ -519,6 +726,7 @@ export type Database = {
           is_conflict?: boolean
           is_external?: boolean
           notes?: string | null
+          num_children?: number
           payment_method?: string | null
           payment_status?: string | null
           reservation_code?: string
@@ -535,6 +743,7 @@ export type Database = {
           check_in_time?: string | null
           check_out?: string
           check_out_time?: string | null
+          child_total?: number
           conflict_reason?: string | null
           conflict_with_reservation_id?: string | null
           created_at?: string
@@ -552,6 +761,7 @@ export type Database = {
           is_conflict?: boolean
           is_external?: boolean
           notes?: string | null
+          num_children?: number
           payment_method?: string | null
           payment_status?: string | null
           reservation_code?: string
@@ -822,22 +1032,40 @@ export type Database = {
         Args: { p_reservation_id: string }
         Returns: Json
       }
-      create_reservation_if_available: {
-        Args: {
-          p_booking_source?: string
-          p_check_in: string
-          p_check_out: string
-          p_guest_email?: string
-          p_guest_name: string
-          p_guest_phone?: string
-          p_guests_count?: number
-          p_hotel_id: string
-          p_room_id?: string
-          p_room_type_id: string
-          p_total_price?: number
-        }
-        Returns: string
-      }
+      create_reservation_if_available:
+        | {
+            Args: {
+              p_booking_source?: string
+              p_check_in: string
+              p_check_out: string
+              p_guest_email?: string
+              p_guest_name: string
+              p_guest_phone?: string
+              p_guests_count?: number
+              p_hotel_id: string
+              p_room_id?: string
+              p_room_type_id: string
+              p_total_price?: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_booking_source?: string
+              p_check_in: string
+              p_check_out: string
+              p_guest_email?: string
+              p_guest_name: string
+              p_guest_phone?: string
+              p_guests_count?: number
+              p_hotel_id: string
+              p_num_children?: number
+              p_room_id?: string
+              p_room_type_id: string
+              p_total_price?: number
+            }
+            Returns: string
+          }
       get_analytics_summary: {
         Args: { p_from: string; p_hotel_id: string; p_to: string }
         Returns: Json
@@ -853,25 +1081,46 @@ export type Database = {
         }
         Returns: boolean
       }
-      update_reservation_if_available: {
-        Args: {
-          p_booking_source?: string
-          p_check_in?: string
-          p_check_out?: string
-          p_guest_email?: string
-          p_guest_name?: string
-          p_guest_phone?: string
-          p_guests_count?: number
-          p_hotel_id: string
-          p_notes?: string
-          p_reservation_id: string
-          p_room_id?: string
-          p_room_type_id: string
-          p_special_requests?: string
-          p_total_price?: number
-        }
-        Returns: undefined
-      }
+      update_reservation_if_available:
+        | {
+            Args: {
+              p_booking_source?: string
+              p_check_in?: string
+              p_check_out?: string
+              p_guest_email?: string
+              p_guest_name?: string
+              p_guest_phone?: string
+              p_guests_count?: number
+              p_hotel_id: string
+              p_notes?: string
+              p_reservation_id: string
+              p_room_id?: string
+              p_room_type_id: string
+              p_special_requests?: string
+              p_total_price?: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_booking_source?: string
+              p_check_in?: string
+              p_check_out?: string
+              p_guest_email?: string
+              p_guest_name?: string
+              p_guest_phone?: string
+              p_guests_count?: number
+              p_hotel_id: string
+              p_notes?: string
+              p_num_children?: number
+              p_reservation_id: string
+              p_room_id?: string
+              p_room_type_id: string
+              p_special_requests?: string
+              p_total_price?: number
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       app_role: "admin" | "manager" | "staff"
