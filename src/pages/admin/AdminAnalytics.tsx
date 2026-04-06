@@ -645,6 +645,11 @@ const AdminAnalytics = () => {
             </ResponsiveContainer>
           </div>
         </TabsContent>
+
+        {/* ========== NIGHT AUDIT TAB ========== */}
+        <TabsContent value="night-audit" className="space-y-6">
+          <NightAuditTab hotelId={hotel?.id} cur={cur} />
+        </TabsContent>
       </Tabs>
     </div>
   );
