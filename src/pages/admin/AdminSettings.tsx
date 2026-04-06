@@ -108,6 +108,13 @@ const AdminSettings = () => {
       cancellation_policy: hotel.cancellation_policy, tax_percentage: hotel.tax_percentage,
       conflict_policy: hotel.conflict_policy,
       cleaning_duration_minutes: hotel.cleaning_duration_minutes || 120,
+      child_pricing_enabled: hotel.child_pricing_enabled || false,
+      child_price_type: hotel.child_price_type || 'percentage',
+      child_price_value: hotel.child_price_value || 0,
+      no_show_cutoff_time: hotel.no_show_cutoff_time || '23:00',
+      night_audit_enabled: hotel.night_audit_enabled || false,
+      night_audit_time: hotel.night_audit_time || '23:59',
+      night_audit_email: hotel.night_audit_email || null,
       updated_at: new Date().toISOString(),
     }).eq('id', hotel.id);
     setSaving(false);
