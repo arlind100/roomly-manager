@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { TimePickerInput } from '@/components/ui/time-picker-input';
 import { toast } from 'sonner';
 import { languageNames, type Language } from '@/i18n/translations';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -365,8 +366,8 @@ const AdminSettings = () => {
               <SelectContent>{currencies.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div><Label>{t('admin.checkInTime')}</Label><Input type="time" value={hotel.check_in_time || ''} onChange={e => update('check_in_time', e.target.value)} /></div>
-          <div><Label>{t('admin.checkOutTime')}</Label><Input type="time" value={hotel.check_out_time || ''} onChange={e => update('check_out_time', e.target.value)} /></div>
+          <div><Label>{t('admin.checkInTime')}</Label><TimePickerInput value={hotel.check_in_time || ''} onChange={v => update('check_in_time', v)} placeholder="Check-in time" /></div>
+          <div><Label>{t('admin.checkOutTime')}</Label><TimePickerInput value={hotel.check_out_time || ''} onChange={v => update('check_out_time', v)} placeholder="Check-out time" /></div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><Label>{t('admin.taxPercentage')}</Label><Input type="number" min={0} max={100} step={0.01} value={hotel.tax_percentage || 0} onChange={e => update('tax_percentage', parseFloat(e.target.value) || 0)} /></div>
@@ -413,7 +414,7 @@ const AdminSettings = () => {
         <h2 className="text-sm font-semibold">Operations</h2>
         <div>
           <Label>No-Show Cutoff Time</Label>
-          <Input type="time" value={hotel.no_show_cutoff_time || '23:00'} onChange={e => update('no_show_cutoff_time', e.target.value)} />
+          <TimePickerInput value={hotel.no_show_cutoff_time || '23:00'} onChange={v => update('no_show_cutoff_time', v)} placeholder="Cutoff time" />
           <p className="text-xs text-muted-foreground mt-1">After this time, a "No Show" button appears on the dashboard for unconfirmed arrivals</p>
         </div>
       </section>
@@ -432,7 +433,7 @@ const AdminSettings = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <div>
               <Label>Audit Generation Time</Label>
-              <Input type="time" value={hotel.night_audit_time || '23:59'} onChange={e => update('night_audit_time', e.target.value)} />
+              <TimePickerInput value={hotel.night_audit_time || '23:59'} onChange={v => update('night_audit_time', v)} placeholder="Audit time" />
             </div>
             <div>
               <Label>Recipient Email</Label>

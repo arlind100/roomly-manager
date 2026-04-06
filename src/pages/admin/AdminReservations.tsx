@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { DatePickerInput } from '@/components/ui/date-picker-input';
+import { TimePickerInput } from '@/components/ui/time-picker-input';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
@@ -39,14 +40,14 @@ type ReservationForm = {
   guest_name: string; guest_email: string; guest_phone: string;
   room_type_id: string; room_id: string; check_in: string; check_out: string;
   check_in_time: string; check_out_time: string;
-  guests_count: number; total_price: number; special_requests: string; notes: string;
+  guests_count: number; num_children: number; total_price: number; special_requests: string; notes: string;
   booking_source: string;
 };
 
 const emptyForm: ReservationForm = {
   guest_name: '', guest_email: '', guest_phone: '', room_type_id: '', room_id: '',
   check_in: '', check_out: '', check_in_time: '', check_out_time: '',
-  guests_count: 1, total_price: 0, special_requests: '', notes: '',
+  guests_count: 1, num_children: 0, total_price: 0, special_requests: '', notes: '',
   booking_source: 'direct',
 };
 
@@ -56,9 +57,10 @@ interface FormFieldsProps {
   roomTypes: any[];
   rooms: any[];
   t: (key: string) => string;
+  childPricingEnabled?: boolean;
 }
 
-const FormFields = ({ f, setF, roomTypes, rooms, t }: FormFieldsProps) => {
+const FormFields = ({ f, setF, roomTypes, rooms, t, childPricingEnabled }: FormFieldsProps) => {
   const availableRooms = rooms.filter(r =>
     r.room_type_id === f.room_type_id &&
     (r.operational_status === 'available' || r.operational_status === 'reserved')
@@ -87,11 +89,14 @@ const FormFields = ({ f, setF, roomTypes, rooms, t }: FormFieldsProps) => {
             </SelectContent>
           </Select>
         </div>
-        <div><Label>{t('admin.guests')}</Label><Input type="number" min={1} value={f.guests_count} onChange={e => setF(p => ({...p, guests_count: parseInt(e.target.value) || 1}))} /></div>
+        <div><Label>Adults</Label><Input type="number" min={1} value={f.guests_count} onChange={e => setF(p => ({...p, guests_count: parseInt(e.target.value) || 1}))} /></div>
+        {childPricingEnabled && (
+          <div><Label>Children</Label><Input type="number" min={0} value={f.num_children} onChange={e => setF(p => ({...p, num_children: parseInt(e.target.value) || 0}))} /></div>
+        )}
         <div><Label>{t('admin.checkIn')} *</Label><DatePickerInput value={f.check_in} onChange={v => setF(p => ({...p, check_in: v}))} placeholder="Check-in date" /></div>
         <div><Label>{t('admin.checkOut')} *</Label><DatePickerInput value={f.check_out} onChange={v => setF(p => ({...p, check_out: v}))} placeholder="Check-out date" /></div>
-        <div><Label>Check-in Time</Label><Input type="time" value={f.check_in_time} onChange={e => setF(p => ({...p, check_in_time: e.target.value}))} /></div>
-        <div><Label>Check-out Time</Label><Input type="time" value={f.check_out_time} onChange={e => setF(p => ({...p, check_out_time: e.target.value}))} /></div>
+        <div><Label>Check-in Time</Label><TimePickerInput value={f.check_in_time} onChange={v => setF(p => ({...p, check_in_time: v}))} placeholder="Check-in time" /></div>
+        <div><Label>Check-out Time</Label><TimePickerInput value={f.check_out_time} onChange={v => setF(p => ({...p, check_out_time: v}))} placeholder="Check-out time" /></div>
         <div><Label>{t('admin.totalPrice')}</Label><Input type="number" min={0} value={f.total_price} onChange={e => setF(p => ({...p, total_price: parseFloat(e.target.value) || 0}))} /></div>
         <div><Label>Booking Source</Label>
           <Select value={f.booking_source} onValueChange={v => setF(p => ({...p, booking_source: v}))}>
@@ -472,6 +477,7 @@ const AdminReservations = () => {
       p_guest_email: form.guest_email || null,
       p_guest_phone: form.guest_phone || null,
       p_guests_count: form.guests_count,
+      p_num_children: form.num_children || 0,
       p_total_price: form.total_price || null,
       p_booking_source: form.booking_source || 'direct',
       p_room_id: roomId,
@@ -495,7 +501,7 @@ const AdminReservations = () => {
       room_type_id: r.room_type_id || '', room_id: r.room_id || '',
       check_in: r.check_in, check_out: r.check_out,
       check_in_time: r.check_in_time || '', check_out_time: r.check_out_time || '',
-      guests_count: r.guests_count, total_price: Number(r.total_price) || 0,
+      guests_count: r.guests_count, num_children: r.num_children || 0, total_price: Number(r.total_price) || 0,
       special_requests: r.special_requests || '', notes: r.notes || '',
       booking_source: r.booking_source || 'direct',
     });
@@ -517,6 +523,7 @@ const AdminReservations = () => {
       p_guest_email: editForm.guest_email || null,
       p_guest_phone: editForm.guest_phone || null,
       p_guests_count: editForm.guests_count,
+      p_num_children: editForm.num_children || 0,
       p_total_price: editForm.total_price || null,
       p_booking_source: editForm.booking_source || null,
       p_special_requests: editForm.special_requests || null,
@@ -734,7 +741,7 @@ const AdminReservations = () => {
                 <div><span className="text-muted-foreground block text-xs">{t('admin.guestEmail')}</span>{selectedRes.guest_email || '—'}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.guestPhone')}</span>{selectedRes.guest_phone || '—'}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.room')}</span>{selectedRes.room_types?.name || '—'}</div>
-                <div><span className="text-muted-foreground block text-xs">{t('admin.guests')}</span>{selectedRes.guests_count}</div>
+                <div><span className="text-muted-foreground block text-xs">{t('admin.guests')}</span>{selectedRes.guests_count} adults{selectedRes.num_children > 0 && `, ${selectedRes.num_children} children`}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.checkIn')}</span>{format(new Date(selectedRes.check_in + 'T00:00:00'), 'MMM dd, yyyy')} {selectedRes.check_in_time && <span className="text-muted-foreground">@ {selectedRes.check_in_time}</span>}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.checkOut')}</span>{format(new Date(selectedRes.check_out + 'T00:00:00'), 'MMM dd, yyyy')} {selectedRes.check_out_time && <span className="text-muted-foreground">@ {selectedRes.check_out_time}</span>}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.totalPrice')}</span>{displayPrice(selectedRes.total_price || 0, cur)}</div>
@@ -812,7 +819,7 @@ const AdminReservations = () => {
       <Dialog open={showEdit} onOpenChange={v => { if (!v) { setShowEdit(false); setSelectedRes(null); } }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.editReservation')}</DialogTitle></DialogHeader>
-          <FormFields f={editForm} setF={setEditForm} roomTypes={roomTypes} rooms={rooms} t={t} />
+          <FormFields f={editForm} setF={setEditForm} roomTypes={roomTypes} rooms={rooms} t={t} childPricingEnabled={hotel?.child_pricing_enabled} />
           <Button onClick={handleEditSave} disabled={saving} className="w-full">{saving ? t('admin.saving') : t('admin.saveChanges')}</Button>
         </DialogContent>
       </Dialog>
@@ -821,7 +828,7 @@ const AdminReservations = () => {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.newReservation')}</DialogTitle></DialogHeader>
-          <FormFields f={form} setF={setForm} roomTypes={roomTypes} rooms={rooms} t={t} />
+          <FormFields f={form} setF={setForm} roomTypes={roomTypes} rooms={rooms} t={t} childPricingEnabled={hotel?.child_pricing_enabled} />
           <Button onClick={handleCreate} disabled={creating} className="w-full">{creating ? t('admin.creating') : t('admin.createReservation')}</Button>
         </DialogContent>
       </Dialog>
