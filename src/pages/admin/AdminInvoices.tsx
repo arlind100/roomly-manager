@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useHotel } from '@/hooks/useHotel';
@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { FileText, Plus, Download, Send, Loader2 } from 'lucide-react';
+import { FileText, Plus, Download, Send, Loader2, Trash2, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminInvoices = () => {
@@ -31,6 +31,14 @@ const AdminInvoices = () => {
   const [form, setForm] = useState({ reservation_id: '', amount: 0, status: 'draft' });
   const [creatingInv, setCreatingInv] = useState(false);
 
+  // Detail view
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [extras, setExtras] = useState<any[]>([]);
+  const [loadingExtras, setLoadingExtras] = useState(false);
+  const [newExtra, setNewExtra] = useState({ description: '', quantity: 1, unit_price: 0 });
+  const [addingExtra, setAddingExtra] = useState(false);
+  const [deletingExtraId, setDeletingExtraId] = useState<string | null>(null);
+
   useEffect(() => { if (hotel?.id) fetchData(); }, [hotel?.id, page]);
 
   const fetchData = async () => {
@@ -47,11 +55,80 @@ const AdminInvoices = () => {
     setLoading(false);
   };
 
+  const fetchExtras = useCallback(async (invoiceId: string) => {
+    if (!hotel?.id) return;
+    setLoadingExtras(true);
+    const { data } = await supabase.from('invoice_extras')
+      .select('*')
+      .eq('invoice_id', invoiceId)
+      .eq('hotel_id', hotel.id)
+      .order('created_at');
+    setExtras(data || []);
+    setLoadingExtras(false);
+  }, [hotel?.id]);
+
+  const openDetail = (inv: any) => {
+    setSelectedInvoice(inv);
+    fetchExtras(inv.id);
+    setNewExtra({ description: '', quantity: 1, unit_price: 0 });
+  };
+
+  const handleAddExtra = async () => {
+    if (!newExtra.description || !newExtra.unit_price) { toast.error('Description and price required'); return; }
+    if (!hotel?.id || !selectedInvoice) return;
+    setAddingExtra(true);
+    const total = newExtra.quantity * newExtra.unit_price;
+    const { error } = await supabase.from('invoice_extras').insert({
+      hotel_id: hotel.id,
+      invoice_id: selectedInvoice.id,
+      description: newExtra.description,
+      quantity: newExtra.quantity,
+      unit_price: newExtra.unit_price,
+      total,
+    });
+    setAddingExtra(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Extra added');
+    setNewExtra({ description: '', quantity: 1, unit_price: 0 });
+    fetchExtras(selectedInvoice.id);
+    // Update invoice total
+    await recalcInvoiceTotal(selectedInvoice.id);
+  };
+
+  const handleDeleteExtra = async (extraId: string) => {
+    setDeletingExtraId(extraId);
+    await supabase.from('invoice_extras').delete().eq('id', extraId);
+    setDeletingExtraId(null);
+    toast.success('Extra removed');
+    if (selectedInvoice) {
+      fetchExtras(selectedInvoice.id);
+      await recalcInvoiceTotal(selectedInvoice.id);
+    }
+  };
+
+  const recalcInvoiceTotal = async (invoiceId: string) => {
+    if (!hotel?.id) return;
+    // Get base reservation amount
+    const inv = invoices.find(i => i.id === invoiceId) || selectedInvoice;
+    const resPrice = Number(inv?.reservations?.total_price || inv?.amount || 0);
+    // Get extras total
+    const { data: extrasData } = await supabase.from('invoice_extras')
+      .select('total')
+      .eq('invoice_id', invoiceId);
+    const extrasTotal = (extrasData || []).reduce((s: number, e: any) => s + Number(e.total), 0);
+    const newTotal = resPrice + extrasTotal;
+    await supabase.from('invoices').update({ amount: newTotal }).eq('id', invoiceId);
+    // Update local state
+    setInvoices(prev => prev.map(i => i.id === invoiceId ? { ...i, amount: newTotal } : i));
+    if (selectedInvoice?.id === invoiceId) {
+      setSelectedInvoice((prev: any) => prev ? { ...prev, amount: newTotal } : prev);
+    }
+  };
+
   const handleCreate = async () => {
     if (!form.reservation_id || !form.amount) { toast.error('Select reservation and amount'); return; }
     if (!hotel?.id) { toast.error('Hotel not loaded'); return; }
     setCreatingInv(true);
-    // Check for existing invoice on this reservation
     const { data: existing } = await supabase.from('invoices').select('id').eq('reservation_id', form.reservation_id).neq('status', 'cancelled').limit(1);
     if (existing && existing.length > 0) {
       toast.error('An invoice already exists for this reservation');
@@ -131,6 +208,9 @@ const AdminInvoices = () => {
     setSendingId(null);
   };
 
+  const extrasTotal = extras.reduce((s, e) => s + Number(e.total), 0);
+  const taxPercentage = hotel?.tax_percentage || 0;
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
@@ -155,13 +235,13 @@ const AdminInvoices = () => {
                 <th className="text-right py-3.5 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('admin.actions')}</th>
               </tr></thead>
               <tbody>{invoices.map(inv => (
-                <tr key={inv.id} className="border-b border-border/30 transition-colors">
+                <tr key={inv.id} className="border-b border-border/30 transition-colors cursor-pointer hover:bg-muted/30" onClick={() => openDetail(inv)}>
                   <td className="py-3 px-4 font-mono text-xs">{inv.invoice_number}</td>
                   <td className="py-3 px-4">{inv.reservations?.guest_name || '—'}</td>
                   <td className="py-3 px-4 hidden md:table-cell text-muted-foreground font-mono text-xs">{inv.reservations?.reservation_code || '—'}</td>
                   <td className="py-3 px-4 font-semibold">{displayPrice(Number(inv.amount), cur)}</td>
                   <td className="py-3 px-4"><StatusBadge status={inv.status} /></td>
-                  <td className="py-3 px-4 text-right">
+                  <td className="py-3 px-4 text-right" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(inv)} title={t('admin.download')}><Download size={14} /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" disabled={sendingId === inv.id} onClick={() => {
@@ -193,6 +273,105 @@ const AdminInvoices = () => {
           )}
         </div>
       )}
+
+      {/* Invoice Detail with Extras */}
+      <Dialog open={!!selectedInvoice} onOpenChange={v => { if (!v) { setSelectedInvoice(null); setExtras([]); } }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Invoice {selectedInvoice?.invoice_number}</DialogTitle></DialogHeader>
+          {selectedInvoice && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-xs text-muted-foreground block">Guest</span>{selectedInvoice.reservations?.guest_name || '—'}</div>
+                <div><span className="text-xs text-muted-foreground block">Reservation</span><span className="font-mono text-xs">{selectedInvoice.reservations?.reservation_code || '—'}</span></div>
+                <div><span className="text-xs text-muted-foreground block">Status</span><StatusBadge status={selectedInvoice.status} /></div>
+                <div><span className="text-xs text-muted-foreground block">Total</span><span className="font-semibold">{displayPrice(Number(selectedInvoice.amount), cur)}</span></div>
+              </div>
+
+              {/* Line Items */}
+              <div className="border-t border-border pt-3">
+                <h4 className="text-xs font-semibold text-muted-foreground mb-2">Line Items</h4>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/30">
+                    <span>Room charge</span>
+                    <span className="font-medium">{displayPrice(Number(selectedInvoice.amount) - extrasTotal, cur)}</span>
+                  </div>
+                  {loadingExtras ? (
+                    <div className="flex items-center gap-2 py-2 px-3"><Loader2 size={14} className="animate-spin" /> <span className="text-xs text-muted-foreground">Loading extras...</span></div>
+                  ) : extras.map(extra => (
+                    <div key={extra.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/20">
+                      <div>
+                        <span>{extra.description}</span>
+                        {extra.quantity > 1 && <span className="text-xs text-muted-foreground ml-1">×{extra.quantity}</span>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{displayPrice(Number(extra.total), cur)}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" disabled={deletingExtraId === extra.id} onClick={() => handleDeleteExtra(extra.id)}>
+                          {deletingExtraId === extra.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Extra Inline */}
+                <div className="mt-3 border border-dashed border-border/60 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1"><PlusCircle size={12} /> Add Extra Charge</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    <Input className="col-span-2 h-8 text-xs" placeholder="Description" value={newExtra.description} onChange={e => setNewExtra(f => ({ ...f, description: e.target.value }))} />
+                    <Input className="h-8 text-xs" type="number" min={1} placeholder="Qty" value={newExtra.quantity} onChange={e => setNewExtra(f => ({ ...f, quantity: parseInt(e.target.value) || 1 }))} />
+                    <Input className="h-8 text-xs" type="number" min={0} step={0.01} placeholder="Price" value={newExtra.unit_price || ''} onChange={e => setNewExtra(f => ({ ...f, unit_price: parseFloat(e.target.value) || 0 }))} />
+                  </div>
+                  {newExtra.description && newExtra.unit_price > 0 && (
+                    <p className="text-[10px] text-muted-foreground">Total: {displayPrice(newExtra.quantity * newExtra.unit_price, cur)}</p>
+                  )}
+                  <Button size="sm" variant="outline" className="w-full h-7 text-xs gap-1" onClick={handleAddExtra} disabled={addingExtra}>
+                    {addingExtra ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                    Add
+                  </Button>
+                </div>
+              </div>
+
+              {/* Tax Summary */}
+              {taxPercentage > 0 && (
+                <div className="border-t border-border pt-3 space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>{displayPrice(Number(selectedInvoice.amount), cur)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Tax ({taxPercentage}%)</span>
+                    <span>{displayPrice(Number(selectedInvoice.amount) * taxPercentage / 100, cur)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold">
+                    <span>Grand Total</span>
+                    <span>{displayPrice(Number(selectedInvoice.amount) * (1 + taxPercentage / 100), cur)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-1.5 flex-wrap pt-2">
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => handleDownload(selectedInvoice)}>
+                  <Download size={12} /> Download PDF
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1" disabled={sendingId === selectedInvoice.id} onClick={() => handleSendEmail(selectedInvoice)}>
+                  {sendingId === selectedInvoice.id ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Send Email
+                </Button>
+                {selectedInvoice.status !== 'paid' && (
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1 text-green-600" onClick={() => { updateStatus(selectedInvoice.id, 'paid'); setSelectedInvoice((p: any) => p ? { ...p, status: 'paid' } : p); }}>
+                    Mark Paid
+                  </Button>
+                )}
+                {selectedInvoice.status === 'paid' && (
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => { updateStatus(selectedInvoice.id, 'unpaid'); setSelectedInvoice((p: any) => p ? { ...p, status: 'unpaid' } : p); }}>
+                    Mark Unpaid
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
