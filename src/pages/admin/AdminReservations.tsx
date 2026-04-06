@@ -500,7 +500,7 @@ const AdminReservations = () => {
       room_type_id: r.room_type_id || '', room_id: r.room_id || '',
       check_in: r.check_in, check_out: r.check_out,
       check_in_time: r.check_in_time || '', check_out_time: r.check_out_time || '',
-      guests_count: r.guests_count, total_price: Number(r.total_price) || 0,
+      guests_count: r.guests_count, num_children: r.num_children || 0, total_price: Number(r.total_price) || 0,
       special_requests: r.special_requests || '', notes: r.notes || '',
       booking_source: r.booking_source || 'direct',
     });
