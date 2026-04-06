@@ -378,6 +378,82 @@ const AdminSettings = () => {
         </div>
       </section>
 
+      {/* Children Pricing */}
+      <section className="bg-card rounded-lg border border-border/60 p-6 space-y-4 shadow-card">
+        <h2 className="text-sm font-semibold">Children Pricing</h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>Enable Children Guests</Label>
+            <p className="text-xs text-muted-foreground">Allow adding children to reservations with separate pricing</p>
+          </div>
+          <Switch checked={hotel.child_pricing_enabled || false} onCheckedChange={v => update('child_pricing_enabled', v)} />
+        </div>
+        {hotel.child_pricing_enabled && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div>
+              <Label>Price Type</Label>
+              <Select value={hotel.child_price_type || 'percentage'} onValueChange={v => update('child_price_type', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">Percentage of room rate</SelectItem>
+                  <SelectItem value="fixed">Fixed price per child/night</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{hotel.child_price_type === 'fixed' ? 'Price per child/night' : 'Percentage (%)'}</Label>
+              <Input type="number" min={0} step={hotel.child_price_type === 'fixed' ? 1 : 0.1} value={hotel.child_price_value || 0} onChange={e => update('child_price_value', parseFloat(e.target.value) || 0)} />
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Operations — No-Show Cutoff */}
+      <section className="bg-card rounded-lg border border-border/60 p-6 space-y-4 shadow-card">
+        <h2 className="text-sm font-semibold">Operations</h2>
+        <div>
+          <Label>No-Show Cutoff Time</Label>
+          <Input type="time" value={hotel.no_show_cutoff_time || '23:00'} onChange={e => update('no_show_cutoff_time', e.target.value)} />
+          <p className="text-xs text-muted-foreground mt-1">After this time, a "No Show" button appears on the dashboard for unconfirmed arrivals</p>
+        </div>
+      </section>
+
+      {/* Night Audit */}
+      <section className="bg-card rounded-lg border border-border/60 p-6 space-y-4 shadow-card">
+        <h2 className="text-sm font-semibold">Night Audit</h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>Enable Automatic Night Audit</Label>
+            <p className="text-xs text-muted-foreground">Generate a nightly summary report automatically</p>
+          </div>
+          <Switch checked={hotel.night_audit_enabled || false} onCheckedChange={v => update('night_audit_enabled', v)} />
+        </div>
+        {hotel.night_audit_enabled && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div>
+              <Label>Audit Generation Time</Label>
+              <Input type="time" value={hotel.night_audit_time || '23:59'} onChange={e => update('night_audit_time', e.target.value)} />
+            </div>
+            <div>
+              <Label>Recipient Email</Label>
+              <Input type="email" value={hotel.night_audit_email || ''} onChange={e => update('night_audit_email', e.target.value)} placeholder={hotel.email || 'admin@hotel.com'} />
+            </div>
+          </div>
+        )}
+        <Button variant="outline" size="sm" onClick={async () => {
+          if (!hotel?.id) return;
+          const auditDate = new Date().toISOString().split('T')[0];
+          toast.info('Generating night audit...');
+          try {
+            const { error } = await supabase.functions.invoke('generate-night-audit', { body: { hotel_id: hotel.id, audit_date: auditDate } });
+            if (error) { toast.error(error.message); return; }
+            toast.success('Night audit generated and emailed');
+          } catch { toast.error('Failed to generate audit'); }
+        }}>
+          Generate Now
+        </Button>
+      </section>
+
       {/* Policies */}
       <section className="bg-card rounded-lg border border-border/60 p-6 space-y-4 shadow-card">
         <h2 className="text-sm font-semibold">{t('admin.policies')}</h2>
