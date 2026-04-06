@@ -345,6 +345,10 @@ const AdminReservations = () => {
     const updateData: Record<string, any> = { status, updated_at: now };
     if (status === 'checked_in') updateData.check_in_time = timeNow;
     if (status === 'completed') updateData.check_out_time = timeNow;
+    if (status === 'no_show') {
+      const res = reservations.find(r => r.id === id);
+      updateData.notes = `${res?.notes ? res.notes + '\n' : ''}[No-show marked at ${timeNow} on ${now.split('T')[0]}]`;
+    }
 
     const { error } = await supabase.from('reservations').update(updateData).eq('id', id);
     if (error) { toast.error(error.message); return; }
@@ -362,6 +366,26 @@ const AdminReservations = () => {
     if (status === 'completed') {
       const resWithRoom = effectiveRoomId ? { ...res, room_id: effectiveRoomId } : res;
       await markRoomDirty(resWithRoom);
+    }
+
+    // Release room on no-show
+    if (status === 'no_show' && effectiveRoomId) {
+      await supabase.from('rooms').update({ operational_status: 'available', updated_at: now }).eq('id', effectiveRoomId);
+    }
+
+    // Send no-show notification email
+    if (status === 'no_show' && res?.guest_email) {
+      try {
+        await supabase.functions.invoke('send-noshow-email', {
+          body: {
+            to_email: res.guest_email, guest_name: res.guest_name,
+            reservation_code: res.reservation_code, check_in: res.check_in,
+            room_type_name: res.room_types?.name || '',
+            hotel_name: hotel?.name || 'Hotel', hotel_email: hotel?.email || '',
+          },
+        });
+        toast.success('No-show notification sent');
+      } catch (e) { console.error('No-show email error:', e); }
     }
 
     if (status === 'confirmed' && res?.guest_email) {
