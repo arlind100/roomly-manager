@@ -39,6 +39,49 @@ const CHART_COLORS = [
 
 type DatePreset = 'today' | '7days' | '30days' | 'month' | 'custom';
 
+const NightAuditTab = ({ hotelId, cur }: { hotelId?: string; cur: string }) => {
+  const [audits, setAudits] = useState<any[]>([]);
+  const [loadingAudits, setLoadingAudits] = useState(true);
+  useEffect(() => {
+    if (!hotelId) return;
+    (async () => {
+      const { data } = await supabase.from('night_audit_logs').select('*').eq('hotel_id', hotelId).order('audit_date', { ascending: false }).limit(50);
+      setAudits(data || []); setLoadingAudits(false);
+    })();
+  }, [hotelId]);
+  if (loadingAudits) return <div className="flex items-center justify-center h-32"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (audits.length === 0) return (
+    <div className="bg-card rounded-lg border border-border/60 p-12 text-center shadow-card">
+      <Moon size={32} className="mx-auto mb-3 text-muted-foreground/40" />
+      <p className="text-sm font-medium text-muted-foreground">No night audits generated yet</p>
+      <p className="text-xs text-muted-foreground mt-1">Enable night audit in Settings to generate nightly reports automatically</p>
+    </div>
+  );
+  return (
+    <div className="bg-card rounded-lg border border-border/60 shadow-card overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader><TableRow>
+            <TableHead>Date</TableHead><TableHead>Arrivals</TableHead><TableHead>Departures</TableHead>
+            <TableHead>No-Shows</TableHead><TableHead>Occupancy</TableHead><TableHead>Revenue</TableHead><TableHead>Unpaid</TableHead>
+          </TableRow></TableHeader>
+          <TableBody>{audits.map(a => (
+            <TableRow key={a.id}>
+              <TableCell className="text-sm font-medium">{format(parseISO(a.audit_date), 'MMM dd, yyyy')}</TableCell>
+              <TableCell className="text-sm">{a.arrivals_actual}/{a.arrivals_expected}</TableCell>
+              <TableCell className="text-sm">{a.departures_actual}/{a.departures_expected}</TableCell>
+              <TableCell className="text-sm">{a.no_shows}</TableCell>
+              <TableCell className="text-sm font-medium">{a.occupancy_rate}%</TableCell>
+              <TableCell className="text-sm">{displayPrice(Number(a.revenue_today), cur)}</TableCell>
+              <TableCell className="text-sm">{a.unpaid_invoices_count > 0 ? `${a.unpaid_invoices_count} (${displayPrice(Number(a.unpaid_invoices_total), cur)})` : '—'}</TableCell>
+            </TableRow>
+          ))}</TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+};
+
 const AdminAnalytics = () => {
   const { t } = useLanguage();
   const { hotel } = useHotel();
