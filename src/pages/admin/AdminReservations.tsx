@@ -741,7 +741,7 @@ const AdminReservations = () => {
                 <div><span className="text-muted-foreground block text-xs">{t('admin.guestEmail')}</span>{selectedRes.guest_email || '—'}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.guestPhone')}</span>{selectedRes.guest_phone || '—'}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.room')}</span>{selectedRes.room_types?.name || '—'}</div>
-                <div><span className="text-muted-foreground block text-xs">{t('admin.guests')}</span>{selectedRes.guests_count}</div>
+                <div><span className="text-muted-foreground block text-xs">{t('admin.guests')}</span>{selectedRes.guests_count} adults{selectedRes.num_children > 0 && `, ${selectedRes.num_children} children`}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.checkIn')}</span>{format(new Date(selectedRes.check_in + 'T00:00:00'), 'MMM dd, yyyy')} {selectedRes.check_in_time && <span className="text-muted-foreground">@ {selectedRes.check_in_time}</span>}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.checkOut')}</span>{format(new Date(selectedRes.check_out + 'T00:00:00'), 'MMM dd, yyyy')} {selectedRes.check_out_time && <span className="text-muted-foreground">@ {selectedRes.check_out_time}</span>}</div>
                 <div><span className="text-muted-foreground block text-xs">{t('admin.totalPrice')}</span>{displayPrice(selectedRes.total_price || 0, cur)}</div>
@@ -819,7 +819,7 @@ const AdminReservations = () => {
       <Dialog open={showEdit} onOpenChange={v => { if (!v) { setShowEdit(false); setSelectedRes(null); } }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.editReservation')}</DialogTitle></DialogHeader>
-          <FormFields f={editForm} setF={setEditForm} roomTypes={roomTypes} rooms={rooms} t={t} />
+          <FormFields f={editForm} setF={setEditForm} roomTypes={roomTypes} rooms={rooms} t={t} childPricingEnabled={hotel?.child_pricing_enabled} />
           <Button onClick={handleEditSave} disabled={saving} className="w-full">{saving ? t('admin.saving') : t('admin.saveChanges')}</Button>
         </DialogContent>
       </Dialog>
@@ -828,7 +828,7 @@ const AdminReservations = () => {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{t('admin.newReservation')}</DialogTitle></DialogHeader>
-          <FormFields f={form} setF={setForm} roomTypes={roomTypes} rooms={rooms} t={t} />
+          <FormFields f={form} setF={setForm} roomTypes={roomTypes} rooms={rooms} t={t} childPricingEnabled={hotel?.child_pricing_enabled} />
           <Button onClick={handleCreate} disabled={creating} className="w-full">{creating ? t('admin.creating') : t('admin.createReservation')}</Button>
         </DialogContent>
       </Dialog>
