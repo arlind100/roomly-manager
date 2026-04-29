@@ -4,7 +4,7 @@ export type AdminTheme = 'light' | 'dark';
 
 export function useAdminTheme() {
   const [theme, setThemeState] = useState<AdminTheme>(
-    () => (localStorage.getItem('admin_theme') as AdminTheme) || 'light'
+    () => (localStorage.getItem('admin_theme') as AdminTheme) || 'dark'
   );
 
   // Apply theme class to <body> so portals (modals, popovers, selects) inherit admin tokens
