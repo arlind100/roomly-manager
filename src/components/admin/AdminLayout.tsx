@@ -182,7 +182,7 @@ function AdminLayoutInner() {
   return (
     <div className={`min-h-screen flex admin-${theme}`}>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-60 flex-col border-r border-sidebar-border bg-[hsl(var(--sidebar-background))] fixed inset-y-0 left-0 z-30">
+      <aside className="hidden lg:flex w-60 flex-col border-r border-sidebar-border bg-[hsl(var(--sidebar-background))] fixed inset-y-0 left-0 z-30 isolate">
         <SidebarContent />
       </aside>
 
